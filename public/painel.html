@@ -475,7 +475,7 @@
         total += subBarracas;
         resumoHTML += `<div class="flex justify-between text-xs font-bold text-indigo-700 mb-1"><span>${pedidoAtual.qtd_barracas}x ${descPreco}</span><span>R$ ${subBarracas.toFixed(2)}</span></div>`;
 
-        // 2. Itens Padrão (Dynamic Matching)
+        // 2. Itens Padrão
         let itens = [];
         try {
           itens =
@@ -485,11 +485,11 @@
         } catch (e) {}
         if (Array.isArray(itens)) {
           itens.forEach((nomeItem) => {
-            let itemDb = precosCache.find((p) => p.descricao === nomeItem); // Busca por nome exato
+            let itemDb = precosCache.find((p) => p.descricao === nomeItem);
             if (!itemDb && mapaItens[nomeItem])
               itemDb = precosCache.find(
                 (p) => p.item_chave === mapaItens[nomeItem],
-              ); // Busca por mapa
+              );
 
             if (itemDb) {
               total += parseFloat(itemDb.valor);
@@ -510,7 +510,6 @@
           comidas.forEach((nomeComida) => {
             let itemDb = precosCache.find((p) => p.descricao === nomeComida);
             if (!itemDb) {
-              // Tenta mapa antigo se não achar nome exato
               if (nomeComida.includes("Manha"))
                 itemDb = precosCache.find((p) => p.item_chave === "cafe_manha");
               else if (nomeComida.includes("Tarde"))
@@ -547,7 +546,7 @@
         pedidoAtual.valorExtraManual = valorExtra.toFixed(2);
       }
 
-      // --- FUNÇÃO DE COPIAR CORRIGIDA (TEXTO COMPLETO) ---
+      // --- COPIAR (TEXTO COMPLETO) ---
       async function copiarSalvarOrcamento() {
         const valorExtra =
           parseFloat(document.getElementById("valor-extra-manual").value) || 0;
@@ -559,7 +558,6 @@
         btn.innerHTML = "Salvando...";
 
         try {
-          // 1. Salva no Banco
           await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
             method: "PUT",
             headers: {
@@ -574,14 +572,13 @@
             }),
           });
 
-          // 2. Prepara Texto
           const dataFesta = pedidoAtual.data_festa
             ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
                 timeZone: "UTC",
               })
             : "A definir";
-          let itens = [];
-          let comida = [];
+          let itens = [],
+            comida = [];
           try {
             itens =
               typeof pedidoAtual.itens_padrao === "string"
@@ -597,37 +594,11 @@
           if (!Array.isArray(itens)) itens = [];
           if (!Array.isArray(comida)) comida = [];
 
-          const texto = `*Orçamento Cabana de Brincar* ⛺✨
-Olá *${pedidoAtual.nome}*! Tudo bem? 💖
-
-Recebemos seu pedido! Segue o resumo detalhado:
-
-🗓 *Data:* ${dataFesta} às ${pedidoAtual.horario}
-📍 *Local:* ${pedidoAtual.endereco}
-
-🎪 *Estrutura:*
-▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}
-▪️ ${pedidoAtual.qtd_criancas} Crianças (${pedidoAtual.faixa_etaria})
-▪️ Tema: ${pedidoAtual.tema || "A definir"}
-
-✅ *Itens Inclusos:*
-${itens.length > 0 ? itens.map((i) => `  • ${i}`).join("\n") : "  • (Apenas estrutura básica)"}
-
-🍽️ *Alimentação:*
-${comida.length > 0 ? comida.map((c) => `  • ${c}`).join("\n") : "  • (Sem alimentação inclusa)"}
-
-${pedidoAtual.itens_adicionais ? `📝 *Obs do Pedido:* ${pedidoAtual.itens_adicionais}\n` : ""}
-${valorExtra > 0 ? `➕ *Adicionais${descExtra ? ` (${descExtra})` : ""}:* R$ ${valorExtra.toFixed(2)}\n` : ""}
-------------------------------------
-💰 *Valor Total Final: R$ ${pedidoAtual.totalCalculado}*
-------------------------------------
-
-Podemos confirmar o agendamento? ✨`;
+          const texto = `*Orçamento Cabana de Brincar* ⛺✨\nOlá *${pedidoAtual.nome}*! Tudo bem? 💖\n\nRecebemos seu pedido! Segue o resumo detalhado:\n\n🗓 *Data:* ${dataFesta} às ${pedidoAtual.horario}\n📍 *Local:* ${pedidoAtual.endereco}\n\n🎪 *Estrutura:*\n▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n▪️ ${pedidoAtual.qtd_criancas} Crianças (${pedidoAtual.faixa_etaria})\n▪️ Tema: ${pedidoAtual.tema || "A definir"}\n\n✅ *Itens Inclusos:*\n${itens.length > 0 ? itens.map((i) => `  • ${i}`).join("\n") : "  • (Apenas estrutura básica)"}\n\n🍽️ *Alimentação:*\n${comida.length > 0 ? comida.map((c) => `  • ${c}`).join("\n") : "  • (Sem alimentação inclusa)"}\n\n${pedidoAtual.itens_adicionais ? `📝 *Obs do Pedido:* ${pedidoAtual.itens_adicionais}\n` : ""}${valorExtra > 0 ? `➕ *Adicionais${descExtra ? ` (${descExtra})` : ""}:* R$ ${valorExtra.toFixed(2)}\n` : ""}------------------------------------\n💰 *Valor Total Final: R$ ${pedidoAtual.totalCalculado}*\n------------------------------------\n\nPodemos confirmar o agendamento? ✨`;
 
           await navigator.clipboard.writeText(texto);
           alert("✅ Salvo e Copiado com Sucesso!");
 
-          // Atualiza local
           pedidoAtual.valor_itens_extras = valorExtra;
           pedidoAtual.descricao_itens_extras = descExtra;
           pedidoAtual.valor_final = pedidoAtual.totalCalculado;
@@ -636,6 +607,84 @@ Podemos confirmar o agendamento? ✨`;
         } finally {
           btn.innerHTML = txtOriginal;
         }
+      }
+
+      // --- DETALHES (CORRIGIDO PARA MOSTRAR TEMA) ---
+      function verDetalhes(id) {
+        isModalOpen = true;
+        pedidoAtual = pedidosCache.find((p) => p.id === id);
+        document.getElementById("valor-extra-manual").value =
+          pedidoAtual.valor_itens_extras || 0;
+        document.getElementById("desc-extra-manual").value =
+          pedidoAtual.descricao_itens_extras || "";
+        const dataFesta = pedidoAtual.data_festa
+          ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
+              timeZone: "UTC",
+            })
+          : "A definir";
+        let itens = [],
+          comida = [];
+        try {
+          itens =
+            typeof pedidoAtual.itens_padrao === "string"
+              ? JSON.parse(pedidoAtual.itens_padrao)
+              : pedidoAtual.itens_padrao;
+        } catch (e) {}
+        try {
+          comida =
+            typeof pedidoAtual.alimentacao === "string"
+              ? JSON.parse(pedidoAtual.alimentacao)
+              : pedidoAtual.alimentacao;
+        } catch (e) {}
+        if (!Array.isArray(itens)) itens = [];
+        if (!Array.isArray(comida)) comida = [];
+
+        // AQUI ESTÁ A CORREÇÃO: ADICIONEI O CAMPO DE TEMA E CORES VISUALMENTE
+        document.getElementById("conteudo-detalhes").innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase">CLIENTE</p>
+                        <p class="font-bold text-slate-800 text-lg">${pedidoAtual.nome}</p>
+                        <p class="text-green-600 text-sm font-mono flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${pedidoAtual.whatsapp}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase">FESTA</p>
+                        <p class="font-bold text-slate-800">${dataFesta}</p>
+                        <p class="text-slate-500 text-xs flex items-start gap-1 mt-1"><i data-lucide="map-pin" class="w-3 h-3 mt-0.5"></i> ${pedidoAtual.endereco}</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-sm text-slate-600 space-y-4">
+                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                        <p class="flex items-center gap-2 font-bold text-indigo-700">
+                            <i data-lucide="tent" class="w-4 h-4"></i> ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}
+                        </p>
+                        <p class="ml-6 text-xs text-indigo-600/80 mb-2">Para ${pedidoAtual.qtd_criancas} crianças (${pedidoAtual.faixa_etaria})</p>
+                        
+                        <div class="border-t border-indigo-200 pt-2 mt-2 ml-6">
+                            <p class="text-xs font-bold text-indigo-500 uppercase">Tema & Cores:</p>
+                            <p class="font-bold text-indigo-900">${pedidoAtual.tema || "Não informado"} <span class="font-normal text-indigo-700">(${pedidoAtual.cores || "Cores padrão"})</span></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="font-bold text-xs text-slate-400 uppercase mb-2 flex items-center gap-1"><i data-lucide="check-square" class="w-3 h-3"></i> Itens Selecionados:</p>
+                            ${itens.length > 0 ? `<ul class="list-disc ml-4 space-y-1">${itens.map((i) => `<li>${i}</li>`).join("")}</ul>` : '<p class="text-slate-400 italic text-xs ml-4">Nenhum item selecionado</p>'}
+                        </div>
+                        <div>
+                            <p class="font-bold text-xs text-slate-400 uppercase mb-2 flex items-center gap-1"><i data-lucide="utensils" class="w-3 h-3"></i> Alimentação:</p>
+                            ${comida.length > 0 ? `<ul class="list-disc ml-4 space-y-1">${comida.map((c) => `<li>${c}</li>`).join("")}</ul>` : '<p class="text-slate-400 italic text-xs ml-4">Nenhuma alimentação</p>'}
+                        </div>
+                    </div>
+
+                    ${pedidoAtual.itens_adicionais ? `<div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200"><p class="text-xs font-bold text-yellow-800 uppercase flex items-center gap-1"><i data-lucide="sticky-note" class="w-3 h-3"></i> Obs do Cliente:</p><p class="text-sm text-yellow-900 mt-1">${pedidoAtual.itens_adicionais}</p></div>` : ""}
+                    
+                    ${pedidoAtual.alergias ? `<div class="bg-red-50 p-3 rounded-lg border border-red-200"><p class="text-xs font-bold text-red-800 uppercase flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Alergias / Restrições:</p><p class="text-sm text-red-900 mt-1 font-bold">${pedidoAtual.alergias}</p></div>` : ""}
+                </div>`;
+        calcularOrcamento();
+        document.getElementById("modal-detalhes").classList.remove("hidden");
+        lucide.createIcons();
       }
 
       // Funções de Interface (Iguais ao anterior)
@@ -845,40 +894,6 @@ Podemos confirmar o agendamento? ✨`;
           });
           fetchDados(s);
         }
-      }
-
-      function verDetalhes(id) {
-        isModalOpen = true;
-        pedidoAtual = pedidosCache.find((p) => p.id === id);
-        document.getElementById("valor-extra-manual").value =
-          pedidoAtual.valor_itens_extras || 0;
-        document.getElementById("desc-extra-manual").value =
-          pedidoAtual.descricao_itens_extras || "";
-        const d = pedidoAtual.data_festa
-          ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
-              timeZone: "UTC",
-            })
-          : "-";
-        let i = [],
-          c = [];
-        try {
-          i =
-            typeof pedidoAtual.itens_padrao === "string"
-              ? JSON.parse(pedidoAtual.itens_padrao)
-              : pedidoAtual.itens_padrao;
-        } catch (e) {}
-        try {
-          c =
-            typeof pedidoAtual.alimentacao === "string"
-              ? JSON.parse(pedidoAtual.alimentacao)
-              : pedidoAtual.alimentacao;
-        } catch (e) {}
-        if (!Array.isArray(i)) i = [];
-        if (!Array.isArray(c)) c = [];
-        document.getElementById("conteudo-detalhes").innerHTML =
-          `<div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl"><div><p class="text-xs font-bold text-slate-400">CLIENTE</p><p class="font-bold text-lg">${pedidoAtual.nome}</p></div><div><p class="text-xs font-bold text-slate-400">FESTA</p><p class="font-bold">${d}</p></div></div><div class="mt-4 text-sm space-y-2"><p class="font-bold text-indigo-700">${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</p><div class="grid grid-cols-2"><div><p class="font-bold text-xs text-slate-400">ITENS:</p><ul class="list-disc ml-4">${i.length ? i.map((x) => `<li>${x}</li>`).join("") : "<li>Nenhum</li>"}</ul></div><div><p class="font-bold text-xs text-slate-400">COMIDA:</p><ul class="list-disc ml-4">${c.length ? c.map((x) => `<li>${x}</li>`).join("") : "<li>Nenhuma</li>"}</ul></div></div>${pedidoAtual.itens_adicionais ? `<div class="bg-yellow-50 p-2 rounded mt-2 text-xs">Obs: ${pedidoAtual.itens_adicionais}</div>` : ""}</div>`;
-        calcularOrcamento();
-        document.getElementById("modal-detalhes").classList.remove("hidden");
       }
       function fecharModal(id) {
         document.getElementById(id).classList.add("hidden");

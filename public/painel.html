@@ -36,6 +36,12 @@
         background-color: #fff;
         box-shadow: 0 0 0 2px #bfdbfe;
       }
+
+      #canvas-container {
+        background-color: #ffffff;
+        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 20px 20px;
+      }
     </style>
   </head>
   <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -82,13 +88,14 @@
             ></span>
           </h1>
         </div>
+
         <div class="flex bg-slate-100 p-1 rounded-xl overflow-x-auto">
           <button
             onclick="mudarAba('pedidos')"
             id="btn-tab-pedidos"
             class="px-6 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-sm whitespace-nowrap"
           >
-            Pedidos Ativos
+            Pedidos
           </button>
           <button
             onclick="mudarAba('financeiro')"
@@ -102,9 +109,17 @@
             id="btn-tab-precos"
             class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-indigo-600 transition-all whitespace-nowrap flex items-center gap-2"
           >
-            <i data-lucide="tag" class="w-3 h-3"></i> Tabela de Preços
+            <i data-lucide="tag" class="w-3 h-3"></i> Preços
+          </button>
+          <button
+            onclick="mudarAba('projetos')"
+            id="btn-tab-projetos"
+            class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-indigo-600 transition-all whitespace-nowrap flex items-center gap-2"
+          >
+            <i data-lucide="palette" class="w-3 h-3"></i> Projetos
           </button>
         </div>
+
         <div class="flex gap-2">
           <button
             onclick="location.reload()"
@@ -225,23 +240,20 @@
                 <div>
                   <label
                     class="block text-xs font-bold text-slate-500 uppercase mb-1"
-                    >Nome do Item</label
+                    >Nome</label
                   ><input
                     type="text"
                     id="novo-item-nome"
-                    placeholder="Ex: Pipoca Gourmet"
                     class="w-full p-3 border rounded-lg"
                   />
                 </div>
                 <div>
                   <label
                     class="block text-xs font-bold text-slate-500 uppercase mb-1"
-                    >Valor (R$)</label
+                    >Valor</label
                   ><input
                     type="number"
                     id="novo-item-valor"
-                    placeholder="0.00"
-                    step="0.01"
                     class="w-full p-3 border rounded-lg"
                   />
                 </div>
@@ -253,16 +265,17 @@
                     id="novo-item-cat"
                     class="w-full p-3 border rounded-lg bg-white"
                   >
-                    <option value="padrao">Item Padrão (Checkbox)</option>
+                    <option value="tendas">Tendas</option>
+                    <option value="padrao">Itens</option>
                     <option value="alimentacao">Alimentação</option>
-                    <option value="sistema">Sistema / Taxa</option>
+                    <option value="sistema">Taxas</option>
                   </select>
                 </div>
                 <button
                   onclick="criarNovoItem()"
-                  class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-colors"
+                  class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700"
                 >
-                  Cadastrar Item
+                  Cadastrar
                 </button>
               </div>
             </div>
@@ -279,6 +292,69 @@
               <div class="p-6">
                 <div id="lista-precos-editaveis" class="space-y-4"></div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-projetos" class="hidden tab-content">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[85vh]">
+          <div
+            class="lg:col-span-1 bg-white rounded-xl shadow border border-slate-200 flex flex-col overflow-hidden"
+          >
+            <div
+              class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700"
+            >
+              Pedidos para Montar
+            </div>
+            <div
+              class="p-4 flex-1 overflow-y-auto space-y-2"
+              id="lista-clientes-projeto"
+            >
+              <p class="text-slate-400 text-sm text-center mt-4">
+                Carregando...
+              </p>
+            </div>
+          </div>
+          <div
+            class="lg:col-span-3 bg-white rounded-xl shadow border border-slate-200 flex flex-col"
+          >
+            <div
+              class="p-4 border-b border-slate-200 flex justify-between items-center"
+            >
+              <div>
+                <h3 class="font-bold text-indigo-700 flex items-center gap-2">
+                  <i data-lucide="palette"></i> Gerador de Projeto
+                </h3>
+                <p class="text-xs text-slate-400" id="projeto-cliente-nome">
+                  Selecione um cliente
+                </p>
+              </div>
+              <button
+                onclick="baixarImagemProjeto()"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 flex items-center gap-2 shadow-sm"
+              >
+                <i data-lucide="download"></i> Baixar JPG
+              </button>
+            </div>
+
+            <div
+              class="flex-1 flex items-center justify-center p-6 bg-slate-100 overflow-hidden"
+              id="canvas-container"
+            >
+              <canvas
+                id="canvas-projeto"
+                width="1080"
+                height="1080"
+                class="bg-white shadow-2xl rounded-sm max-h-full max-w-full object-contain"
+              ></canvas>
+            </div>
+
+            <div class="p-4 bg-slate-50 border-t border-slate-200">
+              <p class="text-xs font-bold text-slate-400 uppercase mb-2">
+                Simulação (Marque para visualizar):
+              </p>
+              <div class="flex flex-wrap gap-4" id="controles-camadas"></div>
             </div>
           </div>
         </div>
@@ -304,7 +380,6 @@
           <i data-lucide="file-text" class="w-5 h-5"></i> Detalhes & Orçamento
         </h3>
         <div id="conteudo-detalhes" class="text-sm space-y-6"></div>
-
         <div
           class="mt-8 bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-inner"
         >
@@ -314,12 +389,16 @@
             <i data-lucide="calculator" class="w-4 h-4 text-green-600"></i>
             Calculadora Automática
           </h4>
-
+          <div class="mb-4 bg-white p-3 rounded-lg border border-slate-100">
+            <p class="text-xs font-bold text-indigo-400 uppercase mb-2">
+              Aplicar Taxas:
+            </p>
+            <div id="container-taxas-sistema" class="space-y-2"></div>
+          </div>
           <div
             id="calculadora-resumo"
             class="space-y-2 text-slate-600 mb-4 font-mono text-xs border-b border-slate-200 pb-4"
           ></div>
-
           <div
             class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-4 space-y-3"
           >
@@ -351,7 +430,6 @@
               </div>
             </div>
           </div>
-
           <div
             class="flex justify-between items-center mb-4 pt-2 border-t border-slate-200"
           >
@@ -362,7 +440,6 @@
               >R$ 0,00</span
             >
           </div>
-
           <button
             onclick="copiarSalvarOrcamento()"
             id="btn-copiar"
@@ -386,18 +463,43 @@
       let isModalOpen = false;
       let chartInstance = null;
 
-      // MAPA PARA RELACIONAR NOME NO PEDIDO COM PREÇO NO BANCO (FALLBACK)
+      // --- MAPA DE CORREÇÃO (NOMES EXATOS DO BANCO) ---
+      // Aqui mapeamos: O QUE VEM DO BANCO -> NOME DA CHAVE/ARQUIVO
       const mapaItens = {
-        "Mesa de café": "item_mesa",
-        "Almofadas fofas": "item_almofadas",
-        Colchonetes: "item_colchonetes",
-        "Luzinhas LED": "item_luzes",
-        "Cafe da Manha": "cafe_manha",
-        "Cafe da Tarde": "cafe_tarde",
-        Jantar: "jantar",
-        "Jantar/Noite": "jantar",
+        "Mesa de Café": "mesa",
+        "Kit Almofadas": "almofadas",
+        Colchonete: "colchonete",
+        "Luzinhas LED": "luz",
       };
 
+      // --- FUNÇÃO BLINDADA PARA LER JSON ---
+      function safeParse(jsonString) {
+        if (!jsonString) return [];
+        if (Array.isArray(jsonString)) return jsonString;
+        try {
+          const parsed = JSON.parse(jsonString);
+          if (typeof parsed === "string") return JSON.parse(parsed);
+          return parsed;
+        } catch (e) {
+          return [];
+        }
+      }
+
+      // --- LÓGICA DE NOMES DE ARQUIVO (DINÂMICO PARA INDIO/TENDA) ---
+      function getArquivoImagem(tipoBarraca, itemKey, temLuz) {
+        // Detecta se é Índio ou Tenda
+        const tipo =
+          tipoBarraca && tipoBarraca.includes("Indio") ? "indio" : "tenda";
+
+        // Lógica do Cenário Base
+        if (itemKey === "base")
+          return temLuz ? `base_${tipo}_luz.png` : `base_${tipo}.png`;
+
+        // Lógica dos Itens (ex: item_mesa_tenda.png)
+        return `item_${itemKey}_${tipo}.png`;
+      }
+
+      // --- SISTEMA ---
       async function autenticar() {
         const senha = document.getElementById("adminPass").value;
         try {
@@ -415,7 +517,10 @@
       }
 
       async function fetchDados(senha, isAutoRefresh = false) {
-        if (isAutoRefresh)
+        if (
+          isAutoRefresh &&
+          document.getElementById("view-projetos").classList.contains("hidden")
+        )
           document
             .getElementById("loading-indicator")
             .classList.remove("hidden");
@@ -423,7 +528,6 @@
           const res = await fetch("/api/admin/pedidos", {
             headers: { "x-admin-password": senha },
           });
-          if (!res.ok) throw new Error();
           pedidosCache = await res.json();
           const resPrecos = await fetch("/api/admin/precos", {
             headers: { "x-admin-password": senha },
@@ -431,6 +535,7 @@
           precosCache = await resPrecos.json();
           renderizarTabelas();
           renderizarPrecosAdmin();
+          renderizarListaProjetos();
           atualizarGrafico();
         } catch (e) {
         } finally {
@@ -445,52 +550,140 @@
         }
       }
 
-      // --- CÁLCULO FINANCEIRO DETALHADO ---
+      // --- ABA PROJETOS: LISTA ---
+      function renderizarListaProjetos() {
+        const div = document.getElementById("lista-clientes-projeto");
+        if (
+          div.childElementCount > 0 &&
+          !document.getElementById("view-projetos").classList.contains("hidden")
+        )
+          return;
+        div.innerHTML = "";
+        pedidosCache.forEach((p) => {
+          const itens = safeParse(p.itens_padrao);
+          // Verifica usando o mapa se tem luzes
+          const temLuz = itens.some((i) => mapaItens[i] === "luz");
+          const labelLuz = temLuz ? "💡 Com Luz" : "🌑 Sem Luz";
+
+          div.innerHTML += `<div onclick="carregarProjetoNoCanvas(${p.id})" class="p-3 border-b border-slate-100 hover:bg-indigo-50 cursor-pointer transition-colors group"><div class="flex justify-between items-center"><p class="font-bold text-slate-700 group-hover:text-indigo-700 text-sm">${p.nome}</p><span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500">${labelLuz}</span></div><p class="text-xs text-slate-400 mt-1">${p.modelo_barraca}</p></div>`;
+        });
+      }
+
+      // --- ABA PROJETOS: LÓGICA VISUAL (CORRIGIDA) ---
+      async function carregarProjetoNoCanvas(id) {
+        const p = pedidosCache.find((x) => x.id === id);
+        if (!p) return;
+        document.getElementById("projeto-cliente-nome").innerText =
+          `Projeto para: ${p.nome} (${p.modelo_barraca})`;
+
+        // 1. Processa Itens usando o Mapa LIMPO
+        const itensDoBanco = safeParse(p.itens_padrao);
+
+        // Converte ["Mesa de Café"] para ["mesa"]
+        const itensAtivos = itensDoBanco
+          .map((nomeBanco) => mapaItens[nomeBanco])
+          .filter((k) => k);
+
+        // 2. Verifica Luzes
+        const temLuz = itensAtivos.includes("luz");
+
+        // 3. Renderiza Controles Manuais
+        const divControles = document.getElementById("controles-camadas");
+        divControles.innerHTML = `
+                <label class="flex items-center gap-2 bg-white px-3 py-1 rounded border border-slate-200 cursor-pointer">
+                    <input type="checkbox" id="chk-manual-luz" onchange="redesenharManual('${p.modelo_barraca}')" ${temLuz ? "checked" : ""} class="w-4 h-4 text-indigo-600">
+                    <span class="text-xs font-bold text-slate-600">Luzes / Base Acesa</span>
+                </label>`;
+
+        // Cria checkboxes (Apenas para os 3 itens físicos)
+        // A ordem aqui não importa para o desenho, só para os controles
+        ["colchonete", "almofadas", "mesa"].forEach((key) => {
+          const estaAtivo = itensAtivos.includes(key);
+
+          divControles.innerHTML += `
+                    <label class="flex items-center gap-2 bg-white px-3 py-1 rounded border border-slate-200 cursor-pointer">
+                        <input type="checkbox" class="chk-layer-visual" data-key="${key}" onchange="redesenharManual('${p.modelo_barraca}')" ${estaAtivo ? "checked" : ""} class="w-4 h-4 text-indigo-600">
+                        <span class="text-xs font-bold text-slate-600 capitalize">${key}</span>
+                    </label>`;
+        });
+
+        redesenharManual(p.modelo_barraca);
+      }
+
+      async function redesenharManual(modeloBarraca) {
+        const canvas = document.getElementById("canvas-projeto");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const temLuz = document.getElementById("chk-manual-luz").checked;
+        const listaFinal = [];
+
+        // 1. Base (Define se é Tenda ou Indio + Se está acesa)
+        listaFinal.push(getArquivoImagem(modeloBarraca, "base", temLuz));
+
+        // 2. Itens (Verifica checkboxes e adiciona na ordem correta)
+        const checkBoxes = Array.from(
+          document.querySelectorAll(".chk-layer-visual:checked"),
+        ).map((c) => c.getAttribute("data-key"));
+
+        // ORDEM FIXA DE PINTURA (Z-INDEX): Colchonete -> Almofadas -> Mesa
+        // Isso garante que a mesa sempre fique na frente das almofadas, independente da ordem de clique
+        if (checkBoxes.includes("colchonete"))
+          listaFinal.push(getArquivoImagem(modeloBarraca, "colchonete", false));
+        if (checkBoxes.includes("almofadas"))
+          listaFinal.push(getArquivoImagem(modeloBarraca, "almofadas", false));
+        if (checkBoxes.includes("mesa"))
+          listaFinal.push(getArquivoImagem(modeloBarraca, "mesa", false));
+
+        // 3. Carrega
+        const loadingPromises = listaFinal.map((arquivo) => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.src = `/assets/${arquivo}`;
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+              console.warn(`Imagem não encontrada: ${arquivo}`);
+              resolve(null);
+            };
+          });
+        });
+
+        const imagens = await Promise.all(loadingPromises);
+        imagens.forEach((img) => {
+          if (img) ctx.drawImage(img, 0, 0, 1080, 1080);
+        });
+      }
+
+      function baixarImagemProjeto() {
+        const link = document.createElement("a");
+        link.download = "projeto_cabana.jpg";
+        link.href = document
+          .getElementById("canvas-projeto")
+          .toDataURL("image/jpeg", 0.9);
+        link.click();
+      }
+
+      // --- ORÇAMENTO & DETALHES (MANTIDOS) ---
       function calcularOrcamento() {
         if (!pedidoAtual) return;
         let total = 0;
         let resumoHTML = "";
 
-        // 1. Barracas
-        let precoUnit = 0;
-        let descPreco = "";
-        const precoIndio =
-          precosCache.find((p) => p.item_chave === "preco_barraca_indio")
-            ?.valor || 0;
-        const precoTenda =
-          precosCache.find((p) => p.item_chave === "preco_tenda_padrao")
-            ?.valor || 0;
-        if (
-          pedidoAtual.modelo_barraca &&
-          pedidoAtual.modelo_barraca.includes("Indio")
-        ) {
-          precoUnit = precoIndio;
-          descPreco = "Barraca Índio";
-        } else {
-          precoUnit = precoTenda;
-          descPreco = "Tenda Padrão";
-        }
-
+        const itemTenda = precosCache.find(
+          (p) =>
+            p.categoria === "tendas" &&
+            p.descricao === pedidoAtual.modelo_barraca,
+        );
+        const precoUnit = itemTenda ? parseFloat(itemTenda.valor) : 0;
         const subBarracas = pedidoAtual.qtd_barracas * precoUnit;
         total += subBarracas;
-        resumoHTML += `<div class="flex justify-between text-xs font-bold text-indigo-700 mb-1"><span>${pedidoAtual.qtd_barracas}x ${descPreco}</span><span>R$ ${subBarracas.toFixed(2)}</span></div>`;
+        resumoHTML += `<div class="flex justify-between text-xs font-bold text-indigo-700 mb-1"><span>${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</span><span>R$ ${subBarracas.toFixed(2)}</span></div>`;
 
-        // 2. Itens Padrão
-        let itens = [];
-        try {
-          itens =
-            typeof pedidoAtual.itens_padrao === "string"
-              ? JSON.parse(pedidoAtual.itens_padrao)
-              : pedidoAtual.itens_padrao;
-        } catch (e) {}
+        // Itens Padrão (Usa nome direto do banco para buscar preço)
+        const itens = safeParse(pedidoAtual.itens_padrao);
         if (Array.isArray(itens)) {
           itens.forEach((nomeItem) => {
             let itemDb = precosCache.find((p) => p.descricao === nomeItem);
-            if (!itemDb && mapaItens[nomeItem])
-              itemDb = precosCache.find(
-                (p) => p.item_chave === mapaItens[nomeItem],
-              );
-
             if (itemDb) {
               total += parseFloat(itemDb.valor);
               resumoHTML += `<div class="flex justify-between text-xs text-slate-600"><span>+ ${nomeItem}</span><span>R$ ${parseFloat(itemDb.valor).toFixed(2)}</span></div>`;
@@ -498,25 +691,10 @@
           });
         }
 
-        // 3. Alimentação
-        let comidas = [];
-        try {
-          comidas =
-            typeof pedidoAtual.alimentacao === "string"
-              ? JSON.parse(pedidoAtual.alimentacao)
-              : pedidoAtual.alimentacao;
-        } catch (e) {}
+        const comidas = safeParse(pedidoAtual.alimentacao);
         if (Array.isArray(comidas)) {
           comidas.forEach((nomeComida) => {
             let itemDb = precosCache.find((p) => p.descricao === nomeComida);
-            if (!itemDb) {
-              if (nomeComida.includes("Manha"))
-                itemDb = precosCache.find((p) => p.item_chave === "cafe_manha");
-              else if (nomeComida.includes("Tarde"))
-                itemDb = precosCache.find((p) => p.item_chave === "cafe_tarde");
-              else if (nomeComida.includes("Jantar"))
-                itemDb = precosCache.find((p) => p.item_chave === "jantar");
-            }
             if (itemDb) {
               const sub = pedidoAtual.qtd_criancas * parseFloat(itemDb.valor);
               total += sub;
@@ -525,16 +703,16 @@
           });
         }
 
-        // 4. Taxa
-        const taxa = precosCache.find(
-          (p) => p.item_chave === "taxa_deslocamento",
+        const taxasInputs = document.querySelectorAll(
+          ".chk-taxa-sistema:checked",
         );
-        if (taxa && parseFloat(taxa.valor) > 0) {
-          total += parseFloat(taxa.valor);
-          resumoHTML += `<div class="flex justify-between text-xs text-slate-400 mt-1 pt-1 border-t border-dashed border-slate-200"><span>Taxa Deslocamento</span><span>R$ ${parseFloat(taxa.valor).toFixed(2)}</span></div>`;
-        }
+        taxasInputs.forEach((chk) => {
+          const valor = parseFloat(chk.getAttribute("data-valor"));
+          const nome = chk.getAttribute("data-nome");
+          total += valor;
+          resumoHTML += `<div class="flex justify-between text-xs text-indigo-500 mt-1"><span>+ ${nome}</span><span>R$ ${valor.toFixed(2)}</span></div>`;
+        });
 
-        // 5. Extra Manual
         const valorExtra =
           parseFloat(document.getElementById("valor-extra-manual").value) || 0;
         total += valorExtra;
@@ -543,10 +721,56 @@
         document.getElementById("label-valor-total").innerText =
           `R$ ${total.toFixed(2)}`;
         pedidoAtual.totalCalculado = total.toFixed(2);
-        pedidoAtual.valorExtraManual = valorExtra.toFixed(2);
       }
 
-      // --- COPIAR (TEXTO COMPLETO) ---
+      function verDetalhes(id) {
+        isModalOpen = true;
+        pedidoAtual = pedidosCache.find((p) => p.id === id);
+        document.getElementById("valor-extra-manual").value =
+          pedidoAtual.valor_itens_extras || 0;
+        document.getElementById("desc-extra-manual").value =
+          pedidoAtual.descricao_itens_extras || "";
+
+        const dataFesta = pedidoAtual.data_festa
+          ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
+              timeZone: "UTC",
+            })
+          : "-";
+
+        const divTaxas = document.getElementById("container-taxas-sistema");
+        divTaxas.innerHTML = "";
+        const taxasSistema = precosCache.filter(
+          (p) => p.categoria === "sistema",
+        );
+        taxasSistema.forEach((taxa) => {
+          const isChecked = taxa.item_chave === "taxa_deslocamento";
+          divTaxas.innerHTML += `<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="chk-taxa-sistema w-4 h-4 text-indigo-600 rounded" value="${taxa.item_chave}" data-valor="${taxa.valor}" data-nome="${taxa.descricao}" onchange="calcularOrcamento()" ${isChecked ? "checked" : ""}><span class="text-xs text-slate-600">${taxa.descricao} (+ R$ ${taxa.valor})</span></label>`;
+        });
+
+        const itens = safeParse(pedidoAtual.itens_padrao);
+        const comida = safeParse(pedidoAtual.alimentacao);
+
+        document.getElementById("conteudo-detalhes").innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div><p class="text-xs font-bold text-slate-400 uppercase">CLIENTE</p><p class="font-bold text-slate-800 text-lg">${pedidoAtual.nome}</p></div>
+                    <div><p class="text-xs font-bold text-slate-400 uppercase">FESTA</p><p class="font-bold text-slate-800">${dataFesta}</p></div>
+                </div>
+                <div class="mt-4 text-sm text-slate-600 space-y-4">
+                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                        <p class="font-bold text-indigo-700">${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</p>
+                        <p class="text-xs font-bold text-indigo-500 uppercase mt-1">Tema: ${pedidoAtual.tema || "-"} (${pedidoAtual.cores})</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><p class="font-bold text-xs text-slate-400 uppercase">Itens:</p>${itens.length > 0 ? `<ul class="list-disc ml-4 text-xs">${itens.map((i) => `<li>${i}</li>`).join("")}</ul>` : '<p class="italic text-xs">Nenhum</p>'}</div>
+                        <div><p class="font-bold text-xs text-slate-400 uppercase">Comida:</p>${comida.length > 0 ? `<ul class="list-disc ml-4 text-xs">${comida.map((c) => `<li>${c}</li>`).join("")}</ul>` : '<p class="italic text-xs">Nenhuma</p>'}</div>
+                    </div>
+                </div>`;
+
+        calcularOrcamento();
+        document.getElementById("modal-detalhes").classList.remove("hidden");
+        lucide.createIcons();
+      }
+
       async function copiarSalvarOrcamento() {
         const valorExtra =
           parseFloat(document.getElementById("valor-extra-manual").value) || 0;
@@ -572,172 +796,140 @@
             }),
           });
 
-          const dataFesta = pedidoAtual.data_festa
+          const d = pedidoAtual.data_festa
             ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
                 timeZone: "UTC",
               })
-            : "A definir";
-          let itens = [],
-            comida = [];
-          try {
-            itens =
-              typeof pedidoAtual.itens_padrao === "string"
-                ? JSON.parse(pedidoAtual.itens_padrao)
-                : pedidoAtual.itens_padrao;
-          } catch (e) {}
-          try {
-            comida =
-              typeof pedidoAtual.alimentacao === "string"
-                ? JSON.parse(pedidoAtual.alimentacao)
-                : pedidoAtual.alimentacao;
-          } catch (e) {}
-          if (!Array.isArray(itens)) itens = [];
-          if (!Array.isArray(comida)) comida = [];
+            : "-";
+          const itens = safeParse(pedidoAtual.itens_padrao);
+          const comida = safeParse(pedidoAtual.alimentacao);
 
-          const texto = `*Orçamento Cabana de Brincar* ⛺✨\nOlá *${pedidoAtual.nome}*! Tudo bem? 💖\n\nRecebemos seu pedido! Segue o resumo detalhado:\n\n🗓 *Data:* ${dataFesta} às ${pedidoAtual.horario}\n📍 *Local:* ${pedidoAtual.endereco}\n\n🎪 *Estrutura:*\n▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n▪️ ${pedidoAtual.qtd_criancas} Crianças (${pedidoAtual.faixa_etaria})\n▪️ Tema: ${pedidoAtual.tema || "A definir"}\n▪️ Cor: ${pedidoAtual.cores || "A definir"}\n\n✅ *Itens Inclusos:*\n${itens.length > 0 ? itens.map((i) => `  • ${i}`).join("\n") : "  • (Apenas estrutura básica)"}\n\n🍽️ *Alimentação:*\n${comida.length > 0 ? comida.map((c) => `  • ${c}`).join("\n") : "  • (Sem alimentação inclusa)"}\n\n${pedidoAtual.itens_adicionais ? `📝 *Obs do Pedido:* ${pedidoAtual.itens_adicionais}\n` : ""}${valorExtra > 0 ? `➕ *Adicionais${descExtra ? ` (${descExtra})` : ""}:* R$ ${valorExtra.toFixed(2)}\n` : ""}------------------------------------\n💰 *Valor Total Final: R$ ${pedidoAtual.totalCalculado}*\n------------------------------------\n\nPodemos confirmar o agendamento? ✨`;
+          let texto = `*Orçamento Cabana de Brincar* ⛺✨\nOlá *${pedidoAtual.nome}*! Tudo bem? 💖\n\nRecebemos seu pedido! Segue o resumo detalhado:\n\n🗓 *Data:* ${d} às ${pedidoAtual.horario}\n📍 *Local:* ${pedidoAtual.endereco}\n\n🎪 *Estrutura:*\n▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n▪️ ${pedidoAtual.qtd_criancas} Crianças (${pedidoAtual.faixa_etaria})\n▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n✅ *Itens Inclusos:*\n`;
+          if (itens.length > 0) itens.forEach((i) => (texto += `  • ${i}\n`));
+          else texto += `  • (Apenas estrutura básica)\n`;
+
+          texto += `\n🍽️ *Alimentação:*\n`;
+          if (comida.length > 0) comida.forEach((c) => (texto += `  • ${c}\n`));
+          else texto += `  • (Sem alimentação inclusa)\n`;
+
+          texto += `\n`;
+          const taxas = document.querySelectorAll(".chk-taxa-sistema:checked");
+          if (taxas.length > 0) {
+            texto += `📄 *Taxas e Serviços:*\n`;
+            taxas.forEach(
+              (chk) => (texto += `  • ${chk.getAttribute("data-nome")}\n`),
+            );
+            texto += `\n`;
+          }
+
+          if (descExtra && valorExtra !== 0)
+            texto += `💰 *Adicionais / Ajustes:*\n  • ${descExtra} (R$ ${valorExtra.toFixed(2)})\n\n`;
+          if (pedidoAtual.itens_adicionais)
+            texto += `📝 *Obs:* ${pedidoAtual.itens_adicionais}\n\n`;
+
+          texto += `------------------------------------\n💰 *Valor Total Final: R$ ${pedidoAtual.totalCalculado}*\n------------------------------------\n\nPodemos confirmar o agendamento? ✨`;
 
           await navigator.clipboard.writeText(texto);
-          alert("✅ Salvo e Copiado com Sucesso!");
-
-          pedidoAtual.valor_itens_extras = valorExtra;
-          pedidoAtual.descricao_itens_extras = descExtra;
-          pedidoAtual.valor_final = pedidoAtual.totalCalculado;
+          alert("✅ Orçamento Copiado!");
         } catch (e) {
-          alert("Erro ao salvar.");
+          alert("Erro ao salvar");
         } finally {
           btn.innerHTML = txtOriginal;
         }
       }
 
-      // --- DETALHES (CORRIGIDO PARA MOSTRAR TEMA) ---
-      function verDetalhes(id) {
-        isModalOpen = true;
-        pedidoAtual = pedidosCache.find((p) => p.id === id);
-        document.getElementById("valor-extra-manual").value =
-          pedidoAtual.valor_itens_extras || 0;
-        document.getElementById("desc-extra-manual").value =
-          pedidoAtual.descricao_itens_extras || "";
-        const dataFesta = pedidoAtual.data_festa
-          ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
-              timeZone: "UTC",
-            })
-          : "A definir";
-        let itens = [],
-          comida = [];
-        try {
-          itens =
-            typeof pedidoAtual.itens_padrao === "string"
-              ? JSON.parse(pedidoAtual.itens_padrao)
-              : pedidoAtual.itens_padrao;
-        } catch (e) {}
-        try {
-          comida =
-            typeof pedidoAtual.alimentacao === "string"
-              ? JSON.parse(pedidoAtual.alimentacao)
-              : pedidoAtual.alimentacao;
-        } catch (e) {}
-        if (!Array.isArray(itens)) itens = [];
-        if (!Array.isArray(comida)) comida = [];
-
-        // AQUI ESTÁ A CORREÇÃO: ADICIONEI O CAMPO DE TEMA E CORES VISUALMENTE
-        document.getElementById("conteudo-detalhes").innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase">CLIENTE</p>
-                        <p class="font-bold text-slate-800 text-lg">${pedidoAtual.nome}</p>
-                        <p class="text-green-600 text-sm font-mono flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${pedidoAtual.whatsapp}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase">FESTA</p>
-                        <p class="font-bold text-slate-800">${dataFesta}</p>
-                        <p class="text-slate-500 text-xs flex items-start gap-1 mt-1"><i data-lucide="map-pin" class="w-3 h-3 mt-0.5"></i> ${pedidoAtual.endereco}</p>
-                    </div>
-                </div>
-
-                <div class="mt-4 text-sm text-slate-600 space-y-4">
-                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                        <p class="flex items-center gap-2 font-bold text-indigo-700">
-                            <i data-lucide="tent" class="w-4 h-4"></i> ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}
-                        </p>
-                        <p class="ml-6 text-xs text-indigo-600/80 mb-2">Para ${pedidoAtual.qtd_criancas} crianças (${pedidoAtual.faixa_etaria})</p>
-                        
-                        <div class="border-t border-indigo-200 pt-2 mt-2 ml-6">
-                            <p class="text-xs font-bold text-indigo-500 uppercase">Tema & Cores:</p>
-                            <p class="font-bold text-indigo-900">${pedidoAtual.tema || "Não informado"} <span class="font-normal text-indigo-700">(${pedidoAtual.cores || "Cores padrão"})</span></p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p class="font-bold text-xs text-slate-400 uppercase mb-2 flex items-center gap-1"><i data-lucide="check-square" class="w-3 h-3"></i> Itens Selecionados:</p>
-                            ${itens.length > 0 ? `<ul class="list-disc ml-4 space-y-1">${itens.map((i) => `<li>${i}</li>`).join("")}</ul>` : '<p class="text-slate-400 italic text-xs ml-4">Nenhum item selecionado</p>'}
-                        </div>
-                        <div>
-                            <p class="font-bold text-xs text-slate-400 uppercase mb-2 flex items-center gap-1"><i data-lucide="utensils" class="w-3 h-3"></i> Alimentação:</p>
-                            ${comida.length > 0 ? `<ul class="list-disc ml-4 space-y-1">${comida.map((c) => `<li>${c}</li>`).join("")}</ul>` : '<p class="text-slate-400 italic text-xs ml-4">Nenhuma alimentação</p>'}
-                        </div>
-                    </div>
-
-                    ${pedidoAtual.itens_adicionais ? `<div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200"><p class="text-xs font-bold text-yellow-800 uppercase flex items-center gap-1"><i data-lucide="sticky-note" class="w-3 h-3"></i> Obs do Cliente:</p><p class="text-sm text-yellow-900 mt-1">${pedidoAtual.itens_adicionais}</p></div>` : ""}
-                    
-                    ${pedidoAtual.alergias ? `<div class="bg-red-50 p-3 rounded-lg border border-red-200"><p class="text-xs font-bold text-red-800 uppercase flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Alergias / Restrições:</p><p class="text-sm text-red-900 mt-1 font-bold">${pedidoAtual.alergias}</p></div>` : ""}
-                </div>`;
-        calcularOrcamento();
-        document.getElementById("modal-detalhes").classList.remove("hidden");
+      // Funções auxiliares (Mantidas)
+      function mudarAba(a) {
+        [
+          "view-pedidos",
+          "view-financeiro",
+          "view-precos",
+          "view-projetos",
+        ].forEach((i) => document.getElementById(i).classList.add("hidden"));
+        [
+          "btn-tab-pedidos",
+          "btn-tab-financeiro",
+          "btn-tab-precos",
+          "btn-tab-projetos",
+        ].forEach(
+          (i) =>
+            (document.getElementById(i).className =
+              "px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-indigo-600 transition-all whitespace-nowrap flex items-center gap-2"),
+        );
+        document.getElementById("view-" + a).classList.remove("hidden");
+        document.getElementById("btn-tab-" + a).className =
+          "px-6 py-2 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm transition-all whitespace-nowrap flex items-center gap-2";
+        if (a === "financeiro") atualizarGrafico();
+        if (a === "precos") renderizarPrecosAdmin();
+        if (a === "projetos") renderizarListaProjetos();
+      }
+      function renderizarTabelas() {
+        const t1 = document.getElementById("tabela-pendentes");
+        const t2 = document.getElementById("tabela-concluidos");
+        t1.innerHTML = "";
+        t2.innerHTML = "";
+        let h = false;
+        pedidosCache.forEach((p) => {
+          const d = p.data_festa
+            ? new Date(p.data_festa).toLocaleDateString("pt-BR", {
+                timeZone: "UTC",
+              })
+            : "-";
+          if (p.status !== "concluido") {
+            h = true;
+            t1.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors"><td class="p-4 font-medium text-indigo-600">${d}<br><span class="text-xs text-slate-400 font-normal">${p.horario}</span></td><td class="p-4 font-bold text-slate-700">${p.nome}</td><td class="p-4 text-xs">${p.qtd_barracas}x ${p.modelo_barraca}</td><td class="p-4 flex gap-2 justify-center"><button onclick="verDetalhes(${p.id})" class="text-indigo-600 p-2 border rounded"><i data-lucide="eye" class="w-4 h-4"></i></button><button onclick="mudarStatus(${p.id},'concluido')" class="text-green-600 p-2 border rounded"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600 p-2 border rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
+          } else {
+            t2.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-xs">${d}</td><td class="p-4 font-bold">${p.nome}</td><td class="p-4">R$ ${p.valor_final}</td><td class="p-4">R$ ${p.valor_itens_extras}</td><td class="p-4">R$ ${p.custos}</td><td class="p-4 text-green-600 font-bold">R$ ${(p.valor_final - p.custos).toFixed(2)}</td><td class="p-4 flex gap-2 justify-center"><button onclick="mudarStatus(${p.id},'pendente')" class="text-yellow-600"><i data-lucide="rotate-ccw"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600"><i data-lucide="trash-2"></i></button></td></tr>`;
+          }
+        });
+        document.getElementById("empty-pendentes").className = h
+          ? "hidden"
+          : "p-10 text-center text-slate-400 bg-slate-50";
         lucide.createIcons();
       }
-
-      // Funções de Interface (Iguais ao anterior)
       function renderizarPrecosAdmin() {
-        const container = document.getElementById("lista-precos-editaveis");
+        const c = document.getElementById("lista-precos-editaveis");
         if (document.activeElement.classList.contains("input-preco-edit"))
           return;
-        container.innerHTML = "";
+        c.innerHTML = "";
         const cats = {
-          padrao: "Itens Padrão (Checkbox)",
-          alimentacao: "Alimentação",
-          sistema: "Sistema / Taxas",
+          tendas: "⛺ Tendas",
+          padrao: "📦 Itens",
+          alimentacao: "🍽️ Alimentação",
+          sistema: "⚙️ Taxas",
         };
-        Object.keys(cats).forEach((catKey) => {
-          const itensDaCat = precosCache.filter((p) => p.categoria === catKey);
-          if (itensDaCat.length > 0) {
-            container.innerHTML += `<div class="font-bold text-xs text-indigo-500 uppercase mt-4 mb-2 border-b pb-1">${cats[catKey]}</div>`;
-            itensDaCat.forEach((item) => {
-              container.innerHTML += `<div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"><span class="text-sm font-bold text-slate-700 w-1/2">${item.descricao}</span><div class="flex items-center gap-2"><span class="text-xs text-slate-400">R$</span><input type="number" value="${item.valor}" onchange="atualizarPreco(${item.id}, this.value)" class="input-preco-edit w-24 p-2 border rounded font-bold text-right outline-none focus:ring-2 focus:ring-indigo-200"><button onclick="deletarItem(${item.id})" class="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
+        Object.keys(cats).forEach((k) => {
+          const i = precosCache.filter((p) => p.categoria === k);
+          if (i.length) {
+            c.innerHTML += `<div class="font-bold text-xs text-indigo-500 mt-4 mb-2 border-b pb-1">${cats[k]}</div>`;
+            i.forEach((it) => {
+              c.innerHTML += `<div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"><span class="text-sm font-bold text-slate-700 w-1/2">${it.descricao}</span><div class="flex items-center gap-2"><span class="text-xs text-slate-400">R$</span><input type="number" value="${it.valor}" onchange="atualizarPreco(${it.id},this.value)" class="input-preco-edit w-24 p-2 border rounded font-bold text-right"><button onclick="deletarItem(${it.id})" class="text-red-400 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
             });
           }
         });
-        lucide.createIcons();
       }
-
+      function fecharModal(id) {
+        document.getElementById(id).classList.add("hidden");
+        isModalOpen = false;
+      }
       async function criarNovoItem() {
-        const nome = document.getElementById("novo-item-nome").value;
-        const valor = document.getElementById("novo-item-valor").value;
-        const cat = document.getElementById("novo-item-cat").value;
-        const senha = document.getElementById("adminPass").value;
-        if (!nome || !valor) return alert("Preencha os dados");
-        try {
-          await fetch("/api/admin/precos", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-admin-password": senha,
-            },
-            body: JSON.stringify({
-              descricao: nome,
-              valor: valor,
-              categoria: cat,
-            }),
-          });
-          alert("Item criado!");
-          document.getElementById("novo-item-nome").value = "";
-          fetchDados(senha);
-        } catch (e) {
-          alert("Erro");
-        }
+        const n = document.getElementById("novo-item-nome").value;
+        const v = document.getElementById("novo-item-valor").value;
+        const c = document.getElementById("novo-item-cat").value;
+        const s = document.getElementById("adminPass").value;
+        if (!n || !v) return;
+        await fetch("/api/admin/precos", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-password": s,
+          },
+          body: JSON.stringify({ descricao: n, valor: v, categoria: c }),
+        });
+        document.getElementById("novo-item-nome").value = "";
+        fetchDados(s);
       }
-
-      async function atualizarPreco(id, val) {
+      async function atualizarPreco(id, v) {
         const s = document.getElementById("adminPass").value;
         await fetch(`/api/admin/precos/${id}`, {
           method: "PUT",
@@ -745,7 +937,7 @@
             "Content-Type": "application/json",
             "x-admin-password": s,
           },
-          body: JSON.stringify({ valor: val }),
+          body: JSON.stringify({ valor: v }),
         });
       }
       async function deletarItem(id) {
@@ -758,74 +950,37 @@
           fetchDados(s);
         }
       }
-
-      function mudarAba(aba) {
-        ["view-pedidos", "view-financeiro", "view-precos"].forEach((id) =>
-          document.getElementById(id).classList.add("hidden"),
-        );
-        ["btn-tab-pedidos", "btn-tab-financeiro", "btn-tab-precos"].forEach(
-          (id) =>
-            (document.getElementById(id).className =
-              "px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-indigo-600 transition-all whitespace-nowrap"),
-        );
-        document.getElementById("view-" + aba).classList.remove("hidden");
-        document.getElementById("btn-tab-" + aba).className =
-          "px-6 py-2 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm transition-all whitespace-nowrap";
-        if (aba === "financeiro") atualizarGrafico();
-        if (aba === "precos") renderizarPrecosAdmin();
-      }
-
-      function renderizarTabelas() {
-        const tb1 = document.getElementById("tabela-pendentes");
-        const tb2 = document.getElementById("tabela-concluidos");
-        tb1.innerHTML = "";
-        tb2.innerHTML = "";
-        let hasP = false;
-        pedidosCache.forEach((p) => {
-          const d = p.data_festa
-            ? new Date(p.data_festa).toLocaleDateString("pt-BR", {
-                timeZone: "UTC",
-              })
-            : "-";
-          if (p.status !== "concluido") {
-            hasP = true;
-            tb1.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-indigo-600 font-medium">${d}<br><span class="text-xs text-slate-400">${p.horario}</span></td><td class="p-4 font-bold text-slate-700">${p.nome}</td><td class="p-4 text-xs">${p.qtd_barracas}x ${p.modelo_barraca}</td><td class="p-4 flex gap-2 justify-center"><button onclick="verDetalhes(${p.id})" class="text-indigo-600 p-2 border rounded"><i data-lucide="eye" class="w-4 h-4"></i></button><button onclick="mudarStatus(${p.id},'concluido')" class="text-green-600 p-2 border rounded"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600 p-2 border rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
-          } else {
-            tb2.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-xs">${d}</td><td class="p-4 font-bold">${p.nome}</td><td class="p-4">R$ ${p.valor_final}</td><td class="p-4">R$ ${p.valor_itens_extras}</td><td class="p-4">R$ ${p.custos}</td><td class="p-4 text-green-600 font-bold">R$ ${(p.valor_final - p.custos).toFixed(2)}</td><td class="p-4 flex gap-2 justify-center"><button onclick="mudarStatus(${p.id},'pendente')" class="text-yellow-600"><i data-lucide="rotate-ccw"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600"><i data-lucide="trash-2"></i></button></td></tr>`;
-          }
-        });
-        document.getElementById("empty-pendentes").className = hasP
-          ? "hidden"
-          : "p-10 text-center text-slate-400 bg-slate-50";
-        lucide.createIcons();
-      }
-
-      async function salvarFinanceiro(id, vf, cu, ex, desc) {
+      async function mudarStatus(id, st) {
         const s = document.getElementById("adminPass").value;
+        const p = pedidosCache.find((x) => x.id === id);
+        let pl = { status: st };
+        if (st === "concluido" && p) {
+          pl.valor_final = p.valor_final || p.totalCalculado || 0;
+          pl.valor_itens_extras =
+            p.valor_itens_extras || p.valorExtraManual || 0;
+          pl.descricao_itens_extras = p.descricao_itens_extras || "";
+        }
         try {
-          await fetch(`/api/admin/pedidos/${id}/financeiro`, {
+          await fetch(`/api/admin/pedidos/${id}/status`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
               "x-admin-password": s,
             },
-            body: JSON.stringify({
-              valor_final: vf,
-              custos: cu,
-              valor_itens_extras: ex,
-              descricao_itens_extras: desc,
-            }),
+            body: JSON.stringify(pl),
           });
-          const p = pedidosCache.find((x) => x.id === id);
-          if (p) {
-            p.valor_final = vf;
-            p.custos = cu;
-            p.valor_itens_extras = ex;
-            p.descricao_itens_extras = desc;
-          }
-          renderizarTabelas();
-          atualizarGrafico();
+          fetchDados(s);
         } catch (e) {}
+      }
+      async function apagarPedido(id) {
+        if (confirm("Excluir?")) {
+          const s = document.getElementById("adminPass").value;
+          await fetch(`/api/admin/pedidos/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-password": s },
+          });
+          fetchDados(s);
+        }
       }
       function atualizarGrafico() {
         const ctx = document.getElementById("financeChart");
@@ -862,42 +1017,6 @@
             scales: { y: { beginAtZero: true } },
           },
         });
-      }
-      async function mudarStatus(id, st) {
-        const s = document.getElementById("adminPass").value;
-        const p = pedidosCache.find((x) => x.id === id);
-        let pl = { status: st };
-        if (st === "concluido" && p) {
-          pl.valor_final = p.valor_final || p.totalCalculado || 0;
-          pl.valor_itens_extras =
-            p.valor_itens_extras || p.valorExtraManual || 0;
-          pl.descricao_itens_extras = p.descricao_itens_extras || "";
-        }
-        try {
-          await fetch(`/api/admin/pedidos/${id}/status`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "x-admin-password": s,
-            },
-            body: JSON.stringify(pl),
-          });
-          fetchDados(s);
-        } catch (e) {}
-      }
-      async function apagarPedido(id) {
-        if (confirm("Excluir?")) {
-          const s = document.getElementById("adminPass").value;
-          await fetch(`/api/admin/pedidos/${id}`, {
-            method: "DELETE",
-            headers: { "x-admin-password": s },
-          });
-          fetchDados(s);
-        }
-      }
-      function fecharModal(id) {
-        document.getElementById(id).classList.add("hidden");
-        isModalOpen = false;
       }
       lucide.createIcons();
     </script>

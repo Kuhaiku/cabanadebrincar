@@ -255,11 +255,7 @@
               id="modelo_barraca"
               class="w-full p-4 rounded-2xl cursor-pointer text-slate-600 bg-white"
             >
-              <option value="">Selecione...</option>
-              <option value="Tenda Festa do Pijama">
-                Tenda de Festa do Pijama
-              </option>
-              <option value="Barraca de Indio">Barraca de Índio</option>
+              <option value="">Carregando modelos...</option>
             </select>
           </div>
           <div class="space-y-2">
@@ -491,8 +487,11 @@
 
           const cp = document.getElementById("container-itens-padrao");
           const ca = document.getElementById("container-alimentacao");
+          const select = document.getElementById("modelo_barraca");
+
           cp.innerHTML = "";
           ca.innerHTML = "";
+          select.innerHTML = '<option value="">Selecione...</option>';
 
           if (itens.length === 0) {
             cp.innerHTML =
@@ -500,16 +499,23 @@
           }
 
           itens.forEach((item) => {
-            const html = `
-                        <label class="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border border-indigo-100 cursor-pointer hover:border-pink-300 transition-all group shadow-sm">
-                            <div class="relative flex items-center">
-                                <input type="checkbox" value="${item.descricao}" class="chk-${item.categoria === "alimentacao" ? "alim" : "item"} custom-checkbox w-6 h-6 rounded-lg border-2 border-slate-300 text-pink-500 focus:ring-pink-500 transition-all">
-                            </div>
-                            <span class="text-slate-600 font-bold group-hover:text-pink-600 transition-colors text-sm">${item.descricao}</span>
-                        </label>`;
+            if (item.categoria === "tendas") {
+              const opt = document.createElement("option");
+              opt.value = item.descricao;
+              opt.textContent = item.descricao;
+              select.appendChild(opt);
+            } else {
+              const html = `
+                    <label class="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border border-indigo-100 cursor-pointer hover:border-pink-300 transition-all group shadow-sm">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" value="${item.descricao}" class="chk-${item.categoria === "alimentacao" ? "alim" : "item"} custom-checkbox w-6 h-6 rounded-lg border-2 border-slate-300 text-pink-500 focus:ring-pink-500 transition-all">
+                        </div>
+                        <span class="text-slate-600 font-bold group-hover:text-pink-600 transition-colors text-sm">${item.descricao}</span>
+                    </label>`;
 
-            if (item.categoria === "alimentacao") ca.innerHTML += html;
-            else cp.innerHTML += html;
+              if (item.categoria === "alimentacao") ca.innerHTML += html;
+              else if (item.categoria === "padrao") cp.innerHTML += html;
+            }
           });
         } catch (e) {
           console.error("Erro itens");

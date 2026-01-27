@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel Administrativo | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Quicksand", sans-serif;
+        background-color: #f8fafc;
+      }
+      .hidden {
+        display: none;
+      }
+      .tab-content {
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .input-tabela:focus {
+        background-color: #fff;
+        box-shadow: 0 0 0 2px #bfdbfe;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div
+      id="login-screen"
+      class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center border border-slate-100"
+    >
+      <div
+        class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600"
+      >
+        <i data-lucide="lock" class="w-8 h-8"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-700 mb-2">Gestão Cabana</h2>
+      <input
+        type="password"
+        id="adminPass"
+        placeholder="Senha Mestra"
+        class="w-full p-4 border border-slate-200 rounded-xl mb-4 text-center focus:outline-indigo-500 transition-all"
+      />
+      <button
+        onclick="autenticar()"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg"
+      >
+        Acessar Sistema
+      </button>
+      <p
+        id="error-msg"
+        class="text-red-500 text-sm mt-3 hidden bg-red-50 p-2 rounded"
+      >
+        Senha Incorreta
+      </p>
+    </div>
+
+    <div id="dashboard-screen" class="hidden w-full max-w-7xl pb-20">
+      <header
+        class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100"
+      >
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            Painel Administrativo<span
+              id="loading-indicator"
+              class="hidden text-xs font-normal text-slate-400 bg-slate-50 px-2 py-1 rounded-full flex items-center gap-1"
+              ><i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i
+            ></span>
+          </h1>
+        </div>
+        <div class="flex bg-slate-100 p-1 rounded-xl overflow-x-auto">
+          <button
+            onclick="mudarAba('pedidos')"
+            id="btn-tab-pedidos"
+            class="px-6 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-sm whitespace-nowrap"
+          >
+            Pedidos Ativos
+          </button>
+          <button
+            onclick="mudarAba('financeiro')"
+            id="btn-tab-financeiro"
+            class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-indigo-600 transition-all whitespace-nowrap"
+          >
+            Financeiro
+          </button>
+          <button
+            onclick="mudarAba('precos')"
+            id="btn-tab-precos"
+            class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-indigo-600 transition-all whitespace-nowrap flex items-center gap-2"
+          >
+            <i data-lucide="tag" class="w-3 h-3"></i> Tabela de Preços
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <button
+            onclick="location.reload()"
+            class="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 text-sm font-bold transition-colors"
+          >
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <div id="view-pedidos" class="tab-content">
+        <div
+          class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden"
+        >
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead
+              class="bg-white border-b border-slate-200 text-slate-400 uppercase font-bold text-xs"
+            >
+              <tr>
+                <th class="p-4">Data Festa</th>
+                <th class="p-4">Cliente</th>
+                <th class="p-4">Resumo</th>
+                <th class="p-4 text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody
+              id="tabela-pendentes"
+              class="divide-y divide-slate-100"
+            ></tbody>
+          </table>
+          <div
+            id="empty-pendentes"
+            class="hidden p-10 text-center text-slate-400 bg-slate-50"
+          >
+            Nenhum pedido pendente.
+          </div>
+        </div>
+      </div>
+
+      <div id="view-financeiro" class="hidden tab-content space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+          >
+            <p class="text-xs font-bold text-slate-400 uppercase">
+              Faturamento
+            </p>
+            <p id="card-faturamento" class="text-2xl font-bold text-indigo-600">
+              R$ 0,00
+            </p>
+          </div>
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+          >
+            <p class="text-xs font-bold text-slate-400 uppercase">Custos</p>
+            <p id="card-gastos" class="text-2xl font-bold text-red-500">
+              R$ 0,00
+            </p>
+          </div>
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+          >
+            <p class="text-xs font-bold text-slate-400 uppercase">Lucro</p>
+            <p id="card-lucro" class="text-2xl font-bold text-green-600">
+              R$ 0,00
+            </p>
+          </div>
+        </div>
+        <div
+          class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-80 relative"
+        >
+          <canvas id="financeChart"></canvas>
+        </div>
+        <div
+          class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden"
+        >
+          <div
+            class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 text-sm"
+          >
+            Histórico Financeiro
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead
+                class="bg-white border-b border-slate-100 text-slate-400 uppercase font-bold text-xs"
+              >
+                <tr>
+                  <th class="p-4">Data</th>
+                  <th class="p-4">Cliente</th>
+                  <th class="p-4 w-32">Final</th>
+                  <th class="p-4 w-32">Extras</th>
+                  <th class="p-4 w-32">Custos</th>
+                  <th class="p-4">Lucro</th>
+                  <th class="p-4 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody
+                id="tabela-concluidos"
+                class="divide-y divide-slate-100"
+              ></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-precos" class="hidden tab-content">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-1">
+            <div
+              class="bg-white rounded-xl shadow border border-slate-200 p-6 sticky top-6"
+            >
+              <h3
+                class="font-bold text-lg text-indigo-800 mb-4 flex items-center gap-2"
+              >
+                <i data-lucide="plus-circle"></i> Novo Item
+              </h3>
+              <div class="space-y-4">
+                <div>
+                  <label
+                    class="block text-xs font-bold text-slate-500 uppercase mb-1"
+                    >Nome do Item</label
+                  ><input
+                    type="text"
+                    id="novo-item-nome"
+                    placeholder="Ex: Pipoca Gourmet"
+                    class="w-full p-3 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-xs font-bold text-slate-500 uppercase mb-1"
+                    >Valor (R$)</label
+                  ><input
+                    type="number"
+                    id="novo-item-valor"
+                    placeholder="0.00"
+                    step="0.01"
+                    class="w-full p-3 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-xs font-bold text-slate-500 uppercase mb-1"
+                    >Categoria</label
+                  ><select
+                    id="novo-item-cat"
+                    class="w-full p-3 border rounded-lg bg-white"
+                  >
+                    <option value="padrao">Item Padrão (Checkbox)</option>
+                    <option value="alimentacao">Alimentação</option>
+                    <option value="sistema">Sistema / Taxa</option>
+                  </select>
+                </div>
+                <button
+                  onclick="criarNovoItem()"
+                  class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-colors"
+                >
+                  Cadastrar Item
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="lg:col-span-2">
+            <div
+              class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden"
+            >
+              <div
+                class="p-6 bg-slate-50 border-b border-slate-200 font-bold text-slate-700"
+              >
+                Itens Cadastrados
+              </div>
+              <div class="p-6">
+                <div id="lista-precos-editaveis" class="space-y-4"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modal-detalhes"
+      class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm transition-opacity"
+    >
+      <div
+        class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative shadow-2xl animate-[popIn_0.3s_ease-out]"
+      >
+        <button
+          onclick="fecharModal('modal-detalhes')"
+          class="absolute top-4 right-4 text-slate-400 hover:text-red-500 bg-slate-100 p-2 rounded-full"
+        >
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <h3
+          class="text-xl font-bold text-indigo-700 mb-6 flex items-center gap-2"
+        >
+          <i data-lucide="file-text" class="w-5 h-5"></i> Detalhes & Orçamento
+        </h3>
+        <div id="conteudo-detalhes" class="text-sm space-y-6"></div>
+
+        <div
+          class="mt-8 bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-inner"
+        >
+          <h4
+            class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide"
+          >
+            <i data-lucide="calculator" class="w-4 h-4 text-green-600"></i>
+            Calculadora Automática
+          </h4>
+
+          <div
+            id="calculadora-resumo"
+            class="space-y-2 text-slate-600 mb-4 font-mono text-xs border-b border-slate-200 pb-4"
+          ></div>
+
+          <div
+            class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-4 space-y-3"
+          >
+            <label
+              class="block text-xs font-bold text-yellow-800 uppercase flex items-center gap-1"
+              ><i data-lucide="plus-circle" class="w-3 h-3"></i> Adicionais /
+              Extras</label
+            >
+            <div class="flex gap-2">
+              <input
+                type="text"
+                id="desc-extra-manual"
+                placeholder="Descrição (ex: 30 lembrancinhas)"
+                class="w-full p-2 border border-yellow-300 rounded text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+              />
+              <div class="flex items-center w-32 shrink-0">
+                <span
+                  class="p-2 bg-white border-y border-l border-yellow-300 rounded-l text-yellow-700 font-bold text-sm"
+                  >R$</span
+                ><input
+                  type="number"
+                  id="valor-extra-manual"
+                  value="0"
+                  min="0"
+                  step="0.01"
+                  oninput="calcularOrcamento()"
+                  class="w-full p-2 border border-yellow-300 rounded-r text-right font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="flex justify-between items-center mb-4 pt-2 border-t border-slate-200"
+          >
+            <span class="font-bold text-slate-800">Total Final:</span
+            ><span
+              id="label-valor-total"
+              class="font-bold text-2xl text-green-600"
+              >R$ 0,00</span
+            >
+          </div>
+
+          <button
+            onclick="copiarSalvarOrcamento()"
+            id="btn-copiar"
+            class="w-full bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-green-700 transition-all shadow-lg"
+          >
+            <i data-lucide="save" class="w-5 h-5"></i
+            ><i data-lucide="copy" class="w-5 h-5"></i> Salvar & Copiar Texto
+            Completo
+          </button>
+          <p class="text-center text-xs text-slate-400 mt-2">
+            Salva o pedido e copia o resumo detalhado para o WhatsApp.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let pedidosCache = [];
+      let precosCache = [];
+      let pedidoAtual = null;
+      let isModalOpen = false;
+      let chartInstance = null;
+
+      // MAPA PARA RELACIONAR NOME NO PEDIDO COM PREÇO NO BANCO (FALLBACK)
+      const mapaItens = {
+        "Mesa de café": "item_mesa",
+        "Almofadas fofas": "item_almofadas",
+        Colchonetes: "item_colchonetes",
+        "Luzinhas LED": "item_luzes",
+        "Cafe da Manha": "cafe_manha",
+        "Cafe da Tarde": "cafe_tarde",
+        Jantar: "jantar",
+        "Jantar/Noite": "jantar",
+      };
+
+      async function autenticar() {
+        const senha = document.getElementById("adminPass").value;
+        try {
+          await fetchDados(senha);
+          document.getElementById("login-screen").classList.add("hidden");
+          document
+            .getElementById("dashboard-screen")
+            .classList.remove("hidden");
+          setInterval(() => {
+            if (!isModalOpen) fetchDados(senha, true);
+          }, 15000);
+        } catch (e) {
+          document.getElementById("error-msg").classList.remove("hidden");
+        }
+      }
+
+      async function fetchDados(senha, isAutoRefresh = false) {
+        if (isAutoRefresh)
+          document
+            .getElementById("loading-indicator")
+            .classList.remove("hidden");
+        try {
+          const res = await fetch("/api/admin/pedidos", {
+            headers: { "x-admin-password": senha },
+          });
+          if (!res.ok) throw new Error();
+          pedidosCache = await res.json();
+          const resPrecos = await fetch("/api/admin/precos", {
+            headers: { "x-admin-password": senha },
+          });
+          precosCache = await resPrecos.json();
+          renderizarTabelas();
+          renderizarPrecosAdmin();
+          atualizarGrafico();
+        } catch (e) {
+        } finally {
+          if (isAutoRefresh)
+            setTimeout(
+              () =>
+                document
+                  .getElementById("loading-indicator")
+                  .classList.add("hidden"),
+              1000,
+            );
+        }
+      }
+
+      // --- CÁLCULO FINANCEIRO DETALHADO ---
+      function calcularOrcamento() {
+        if (!pedidoAtual) return;
+        let total = 0;
+        let resumoHTML = "";
+
+        // 1. Barracas
+        let precoUnit = 0;
+        let descPreco = "";
+        const precoIndio =
+          precosCache.find((p) => p.item_chave === "preco_barraca_indio")
+            ?.valor || 0;
+        const precoTenda =
+          precosCache.find((p) => p.item_chave === "preco_tenda_padrao")
+            ?.valor || 0;
+        if (
+          pedidoAtual.modelo_barraca &&
+          pedidoAtual.modelo_barraca.includes("Indio")
+        ) {
+          precoUnit = precoIndio;
+          descPreco = "Barraca Índio";
+        } else {
+          precoUnit = precoTenda;
+          descPreco = "Tenda Padrão";
+        }
+
+        const subBarracas = pedidoAtual.qtd_barracas * precoUnit;
+        total += subBarracas;
+        resumoHTML += `<div class="flex justify-between text-xs font-bold text-indigo-700 mb-1"><span>${pedidoAtual.qtd_barracas}x ${descPreco}</span><span>R$ ${subBarracas.toFixed(2)}</span></div>`;
+
+        // 2. Itens Padrão (Dynamic Matching)
+        let itens = [];
+        try {
+          itens =
+            typeof pedidoAtual.itens_padrao === "string"
+              ? JSON.parse(pedidoAtual.itens_padrao)
+              : pedidoAtual.itens_padrao;
+        } catch (e) {}
+        if (Array.isArray(itens)) {
+          itens.forEach((nomeItem) => {
+            let itemDb = precosCache.find((p) => p.descricao === nomeItem); // Busca por nome exato
+            if (!itemDb && mapaItens[nomeItem])
+              itemDb = precosCache.find(
+                (p) => p.item_chave === mapaItens[nomeItem],
+              ); // Busca por mapa
+
+            if (itemDb) {
+              total += parseFloat(itemDb.valor);
+              resumoHTML += `<div class="flex justify-between text-xs text-slate-600"><span>+ ${nomeItem}</span><span>R$ ${parseFloat(itemDb.valor).toFixed(2)}</span></div>`;
+            }
+          });
+        }
+
+        // 3. Alimentação
+        let comidas = [];
+        try {
+          comidas =
+            typeof pedidoAtual.alimentacao === "string"
+              ? JSON.parse(pedidoAtual.alimentacao)
+              : pedidoAtual.alimentacao;
+        } catch (e) {}
+        if (Array.isArray(comidas)) {
+          comidas.forEach((nomeComida) => {
+            let itemDb = precosCache.find((p) => p.descricao === nomeComida);
+            if (!itemDb) {
+              // Tenta mapa antigo se não achar nome exato
+              if (nomeComida.includes("Manha"))
+                itemDb = precosCache.find((p) => p.item_chave === "cafe_manha");
+              else if (nomeComida.includes("Tarde"))
+                itemDb = precosCache.find((p) => p.item_chave === "cafe_tarde");
+              else if (nomeComida.includes("Jantar"))
+                itemDb = precosCache.find((p) => p.item_chave === "jantar");
+            }
+            if (itemDb) {
+              const sub = pedidoAtual.qtd_criancas * parseFloat(itemDb.valor);
+              total += sub;
+              resumoHTML += `<div class="flex justify-between text-xs text-pink-600"><span>${pedidoAtual.qtd_criancas}x ${itemDb.descricao}</span><span>R$ ${sub.toFixed(2)}</span></div>`;
+            }
+          });
+        }
+
+        // 4. Taxa
+        const taxa = precosCache.find(
+          (p) => p.item_chave === "taxa_deslocamento",
+        );
+        if (taxa && parseFloat(taxa.valor) > 0) {
+          total += parseFloat(taxa.valor);
+          resumoHTML += `<div class="flex justify-between text-xs text-slate-400 mt-1 pt-1 border-t border-dashed border-slate-200"><span>Taxa Deslocamento</span><span>R$ ${parseFloat(taxa.valor).toFixed(2)}</span></div>`;
+        }
+
+        // 5. Extra Manual
+        const valorExtra =
+          parseFloat(document.getElementById("valor-extra-manual").value) || 0;
+        total += valorExtra;
+
+        document.getElementById("calculadora-resumo").innerHTML = resumoHTML;
+        document.getElementById("label-valor-total").innerText =
+          `R$ ${total.toFixed(2)}`;
+        pedidoAtual.totalCalculado = total.toFixed(2);
+        pedidoAtual.valorExtraManual = valorExtra.toFixed(2);
+      }
+
+      // --- FUNÇÃO DE COPIAR CORRIGIDA (TEXTO COMPLETO) ---
+      async function copiarSalvarOrcamento() {
+        const valorExtra =
+          parseFloat(document.getElementById("valor-extra-manual").value) || 0;
+        const descExtra =
+          document.getElementById("desc-extra-manual").value || "";
+        const senha = document.getElementById("adminPass").value;
+        const btn = document.getElementById("btn-copiar");
+        const txtOriginal = btn.innerHTML;
+        btn.innerHTML = "Salvando...";
+
+        try {
+          // 1. Salva no Banco
+          await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-password": senha,
+            },
+            body: JSON.stringify({
+              valor_final: pedidoAtual.totalCalculado,
+              custos: pedidoAtual.custos || 0,
+              valor_itens_extras: valorExtra,
+              descricao_itens_extras: descExtra,
+            }),
+          });
+
+          // 2. Prepara Texto
+          const dataFesta = pedidoAtual.data_festa
+            ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
+                timeZone: "UTC",
+              })
+            : "A definir";
+          let itens = [];
+          let comida = [];
+          try {
+            itens =
+              typeof pedidoAtual.itens_padrao === "string"
+                ? JSON.parse(pedidoAtual.itens_padrao)
+                : pedidoAtual.itens_padrao;
+          } catch (e) {}
+          try {
+            comida =
+              typeof pedidoAtual.alimentacao === "string"
+                ? JSON.parse(pedidoAtual.alimentacao)
+                : pedidoAtual.alimentacao;
+          } catch (e) {}
+          if (!Array.isArray(itens)) itens = [];
+          if (!Array.isArray(comida)) comida = [];
+
+          const texto = `*Orçamento Cabana de Brincar* ⛺✨
+Olá *${pedidoAtual.nome}*! Tudo bem? 💖
+
+Recebemos seu pedido! Segue o resumo detalhado:
+
+🗓 *Data:* ${dataFesta} às ${pedidoAtual.horario}
+📍 *Local:* ${pedidoAtual.endereco}
+
+🎪 *Estrutura:*
+▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}
+▪️ ${pedidoAtual.qtd_criancas} Crianças (${pedidoAtual.faixa_etaria})
+▪️ Tema: ${pedidoAtual.tema || "A definir"}
+
+✅ *Itens Inclusos:*
+${itens.length > 0 ? itens.map((i) => `  • ${i}`).join("\n") : "  • (Apenas estrutura básica)"}
+
+🍽️ *Alimentação:*
+${comida.length > 0 ? comida.map((c) => `  • ${c}`).join("\n") : "  • (Sem alimentação inclusa)"}
+
+${pedidoAtual.itens_adicionais ? `📝 *Obs do Pedido:* ${pedidoAtual.itens_adicionais}\n` : ""}
+${valorExtra > 0 ? `➕ *Adicionais${descExtra ? ` (${descExtra})` : ""}:* R$ ${valorExtra.toFixed(2)}\n` : ""}
+------------------------------------
+💰 *Valor Total Final: R$ ${pedidoAtual.totalCalculado}*
+------------------------------------
+
+Podemos confirmar o agendamento? ✨`;
+
+          await navigator.clipboard.writeText(texto);
+          alert("✅ Salvo e Copiado com Sucesso!");
+
+          // Atualiza local
+          pedidoAtual.valor_itens_extras = valorExtra;
+          pedidoAtual.descricao_itens_extras = descExtra;
+          pedidoAtual.valor_final = pedidoAtual.totalCalculado;
+        } catch (e) {
+          alert("Erro ao salvar.");
+        } finally {
+          btn.innerHTML = txtOriginal;
+        }
+      }
+
+      // Funções de Interface (Iguais ao anterior)
+      function renderizarPrecosAdmin() {
+        const container = document.getElementById("lista-precos-editaveis");
+        if (document.activeElement.classList.contains("input-preco-edit"))
+          return;
+        container.innerHTML = "";
+        const cats = {
+          padrao: "Itens Padrão (Checkbox)",
+          alimentacao: "Alimentação",
+          sistema: "Sistema / Taxas",
+        };
+        Object.keys(cats).forEach((catKey) => {
+          const itensDaCat = precosCache.filter((p) => p.categoria === catKey);
+          if (itensDaCat.length > 0) {
+            container.innerHTML += `<div class="font-bold text-xs text-indigo-500 uppercase mt-4 mb-2 border-b pb-1">${cats[catKey]}</div>`;
+            itensDaCat.forEach((item) => {
+              container.innerHTML += `<div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"><span class="text-sm font-bold text-slate-700 w-1/2">${item.descricao}</span><div class="flex items-center gap-2"><span class="text-xs text-slate-400">R$</span><input type="number" value="${item.valor}" onchange="atualizarPreco(${item.id}, this.value)" class="input-preco-edit w-24 p-2 border rounded font-bold text-right outline-none focus:ring-2 focus:ring-indigo-200"><button onclick="deletarItem(${item.id})" class="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
+            });
+          }
+        });
+        lucide.createIcons();
+      }
+
+      async function criarNovoItem() {
+        const nome = document.getElementById("novo-item-nome").value;
+        const valor = document.getElementById("novo-item-valor").value;
+        const cat = document.getElementById("novo-item-cat").value;
+        const senha = document.getElementById("adminPass").value;
+        if (!nome || !valor) return alert("Preencha os dados");
+        try {
+          await fetch("/api/admin/precos", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-password": senha,
+            },
+            body: JSON.stringify({
+              descricao: nome,
+              valor: valor,
+              categoria: cat,
+            }),
+          });
+          alert("Item criado!");
+          document.getElementById("novo-item-nome").value = "";
+          fetchDados(senha);
+        } catch (e) {
+          alert("Erro");
+        }
+      }
+
+      async function atualizarPreco(id, val) {
+        const s = document.getElementById("adminPass").value;
+        await fetch(`/api/admin/precos/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-password": s,
+          },
+          body: JSON.stringify({ valor: val }),
+        });
+      }
+      async function deletarItem(id) {
+        if (confirm("Apagar?")) {
+          const s = document.getElementById("adminPass").value;
+          await fetch(`/api/admin/precos/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-password": s },
+          });
+          fetchDados(s);
+        }
+      }
+
+      function mudarAba(aba) {
+        ["view-pedidos", "view-financeiro", "view-precos"].forEach((id) =>
+          document.getElementById(id).classList.add("hidden"),
+        );
+        ["btn-tab-pedidos", "btn-tab-financeiro", "btn-tab-precos"].forEach(
+          (id) =>
+            (document.getElementById(id).className =
+              "px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-indigo-600 transition-all whitespace-nowrap"),
+        );
+        document.getElementById("view-" + aba).classList.remove("hidden");
+        document.getElementById("btn-tab-" + aba).className =
+          "px-6 py-2 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm transition-all whitespace-nowrap";
+        if (aba === "financeiro") atualizarGrafico();
+        if (aba === "precos") renderizarPrecosAdmin();
+      }
+
+      function renderizarTabelas() {
+        const tb1 = document.getElementById("tabela-pendentes");
+        const tb2 = document.getElementById("tabela-concluidos");
+        tb1.innerHTML = "";
+        tb2.innerHTML = "";
+        let hasP = false;
+        pedidosCache.forEach((p) => {
+          const d = p.data_festa
+            ? new Date(p.data_festa).toLocaleDateString("pt-BR", {
+                timeZone: "UTC",
+              })
+            : "-";
+          if (p.status !== "concluido") {
+            hasP = true;
+            tb1.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-indigo-600 font-medium">${d}<br><span class="text-xs text-slate-400">${p.horario}</span></td><td class="p-4 font-bold text-slate-700">${p.nome}</td><td class="p-4 text-xs">${p.qtd_barracas}x ${p.modelo_barraca}</td><td class="p-4 flex gap-2 justify-center"><button onclick="verDetalhes(${p.id})" class="text-indigo-600 p-2 border rounded"><i data-lucide="eye" class="w-4 h-4"></i></button><button onclick="mudarStatus(${p.id},'concluido')" class="text-green-600 p-2 border rounded"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600 p-2 border rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
+          } else {
+            tb2.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-xs">${d}</td><td class="p-4 font-bold">${p.nome}</td><td class="p-4">R$ ${p.valor_final}</td><td class="p-4">R$ ${p.valor_itens_extras}</td><td class="p-4">R$ ${p.custos}</td><td class="p-4 text-green-600 font-bold">R$ ${(p.valor_final - p.custos).toFixed(2)}</td><td class="p-4 flex gap-2 justify-center"><button onclick="mudarStatus(${p.id},'pendente')" class="text-yellow-600"><i data-lucide="rotate-ccw"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600"><i data-lucide="trash-2"></i></button></td></tr>`;
+          }
+        });
+        document.getElementById("empty-pendentes").className = hasP
+          ? "hidden"
+          : "p-10 text-center text-slate-400 bg-slate-50";
+        lucide.createIcons();
+      }
+
+      async function salvarFinanceiro(id, vf, cu, ex, desc) {
+        const s = document.getElementById("adminPass").value;
+        try {
+          await fetch(`/api/admin/pedidos/${id}/financeiro`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-password": s,
+            },
+            body: JSON.stringify({
+              valor_final: vf,
+              custos: cu,
+              valor_itens_extras: ex,
+              descricao_itens_extras: desc,
+            }),
+          });
+          const p = pedidosCache.find((x) => x.id === id);
+          if (p) {
+            p.valor_final = vf;
+            p.custos = cu;
+            p.valor_itens_extras = ex;
+            p.descricao_itens_extras = desc;
+          }
+          renderizarTabelas();
+          atualizarGrafico();
+        } catch (e) {}
+      }
+      function atualizarGrafico() {
+        const ctx = document.getElementById("financeChart");
+        if (!ctx) return;
+        const c = pedidosCache.filter((p) => p.status === "concluido");
+        const fat = c.reduce((s, p) => s + Number(p.valor_final || 0), 0);
+        const cus = c.reduce((s, p) => s + Number(p.custos || 0), 0);
+        document.getElementById("card-faturamento").innerText =
+          `R$ ${fat.toFixed(2)}`;
+        document.getElementById("card-gastos").innerText =
+          `R$ ${cus.toFixed(2)}`;
+        document.getElementById("card-lucro").innerText =
+          `R$ ${(fat - cus).toFixed(2)}`;
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: c.map((p) => p.nome.split(" ")[0]),
+            datasets: [
+              {
+                label: "Lucro",
+                data: c.map((p) => Number(p.valor_final) - Number(p.custos)),
+                backgroundColor: "#22c55e",
+              },
+              {
+                label: "Custos",
+                data: c.map((p) => Number(p.custos)),
+                backgroundColor: "#ef4444",
+              },
+            ],
+          },
+          options: {
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+      }
+      async function mudarStatus(id, st) {
+        const s = document.getElementById("adminPass").value;
+        const p = pedidosCache.find((x) => x.id === id);
+        let pl = { status: st };
+        if (st === "concluido" && p) {
+          pl.valor_final = p.valor_final || p.totalCalculado || 0;
+          pl.valor_itens_extras =
+            p.valor_itens_extras || p.valorExtraManual || 0;
+          pl.descricao_itens_extras = p.descricao_itens_extras || "";
+        }
+        try {
+          await fetch(`/api/admin/pedidos/${id}/status`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-password": s,
+            },
+            body: JSON.stringify(pl),
+          });
+          fetchDados(s);
+        } catch (e) {}
+      }
+      async function apagarPedido(id) {
+        if (confirm("Excluir?")) {
+          const s = document.getElementById("adminPass").value;
+          await fetch(`/api/admin/pedidos/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-password": s },
+          });
+          fetchDados(s);
+        }
+      }
+
+      function verDetalhes(id) {
+        isModalOpen = true;
+        pedidoAtual = pedidosCache.find((p) => p.id === id);
+        document.getElementById("valor-extra-manual").value =
+          pedidoAtual.valor_itens_extras || 0;
+        document.getElementById("desc-extra-manual").value =
+          pedidoAtual.descricao_itens_extras || "";
+        const d = pedidoAtual.data_festa
+          ? new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR", {
+              timeZone: "UTC",
+            })
+          : "-";
+        let i = [],
+          c = [];
+        try {
+          i =
+            typeof pedidoAtual.itens_padrao === "string"
+              ? JSON.parse(pedidoAtual.itens_padrao)
+              : pedidoAtual.itens_padrao;
+        } catch (e) {}
+        try {
+          c =
+            typeof pedidoAtual.alimentacao === "string"
+              ? JSON.parse(pedidoAtual.alimentacao)
+              : pedidoAtual.alimentacao;
+        } catch (e) {}
+        if (!Array.isArray(i)) i = [];
+        if (!Array.isArray(c)) c = [];
+        document.getElementById("conteudo-detalhes").innerHTML =
+          `<div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl"><div><p class="text-xs font-bold text-slate-400">CLIENTE</p><p class="font-bold text-lg">${pedidoAtual.nome}</p></div><div><p class="text-xs font-bold text-slate-400">FESTA</p><p class="font-bold">${d}</p></div></div><div class="mt-4 text-sm space-y-2"><p class="font-bold text-indigo-700">${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</p><div class="grid grid-cols-2"><div><p class="font-bold text-xs text-slate-400">ITENS:</p><ul class="list-disc ml-4">${i.length ? i.map((x) => `<li>${x}</li>`).join("") : "<li>Nenhum</li>"}</ul></div><div><p class="font-bold text-xs text-slate-400">COMIDA:</p><ul class="list-disc ml-4">${c.length ? c.map((x) => `<li>${x}</li>`).join("") : "<li>Nenhuma</li>"}</ul></div></div>${pedidoAtual.itens_adicionais ? `<div class="bg-yellow-50 p-2 rounded mt-2 text-xs">Obs: ${pedidoAtual.itens_adicionais}</div>` : ""}</div>`;
+        calcularOrcamento();
+        document.getElementById("modal-detalhes").classList.remove("hidden");
+      }
+      function fecharModal(id) {
+        document.getElementById(id).classList.add("hidden");
+        isModalOpen = false;
+      }
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

@@ -148,18 +148,19 @@ app.put("/api/admin/pedidos/:id/status", checkAuth, (req, res) => {
   let sql = "UPDATE orcamentos SET status = ? WHERE id = ?";
   let params = [status, id];
 
-  // Se estiver concluindo e enviou valores, atualiza tudo junto
-  if (status === "concluido" && valor_final !== undefined) {
+  // Se estiver concluindo, atualiza tudo junto
+  if (status === "concluido") {
     sql = `
             UPDATE orcamentos 
-            SET status = ?, valor_final = ?, valor_itens_extras = ?, descricao_itens_extras = ? 
+            SET status = ?, valor_final = ?, custos = ?, valor_itens_extras = ?, descricao_itens_extras = ? 
             WHERE id = ?
         `;
     params = [
       status,
-      valor_final,
-      valor_itens_extras,
-      descricao_itens_extras,
+      parseFloat(valor_final) || 0,
+      0, // Inicializa o custo como 0 para evitar erro de NOT NULL
+      parseFloat(valor_itens_extras) || 0,
+      descricao_itens_extras || "",
       id,
     ];
   }

@@ -464,7 +464,6 @@
       let chartInstance = null;
 
       // --- MAPA DE CORREÇÃO (NOMES EXATOS DO BANCO) ---
-      // Aqui mapeamos: O QUE VEM DO BANCO -> NOME DA CHAVE/ARQUIVO
       const mapaItens = {
         "Mesa de Café": "mesa",
         "Kit Almofadas": "almofadas",
@@ -485,17 +484,21 @@
         }
       }
 
-      // --- LÓGICA DE NOMES DE ARQUIVO (DINÂMICO PARA INDIO/TENDA) ---
+      // --- LÓGICA DE NOMES DE ARQUIVO (CORRIGIDA) ---
+      // Esta função foi reescrita para garantir que 'tenda' nunca seja usado.
       function getArquivoImagem(tipoBarraca, itemKey, temLuz) {
-        // Detecta se é Índio ou Tenda
-        const tipo =
-          tipoBarraca && tipoBarraca.includes("Indio") ? "indio" : "tenda";
+        const nomeNormalizado = (tipoBarraca || "").toLowerCase();
+        
+        // REGRA DE OURO: Se tem "indio" -> retorna "indio".
+        // Qualquer outra coisa (Tenda, Cabana, Pijama, etc) -> retorna "pijama".
+        const tipo = nomeNormalizado.includes("indio") ? "indio" : "pijama";
 
         // Lógica do Cenário Base
-        if (itemKey === "base")
+        if (itemKey === "base") {
           return temLuz ? `base_${tipo}_luz.png` : `base_${tipo}.png`;
+        }
 
-        // Lógica dos Itens (ex: item_mesa_tenda.png)
+        // Lógica dos Itens (sempre minúsculo e com prefixo item_)
         return `item_${itemKey}_${tipo}.png`;
       }
 
@@ -561,7 +564,6 @@
         div.innerHTML = "";
         pedidosCache.forEach((p) => {
           const itens = safeParse(p.itens_padrao);
-          // Verifica usando o mapa se tem luzes
           const temLuz = itens.some((i) => mapaItens[i] === "luz");
           const labelLuz = temLuz ? "💡 Com Luz" : "🌑 Sem Luz";
 
@@ -569,25 +571,21 @@
         });
       }
 
-      // --- ABA PROJETOS: LÓGICA VISUAL (CORRIGIDA) ---
+      // --- ABA PROJETOS: LÓGICA VISUAL ---
       async function carregarProjetoNoCanvas(id) {
-        const p = pedidosCache.find((x) => x.id === id);
+        const p = pedidosCache.find((x) => x.id == id); // Comparação flexível para IDs
         if (!p) return;
+        
         document.getElementById("projeto-cliente-nome").innerText =
           `Projeto para: ${p.nome} (${p.modelo_barraca})`;
 
-        // 1. Processa Itens usando o Mapa LIMPO
         const itensDoBanco = safeParse(p.itens_padrao);
-
-        // Converte ["Mesa de Café"] para ["mesa"]
         const itensAtivos = itensDoBanco
           .map((nomeBanco) => mapaItens[nomeBanco])
           .filter((k) => k);
 
-        // 2. Verifica Luzes
         const temLuz = itensAtivos.includes("luz");
 
-        // 3. Renderiza Controles Manuais
         const divControles = document.getElementById("controles-camadas");
         divControles.innerHTML = `
                 <label class="flex items-center gap-2 bg-white px-3 py-1 rounded border border-slate-200 cursor-pointer">
@@ -595,8 +593,6 @@
                     <span class="text-xs font-bold text-slate-600">Luzes / Base Acesa</span>
                 </label>`;
 
-        // Cria checkboxes (Apenas para os 3 itens físicos)
-        // A ordem aqui não importa para o desenho, só para os controles
         ["colchonete", "almofadas", "mesa"].forEach((key) => {
           const estaAtivo = itensAtivos.includes(key);
 
@@ -618,16 +614,15 @@
         const temLuz = document.getElementById("chk-manual-luz").checked;
         const listaFinal = [];
 
-        // 1. Base (Define se é Tenda ou Indio + Se está acesa)
+        // 1. Base
         listaFinal.push(getArquivoImagem(modeloBarraca, "base", temLuz));
 
-        // 2. Itens (Verifica checkboxes e adiciona na ordem correta)
+        // 2. Itens
         const checkBoxes = Array.from(
           document.querySelectorAll(".chk-layer-visual:checked"),
         ).map((c) => c.getAttribute("data-key"));
 
-        // ORDEM FIXA DE PINTURA (Z-INDEX): Colchonete -> Almofadas -> Mesa
-        // Isso garante que a mesa sempre fique na frente das almofadas, independente da ordem de clique
+        // ORDEM FIXA DE PINTURA (Z-INDEX)
         if (checkBoxes.includes("colchonete"))
           listaFinal.push(getArquivoImagem(modeloBarraca, "colchonete", false));
         if (checkBoxes.includes("almofadas"))
@@ -663,7 +658,7 @@
         link.click();
       }
 
-      // --- ORÇAMENTO & DETALHES (MANTIDOS) ---
+      // --- ORÇAMENTO & DETALHES ---
       function calcularOrcamento() {
         if (!pedidoAtual) return;
         let total = 0;
@@ -679,7 +674,6 @@
         total += subBarracas;
         resumoHTML += `<div class="flex justify-between text-xs font-bold text-indigo-700 mb-1"><span>${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</span><span>R$ ${subBarracas.toFixed(2)}</span></div>`;
 
-        // Itens Padrão (Usa nome direto do banco para buscar preço)
         const itens = safeParse(pedidoAtual.itens_padrao);
         if (Array.isArray(itens)) {
           itens.forEach((nomeItem) => {
@@ -725,7 +719,8 @@
 
       function verDetalhes(id) {
         isModalOpen = true;
-        pedidoAtual = pedidosCache.find((p) => p.id === id);
+        pedidoAtual = pedidosCache.find((p) => p.id == id);
+        
         document.getElementById("valor-extra-manual").value =
           pedidoAtual.valor_itens_extras || 0;
         document.getElementById("desc-extra-manual").value =
@@ -782,6 +777,8 @@
         btn.innerHTML = "Salvando...";
 
         try {
+          calcularOrcamento();
+          
           await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
             method: "PUT",
             headers: {
@@ -838,7 +835,7 @@
         }
       }
 
-      // Funções auxiliares (Mantidas)
+      // Funções auxiliares
       function mudarAba(a) {
         [
           "view-pedidos",
@@ -903,10 +900,12 @@
           if (i.length) {
             c.innerHTML += `<div class="font-bold text-xs text-indigo-500 mt-4 mb-2 border-b pb-1">${cats[k]}</div>`;
             i.forEach((it) => {
-              c.innerHTML += `<div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"><span class="text-sm font-bold text-slate-700 w-1/2">${it.descricao}</span><div class="flex items-center gap-2"><span class="text-xs text-slate-400">R$</span><input type="number" value="${it.valor}" onchange="atualizarPreco(${it.id},this.value)" class="input-preco-edit w-24 p-2 border rounded font-bold text-right"><button onclick="deletarItem(${it.id})" class="text-red-400 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
+              c.innerHTML += `<div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"><span class="text-sm font-bold text-slate-700 w-1/2">${it.descricao}</span><div class="flex items-center gap-2"><span class="text-xs text-slate-400">R$</span><input type="number" value="${it.valor}" onchange="atualizarPreco(${it.id},this.value)" class="input-preco-edit w-24 p-2 border rounded font-bold text-right"><button onclick="deletarItem(${it.id})" class="text-red-400 p-2 hover:bg-red-50 rounded transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`;
             });
           }
         });
+        // IMPORTANTE: Renderiza ícones de lixeira
+        lucide.createIcons();
       }
       function fecharModal(id) {
         document.getElementById(id).classList.add("hidden");
@@ -952,14 +951,25 @@
       }
       async function mudarStatus(id, st) {
         const s = document.getElementById("adminPass").value;
-        const p = pedidosCache.find((x) => x.id === id);
+        const p = pedidosCache.find((x) => x.id == id); // Comparação solta para garantir
+        
         let pl = { status: st };
         if (st === "concluido" && p) {
-          pl.valor_final = p.valor_final || p.totalCalculado || 0;
-          pl.valor_itens_extras =
-            p.valor_itens_extras || p.valorExtraManual || 0;
-          pl.descricao_itens_extras = p.descricao_itens_extras || "";
+            // Lógica blindada contra erro 500
+            // Se o valor_final for undefined, usa 0.00 para não quebrar o banco
+            let vFinal = p.valor_final; 
+            if (vFinal === undefined || vFinal === null) vFinal = p.totalCalculado;
+            if (vFinal === undefined || vFinal === null) vFinal = 0;
+
+            let vExtras = p.valor_itens_extras;
+            if (vExtras === undefined || vExtras === null) vExtras = p.valorExtraManual;
+            if (vExtras === undefined || vExtras === null) vExtras = 0;
+
+            pl.valor_final = parseFloat(vFinal) || 0;
+            pl.valor_itens_extras = parseFloat(vExtras) || 0;
+            pl.descricao_itens_extras = p.descricao_itens_extras || "";
         }
+        
         try {
           await fetch(`/api/admin/pedidos/${id}/status`, {
             method: "PUT",
@@ -970,7 +980,10 @@
             body: JSON.stringify(pl),
           });
           fetchDados(s);
-        } catch (e) {}
+        } catch (e) {
+            console.error("Erro ao mudar status:", e);
+            alert("Erro de conexão ao mudar status.");
+        }
       }
       async function apagarPedido(id) {
         if (confirm("Excluir?")) {

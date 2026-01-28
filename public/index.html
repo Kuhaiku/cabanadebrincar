@@ -1,685 +1,556 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-br" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cabana de Brincar | Festa do Pijama</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Cabana de Brincar | Monte Sua Festa</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Nunito', 'sans-serif'],
+              display: ['Fredoka', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                pink: '#FF6B95',
+                dark: '#2D2A4A',
+                soft: '#FFF5F8',
+                accent: '#FFD9E3',
+                purple: '#8B5CF6'
+              }
+            }
+          }
+        }
+      }
+    </script>
     <style>
-      body {
-        font-family: "Quicksand", sans-serif;
-        background: linear-gradient(
-          135deg,
-          #fff0f5 0%,
-          #ffffff 50%,
-          #f0f7ff 100%
-        );
-        color: #1e293b;
-      }
-
-      /* Card Estilo Vidro */
-      .glass-card-light {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(12px);
-        border: 1px solid white;
-        box-shadow: 0 10px 30px -10px rgba(236, 72, 153, 0.2);
-      }
-
-      /* Inputs Fofos */
-      input,
-      select,
-      textarea {
-        background-color: #ffffff !important;
-        border: 2px solid #e2e8f0 !important;
-        color: #334155 !important;
+      body { -webkit-tap-highlight-color: transparent; }
+      
+      /* Inputs Limpos */
+      .clean-input {
+        width: 100%;
+        background-color: #F8FAFC;
+        border: 2px solid #F1F5F9;
+        border-radius: 1rem;
+        padding: 0.8rem 1rem;
         font-weight: 600;
-        transition: all 0.3s ease;
-      }
-      input:focus,
-      select:focus,
-      textarea:focus {
+        color: #475569;
+        transition: all 0.2s;
         outline: none;
-        border-color: #ec4899 !important;
-        box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+      }
+      .clean-input:focus {
+        background-color: #FFFFFF;
+        border-color: #FF6B95;
+        box-shadow: 0 0 0 4px rgba(255, 107, 149, 0.1);
       }
 
-      /* Checkbox Rosa */
+      /* Checkbox Customizado */
+      .custom-checkbox {
+        appearance: none;
+        background-color: #fff;
+        border: 2px solid #cbd5e1;
+        border-radius: 0.5rem;
+        display: inline-block;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
       .custom-checkbox:checked {
-        background-color: #ec4899;
-        border-color: #ec4899;
+        background-color: #FF6B95;
+        border-color: #FF6B95;
+        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+      }
+      
+      /* Item Selecionado (Highlight) */
+      .item-card:has(input:checked) {
+        border-color: #FF6B95;
+        background-color: #FFF5F8;
       }
 
-      /* Animações */
+      /* Animação do Modal de Zoom e Histórico */
+      @keyframes zoomIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      .animate-zoom { animation: zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      
+      /* Animação Botão Flutuante */
       @keyframes popIn {
-        0% {
-          transform: scale(0.8);
-          opacity: 0;
-        }
-        100% {
-          transform: scale(1);
-          opacity: 1;
-        }
+        0% { transform: scale(0.8); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
       }
-      .animate-pop {
-        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-
-      .btn-hover:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 20px -5px rgba(236, 72, 153, 0.4);
-      }
+      .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     </style>
   </head>
-  <body class="min-h-screen pb-20 overflow-x-hidden">
-    <div
-      id="btn-historico"
-      class="hidden fixed bottom-6 right-6 z-50 animate-pop"
-    >
-      <button
-        onclick="abrirHistorico()"
-        class="bg-white border-2 border-pink-200 text-pink-600 font-bold py-3 px-6 rounded-full shadow-2xl hover:bg-pink-50 transition-all flex items-center gap-2 transform hover:scale-105"
-      >
+  <body class="font-sans text-slate-600 bg-white antialiased pb-20">
+
+    <div id="btn-historico" class="hidden fixed bottom-6 right-6 z-50 animate-pop">
+      <button onclick="abrirHistorico()" class="bg-white border-2 border-brand-pink text-brand-pink font-bold py-3 px-6 rounded-full shadow-2xl hover:bg-brand-soft transition-all flex items-center gap-2 transform hover:scale-105">
         <i data-lucide="history" class="w-5 h-5"></i> Meus Pedidos
       </button>
     </div>
 
-    <header class="py-12 px-4 text-center relative">
-      <div
-        class="absolute top-10 left-10 w-24 h-24 bg-pink-200 rounded-full blur-3xl opacity-50 animate-pulse"
-      ></div>
-      <div
-        class="absolute bottom-10 right-10 w-32 h-32 bg-indigo-200 rounded-full blur-3xl opacity-50 animate-pulse"
-      ></div>
-
-      <div class="relative z-10">
-        <h1
-          class="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-600 mb-2 tracking-tight drop-shadow-sm"
-        >
-          Cabana de Brincar
-        </h1>
-        <p class="text-xl md:text-2xl text-slate-500 font-bold">
-          ✨ Festa do Pijama dos Sonhos ✨
-        </p>
+    <header class="py-4 bg-white border-b border-slate-50 sticky top-0 z-[60] shadow-sm lg:shadow-none lg:static">
+      <div class="container mx-auto px-6 flex items-center justify-between">
+         <div class="text-xl font-display font-bold text-brand-pink tracking-wide">
+            Cabana<span class="text-brand-dark">.Brincar</span>
+         </div>
+         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:block">
+            Configurador de Festa
+         </div>
       </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 space-y-16">
-      <section class="relative w-full max-w-4xl mx-auto">
-        <div
-          class="relative h-[300px] md:h-[500px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-100 border-[6px] border-white group"
-        >
-          <img
-            id="carouselImage"
-            src=""
-            alt="Carregando fotos..."
-            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none"
-          ></div>
-
-          <button
-            onclick="prevImage()"
-            class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-indigo-600 p-3 rounded-full shadow-lg transition-all z-20 hover:scale-110 cursor-pointer border border-white"
-          >
-            <i data-lucide="chevron-left" class="w-6 h-6"></i>
-          </button>
-
-          <button
-            onclick="nextImage()"
-            class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-indigo-600 p-3 rounded-full shadow-lg transition-all z-20 hover:scale-110 cursor-pointer border border-white"
-          >
-            <i data-lucide="chevron-right" class="w-6 h-6"></i>
-          </button>
-
-          <div class="absolute bottom-6 left-0 right-0 text-center z-10">
-            <span
-              class="bg-white/20 backdrop-blur-md border border-white/40 text-white px-4 py-1 rounded-full text-sm font-bold shadow-sm"
-            >
-              📸 Galeria de Fotos
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section
-        class="glass-card-light rounded-[2.5rem] p-6 md:p-12 relative mx-auto max-w-4xl"
-      >
-        <div
-          class="flex items-center gap-4 mb-8 border-b-2 border-pink-100 pb-6"
-        >
-          <div class="bg-pink-100 p-4 rounded-2xl text-pink-500 shadow-inner">
-            <i data-lucide="sparkles" class="w-8 h-8"></i>
-          </div>
-          <div>
-            <h2 class="text-3xl font-extrabold text-slate-700">
-              Vamos Planejar?
-            </h2>
-            <p class="text-slate-400 font-medium">
-              Preencha para receber um orçamento mágico
+    <main class="container mx-auto lg:px-4 lg:py-8">
+      
+      <form id="orcamentoForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <div id="visualizador-wrapper" class="lg:col-span-5 sticky top-[60px] lg:top-24 z-50 bg-white/95 backdrop-blur-xl lg:bg-transparent lg:backdrop-blur-none border-b border-slate-100 lg:border-0 shadow-sm lg:shadow-none transition-all duration-300">
+            
+            <div onclick="abrirZoom()" class="relative mx-auto w-full p-2 lg:p-8 lg:bg-brand-soft lg:rounded-[2.5rem] lg:border lg:border-brand-accent/30 flex flex-col items-center justify-center cursor-zoom-in group select-none">
+                <canvas id="simuladorCanvas" width="1080" height="1080" class="h-48 sm:h-64 lg:h-[500px] w-auto object-contain drop-shadow-xl rounded-xl lg:rounded-2xl bg-white/50 lg:bg-white transition-transform group-hover:scale-[1.02] duration-500"></canvas>
+                
+                <div class="hidden lg:block absolute bottom-8 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span class="bg-white/90 backdrop-blur px-4 py-1.5 rounded-full text-xs font-bold text-brand-pink shadow-lg border border-brand-pink/20">
+                      Clique para ampliar <i data-lucide="zoom-in" class="inline w-3 h-3 ml-1"></i>
+                    </span>
+                </div>
+                
+                <div class="lg:hidden absolute bottom-2 right-4 pointer-events-none">
+                    <span class="bg-brand-pink text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1">
+                      <i data-lucide="maximize-2" class="w-3 h-3"></i> Ampliar
+                    </span>
+                </div>
+            </div>
+            
+            <p class="lg:hidden text-center text-[10px] text-slate-400 font-bold uppercase pb-3 tracking-wide pt-1">
+               👆 Sua cabana personalizada
             </p>
-          </div>
         </div>
 
-        <form id="orcamentoForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Nome da Mamãe/Papai</label
-            >
-            <input
-              type="text"
-              id="nome"
-              required
-              placeholder="Seu nome completo"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >WhatsApp</label
-            >
-            <input
-              type="tel"
-              id="whatsapp"
-              required
-              placeholder="(00) 00000-0000"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-
-          <div class="md:col-span-2 space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Endereço da Festa</label
-            >
-            <input
-              type="text"
-              id="endereco"
-              placeholder="Rua, número e bairro"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Data da Festa</label
-            >
-            <input
-              type="date"
-              id="data_festa"
-              class="w-full p-4 rounded-2xl text-slate-600"
-            />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1">Horário</label>
-            <input
-              type="time"
-              id="horario"
-              class="w-full p-4 rounded-2xl text-slate-600"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Quantas Crianças?</label
-            >
-            <input
-              type="number"
-              min="1"
-              id="qtd_criancas"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Faixa Etária</label
-            >
-            <input
-              type="text"
-              id="faixa_etaria"
-              placeholder="Ex: 5 a 8 anos"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Modelo da Barraca</label
-            >
-            <select
-              id="modelo_barraca"
-              class="w-full p-4 rounded-2xl cursor-pointer text-slate-600 bg-white"
-            >
-              <option value="">Carregando modelos...</option>
-            </select>
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Quantidade de Barracas</label
-            >
-            <input
-              type="number"
-              min="1"
-              id="qtd_barracas"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1">Cores</label>
-            <input
-              type="text"
-              id="cores"
-              placeholder="Ex: Rosa e Azul"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1">Tema</label>
-            <input
-              type="text"
-              id="tema"
-              placeholder="Ex: Unicórnio"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-
-          <div
-            class="md:col-span-2 space-y-4 p-6 bg-indigo-50/80 rounded-3xl border-2 border-indigo-100 mt-4"
-          >
-            <span
-              class="flex items-center gap-2 text-sm font-bold text-indigo-600 uppercase tracking-wider"
-            >
-              <i data-lucide="list-checks" class="w-5 h-5"></i> Itens
-              Disponíveis
-            </span>
-            <div class="flex flex-wrap gap-3" id="container-itens-padrao">
-              <span class="text-slate-400 text-sm animate-pulse"
-                >Carregando itens...</span
-              >
+        <div class="lg:col-span-7 space-y-8 px-4 lg:px-0 mt-2 lg:mt-0">
+            
+            <div class="text-center lg:text-left mb-4">
+                <h1 class="font-display text-2xl lg:text-4xl font-bold text-brand-dark">Vamos Criar!</h1>
+                <p class="text-slate-500 text-sm">Preencha os dados para montar sua festa dos sonhos.</p>
             </div>
-          </div>
 
-          <div
-            class="md:col-span-2 space-y-4 p-6 bg-pink-50/80 rounded-3xl border-2 border-pink-100"
-          >
-            <span
-              class="flex items-center gap-2 text-sm font-bold text-pink-600 uppercase tracking-wider"
-            >
-              <i data-lucide="utensils" class="w-5 h-5"></i> Alimentação
-            </span>
-            <div class="flex flex-wrap gap-3" id="container-alimentacao">
-              <span class="text-slate-400 text-sm animate-pulse"
-                >Carregando menu...</span
-              >
+            <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"></div>
+                
+                <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10">
+                    <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">1</span>
+                    Escolha o Estilo
+                </h2>
+                
+                <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block pl-1">Modelo da Barraca</label>
+                        <div class="relative">
+                            <select id="modelo_barraca" onchange="atualizarSimulador()" class="clean-input appearance-none cursor-pointer bg-white">
+                                <option value="">Carregando...</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <div>
+                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Tema Desejado</label>
+                         <input type="text" id="tema" placeholder="Ex: Harry Potter, Safari..." class="clean-input">
+                    </div>
+                    <div>
+                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Cores de Preferência</label>
+                         <input type="text" id="cores" placeholder="Ex: Azul e Prata" class="clean-input">
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"></div>
+
+                <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10">
+                    <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">2</span>
+                    Itens da Cabana
+                </h2>
+                <p class="text-xs text-slate-400 mb-6 relative z-10">Selecione os itens inclusos:</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10" id="container-personalizacao">
+                    <span class="text-xs text-slate-300 italic">Carregando itens...</span>
+                </div>
+            </section>
+
+            <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"></div>
+                
+                <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10">
+                    <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">3</span>
+                    Alimentação
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 relative z-10" id="container-alimentacao">
+                     <span class="text-xs text-slate-300 italic">Carregando menu...</span>
+                </div>
+            </section>
+
+            <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">4</span>
+                    Dados Finais
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Nome Completo</label>
+                        <input type="text" id="nome" required placeholder="Seu nome" class="clean-input">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">WhatsApp</label>
+                        <input type="tel" id="whatsapp" required placeholder="(DDD) 99999-9999" class="clean-input">
+                    </div>
+                     <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Endereço da Festa</label>
+                        <input type="text" id="endereco" required placeholder="Rua, Número e Bairro" class="clean-input">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Data da Festa</label>
+                        <input type="date" id="data_festa" class="clean-input text-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Horário</label>
+                        <input type="time" id="horario" class="clean-input text-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Qtd. Crianças</label>
+                        <input type="number" id="qtd_criancas" min="1" placeholder="Ex: 6" class="clean-input">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Faixa Etária</label>
+                        <input type="text" id="faixa_etaria" placeholder="Ex: 8-10 anos" class="clean-input">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Qtd. Barracas</label>
+                        <input type="number" id="qtd_barracas" min="1" placeholder="Ex: 3" class="clean-input">
+                    </div>
+                </div>
+
+                <div class="space-y-4 mt-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Observações / Extras</label>
+                        <textarea id="itens_adicionais" rows="2" class="clean-input resize-none" placeholder="Quer adicionar algo especial?"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1">Alergias / Restrições</label>
+                        <textarea id="alergias" rows="2" class="clean-input resize-none border-brand-pink/30 bg-brand-soft/20" placeholder="Alguma criança tem alergia?"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <div class="pt-6 pb-24">
+                <button type="submit" class="w-full bg-brand-dark text-white font-display font-bold text-xl py-5 rounded-2xl shadow-xl shadow-slate-300 hover:bg-slate-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 relative overflow-hidden group">
+                    <span class="relative z-10 flex items-center gap-3">
+                        <i data-lucide="send" class="w-6 h-6 text-brand-pink group-hover:text-white transition-colors"></i>
+                        Solicitar Orçamento Grátis
+                    </span>
+                    <div class="absolute inset-0 bg-slate-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left z-0"></div>
+                </button>
+                <p class="text-center text-xs text-slate-400 mt-4 flex items-center justify-center gap-1">
+                    <i data-lucide="lock" class="w-3 h-3"></i> Seus dados estão 100% seguros.
+                </p>
             </div>
-          </div>
-
-          <div class="md:col-span-2 space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Observações / Extras</label
-            >
-            <input
-              type="text"
-              id="itens_adicionais"
-              placeholder="Quer adicionar algo especial?"
-              class="w-full p-4 rounded-2xl"
-            />
-          </div>
-
-          <div class="md:col-span-2 space-y-2">
-            <label class="text-sm font-bold text-slate-600 ml-1"
-              >Alergias / Restrições</label
-            >
-            <textarea
-              id="alergias"
-              rows="2"
-              placeholder="Alguma criança tem alergia?"
-              class="w-full p-4 rounded-2xl"
-            ></textarea>
-          </div>
-
-          <div class="md:col-span-2 pt-6">
-            <button
-              type="submit"
-              class="btn-hover w-full bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 text-white font-bold py-5 px-8 rounded-2xl flex items-center justify-center gap-3 text-xl shadow-xl shadow-pink-200"
-            >
-              <i data-lucide="send" class="w-6 h-6"></i>
-              Revisar e Enviar
-            </button>
-          </div>
-        </form>
-      </section>
+        </div>
+      </form>
     </main>
 
-    <div
-      id="modal-revisao"
-      class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-    >
-      <div
-        class="bg-white rounded-[2rem] w-full max-w-lg p-8 relative shadow-2xl animate-pop border-4 border-white"
-      >
-        <div class="text-center mb-6">
-          <div
-            class="bg-pink-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-pink-500"
-          >
-            <i data-lucide="clipboard-check" class="w-8 h-8"></i>
-          </div>
-          <h3 class="text-2xl font-bold text-slate-800">Confira seu Pedido</h3>
-          <p class="text-slate-500 text-sm">Tudo certo para a festa?</p>
-        </div>
-
-        <div
-          id="revisao-conteudo"
-          class="bg-slate-50 rounded-2xl p-6 border border-slate-100 text-sm text-slate-600 space-y-3 mb-6"
-        ></div>
-
-        <div class="flex gap-3">
-          <button
-            onclick="
-              document.getElementById('modal-revisao').classList.add('hidden')
-            "
-            class="flex-1 py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-          >
-            Voltar
-          </button>
-          <button
-            onclick="enviarRealmente()"
-            id="btn-final-enviar"
-            class="flex-[2] py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold shadow-lg shadow-green-200 transition-all flex justify-center items-center gap-2"
-          >
-            Confirmar <i data-lucide="check" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div
-      id="modal-sucesso"
-      class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/95 backdrop-blur-xl"
-    >
-      <div class="text-center animate-pop max-w-md p-6">
-        <div
-          class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm"
-        >
-          <i data-lucide="sparkles" class="w-12 h-12 text-green-500"></i>
-        </div>
-        <h2 class="text-4xl font-extrabold text-slate-800 mb-3">
-          Pedido Enviado!
-        </h2>
-        <p class="text-lg text-slate-500 mb-8 font-medium">
-          Recebemos sua solicitação mágica. ✨<br />Em breve entraremos em
-          contato.
-        </p>
-        <button
-          onclick="location.reload()"
-          class="bg-indigo-600 text-white px-10 py-4 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-xl hover:-translate-y-1"
-        >
-          Voltar ao Início
-        </button>
-      </div>
-    </div>
-
-    <div
-      id="modal-historico"
-      class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-    >
-      <div
-        class="bg-white rounded-[2rem] w-full max-w-lg p-6 relative shadow-2xl animate-pop max-h-[80vh] overflow-y-auto"
-      >
-        <div
-          class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4"
-        >
-          <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="history" class="text-pink-500"></i> Meus Pedidos
-          </h3>
-          <button
-            onclick="
-              document.getElementById('modal-historico').classList.add('hidden')
-            "
-            class="bg-slate-100 p-2 rounded-full hover:bg-slate-200"
-          >
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-        <div id="lista-historico" class="space-y-4"></div>
-      </div>
-    </div>
-
-    <footer
-      class="py-12 text-center text-slate-400 font-medium text-sm bg-white border-t border-slate-100 mt-20"
-    >
-      <p>&copy; 2023 Cabana de Brincar. Feito com amor.</p>
-      <div class="flex justify-center gap-4 mt-4">
-        <a
-          href="https://www.instagram.com/cabanadebrincar_festadopijama/"
-          target="_blank"
-          class="bg-pink-50 p-3 rounded-full text-pink-500 hover:bg-pink-100 transition-colors"
-          ><i data-lucide="instagram" class="w-5 h-5"></i
-        ></a>
-      </div>
+    <footer class="bg-white border-t border-slate-100 py-10 mt-10 text-center">
+      <p class="font-display font-bold text-xl text-brand-dark mb-1">Cabana.Brincar</p>
+      <p class="text-slate-400 text-xs uppercase tracking-widest">&copy; 2026</p>
     </footer>
+
+    <div id="modal-zoom" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-zoom-out" onclick="fecharZoom()">
+        <div class="relative w-full max-w-4xl animate-zoom" onclick="event.stopPropagation()">
+            <button onclick="fecharZoom()" class="absolute -top-12 right-0 md:-right-12 text-white p-2 hover:bg-white/10 rounded-full transition-colors">
+                <i data-lucide="x" class="w-8 h-8"></i>
+            </button>
+            <img id="img-ampliada" src="" alt="Cabana Personalizada" class="w-full h-auto rounded-2xl shadow-2xl border-2 border-white/10 bg-white">
+            <p class="text-center text-white/50 mt-4 text-xs font-bold uppercase tracking-widest">Toque fora para fechar</p>
+        </div>
+    </div>
+
+    <div id="modal-sucesso" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/95 backdrop-blur-xl">
+        <div class="text-center max-w-sm animate-zoom">
+            <div class="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm animate-bounce">
+                <i data-lucide="check" class="w-10 h-10"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-brand-dark mb-2">Pedido Enviado!</h2>
+            <p class="text-slate-500 mb-8 leading-relaxed">Recebemos sua configuração mágica.<br>Logo entraremos em contato no WhatsApp.</p>
+            <button onclick="location.reload()" class="bg-brand-pink text-white font-bold py-4 px-12 rounded-full shadow-xl hover:bg-pink-600 transition-colors">Voltar ao Início</button>
+        </div>
+    </div>
+
+    <div id="modal-historico" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] w-full max-w-lg p-6 relative shadow-2xl animate-zoom max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <h3 class="text-xl font-bold text-brand-dark flex items-center gap-2">
+                    <i data-lucide="history" class="text-brand-pink"></i> Meus Pedidos
+                </h3>
+                <button onclick="document.getElementById('modal-historico').classList.add('hidden')" class="bg-slate-50 p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="lista-historico" class="space-y-4">
+                </div>
+        </div>
+    </div>
 
     <script>
       lucide.createIcons();
-      let formDataCache = null;
+      const canvas = document.getElementById("simuladorCanvas");
+      const ctx = canvas.getContext("2d");
 
-      document.addEventListener("DOMContentLoaded", () => {
-        const hist = JSON.parse(
-          localStorage.getItem("historicoPedidosCabana") || "[]",
-        );
-        if (hist.length > 0)
-          document.getElementById("btn-historico").classList.remove("hidden");
-        carregarItensDinamicos();
-        loadPhotos();
-      });
+      // --- 0. MAPA DE INTEGRAÇÃO (BANCO DE DADOS -> ASSETS VISUAIS) ---
+      const mapaVisualizacao = {
+          "Mesa de Café": "mesa",
+          "Kit Almofadas": "almofadas",
+          "Colchonete": "colchonete",
+          "Luzinhas LED": "luz"
+      };
 
-      // --- CARREGAR ITENS DO SERVIDOR ---
-      async function carregarItensDinamicos() {
-        try {
-          const res = await fetch("/api/itens-disponiveis");
-          const itens = await res.json();
-
-          const cp = document.getElementById("container-itens-padrao");
-          const ca = document.getElementById("container-alimentacao");
-          const select = document.getElementById("modelo_barraca");
-
-          cp.innerHTML = "";
-          ca.innerHTML = "";
-          select.innerHTML = '<option value="">Selecione...</option>';
-
-          if (itens.length === 0) {
-            cp.innerHTML =
-              '<span class="text-slate-400">Sem itens cadastrados.</span>';
+      // --- 1. LÓGICA DE HISTÓRICO (LOCALSTORAGE) ---
+      function verificarHistorico() {
+          const hist = JSON.parse(localStorage.getItem("historicoPedidosCabana") || "[]");
+          const btn = document.getElementById("btn-historico");
+          if (hist.length > 0) {
+              btn.classList.remove("hidden");
           }
-
-          itens.forEach((item) => {
-            if (item.categoria === "tendas") {
-              const opt = document.createElement("option");
-              opt.value = item.descricao;
-              opt.textContent = item.descricao;
-              select.appendChild(opt);
-            } else {
-              const html = `
-                    <label class="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border border-indigo-100 cursor-pointer hover:border-pink-300 transition-all group shadow-sm">
-                        <div class="relative flex items-center">
-                            <input type="checkbox" value="${item.descricao}" class="chk-${item.categoria === "alimentacao" ? "alim" : "item"} custom-checkbox w-6 h-6 rounded-lg border-2 border-slate-300 text-pink-500 focus:ring-pink-500 transition-all">
-                        </div>
-                        <span class="text-slate-600 font-bold group-hover:text-pink-600 transition-colors text-sm">${item.descricao}</span>
-                    </label>`;
-
-              if (item.categoria === "alimentacao") ca.innerHTML += html;
-              else if (item.categoria === "padrao") cp.innerHTML += html;
-            }
-          });
-        } catch (e) {
-          console.error("Erro itens");
-        }
-      }
-
-      // --- CARROSSEL ---
-      let images = [];
-      let imgIdx = 0;
-      const imgEl = document.getElementById("carouselImage");
-      async function loadPhotos() {
-        try {
-          const r = await fetch("/api/fotos");
-          const d = await r.json();
-          if (d.length > 0) {
-            images = d;
-            imgEl.src = images[0];
-          } else
-            imgEl.src =
-              "https://images.unsplash.com/photo-1555580034-07760a2e19b2?q=80&w=1000";
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      function nextImage() {
-        if (!images.length) return;
-        imgIdx = (imgIdx + 1) % images.length;
-        imgEl.src = images[imgIdx];
-      }
-      function prevImage() {
-        if (!images.length) return;
-        imgIdx = (imgIdx - 1 + images.length) % images.length;
-        imgEl.src = images[imgIdx];
-      }
-      setInterval(nextImage, 5000);
-
-      // --- FORMULÁRIO E REVISÃO ---
-      document
-        .getElementById("orcamentoForm")
-        .addEventListener("submit", (e) => {
-          e.preventDefault();
-          const padrao = Array.from(
-            document.querySelectorAll(".chk-item:checked"),
-          ).map((el) => el.value);
-          const alim = Array.from(
-            document.querySelectorAll(".chk-alim:checked"),
-          ).map((el) => el.value);
-
-          formDataCache = {
-            nome: document.getElementById("nome").value,
-            whatsapp: document.getElementById("whatsapp").value,
-            endereco: document.getElementById("endereco").value,
-            qtd_criancas: document.getElementById("qtd_criancas").value,
-            faixa_etaria: document.getElementById("faixa_etaria").value,
-            modelo_barraca: document.getElementById("modelo_barraca").value,
-            qtd_barracas: document.getElementById("qtd_barracas").value,
-            cores: document.getElementById("cores").value,
-            tema: document.getElementById("tema").value,
-            itens_padrao: padrao,
-            itens_adicionais: document.getElementById("itens_adicionais").value,
-            data_festa: document.getElementById("data_festa").value,
-            horario: document.getElementById("horario").value,
-            alimentacao: alim,
-            alergias: document.getElementById("alergias").value,
-          };
-
-          const dataFesta = formDataCache.data_festa
-            ? new Date(formDataCache.data_festa).toLocaleDateString("pt-BR", {
-                timeZone: "UTC",
-              })
-            : "-";
-
-          document.getElementById("revisao-conteudo").innerHTML = `
-                <div class="grid grid-cols-2 gap-4 border-b border-slate-100 pb-3">
-                    <div><span class="block text-xs font-bold text-slate-400 uppercase">Nome</span> ${formDataCache.nome}</div>
-                    <div><span class="block text-xs font-bold text-slate-400 uppercase">WhatsApp</span> ${formDataCache.whatsapp}</div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 border-b border-slate-100 pb-3">
-                    <div><span class="block text-xs font-bold text-slate-400 uppercase">Data Festa</span> ${dataFesta}</div>
-                    <div><span class="block text-xs font-bold text-slate-400 uppercase">Horário</span> ${formDataCache.horario}</div>
-                </div>
-                <div class="py-2">
-                    <p class="font-bold text-indigo-600 mb-1">${formDataCache.qtd_barracas}x ${formDataCache.modelo_barraca}</p>
-                    <p class="text-xs text-slate-500">Itens: ${padrao.join(", ") || "Nenhum"}</p>
-                    <p class="text-xs text-slate-500">Comida: ${alim.join(", ") || "Nenhuma"}</p>
-                </div>`;
-
-          document.getElementById("modal-revisao").classList.remove("hidden");
-        });
-
-      async function enviarRealmente() {
-        const btn = document.getElementById("btn-final-enviar");
-        btn.innerHTML =
-          '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Enviando...';
-        btn.disabled = true;
-        lucide.createIcons();
-
-        try {
-          const res = await fetch("/api/orcamento", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formDataCache),
-          });
-          if (res.ok) {
-            let hist = JSON.parse(
-              localStorage.getItem("historicoPedidosCabana") || "[]",
-            );
-            hist.unshift({
-              ...formDataCache,
-              data_pedido_local: new Date().toISOString(),
-            });
-            localStorage.setItem(
-              "historicoPedidosCabana",
-              JSON.stringify(hist),
-            );
-            document.getElementById("modal-revisao").classList.add("hidden");
-            document.getElementById("modal-sucesso").classList.remove("hidden");
-          } else alert("Erro no servidor");
-        } catch (e) {
-          alert("Erro de conexão");
-        } finally {
-          btn.innerHTML = "Confirmar";
-          btn.disabled = false;
-        }
       }
 
       function abrirHistorico() {
-        const hist = JSON.parse(
-          localStorage.getItem("historicoPedidosCabana") || "[]",
-        );
-        const lista = document.getElementById("lista-historico");
-        lista.innerHTML = "";
+          const hist = JSON.parse(localStorage.getItem("historicoPedidosCabana") || "[]");
+          const lista = document.getElementById("lista-historico");
+          lista.innerHTML = "";
 
-        if (hist.length === 0)
-          lista.innerHTML =
-            '<p class="text-center text-slate-400">Sem histórico.</p>';
+          if (hist.length === 0) {
+              lista.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">Você ainda não fez nenhum pedido.</p>';
+          }
 
-        hist.forEach((p) => {
-          const data = new Date(p.data_pedido_local).toLocaleDateString(
-            "pt-BR",
-          );
-          const dataFesta = p.data_festa
-            ? new Date(p.data_festa).toLocaleDateString("pt-BR", {
-                timeZone: "UTC",
-              })
-            : "-";
+          hist.forEach((p) => {
+              const data = new Date(p.data_pedido_local).toLocaleDateString("pt-BR");
+              const dataFesta = p.data_festa ? new Date(p.data_festa).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "-";
+              
+              const itens = Array.isArray(p.itens_padrao) ? p.itens_padrao : [];
+              const alim = Array.isArray(p.alimentacao) ? p.alimentacao : [];
 
-          // Correção Arrays
-          const itens = Array.isArray(p.itens_padrao) ? p.itens_padrao : [];
-          const alim = Array.isArray(p.alimentacao) ? p.alimentacao : [];
-
-          lista.innerHTML += `
-                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <div class="flex justify-between mb-2 border-b border-slate-200 pb-2">
-                            <span class="text-xs font-bold text-slate-400">PEDIDO: ${data.substring(0, 5)}</span>
-                            <span class="text-xs font-bold text-indigo-500">FESTA: ${dataFesta}</span>
-                        </div>
-                        <p class="font-bold text-slate-700">${p.modelo_barraca}</p>
-                        <p class="text-xs text-slate-500 mt-1">✅ ${itens.join(", ") || "-"}</p>
-                        <p class="text-xs text-slate-500">🍽️ ${alim.join(", ") || "-"}</p>
-                    </div>`;
-        });
-        document.getElementById("modal-historico").classList.remove("hidden");
+              lista.innerHTML += `
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm hover:border-brand-pink/20 transition-colors">
+                    <div class="flex justify-between mb-2 border-b border-slate-200/60 pb-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pedido: ${data}</span>
+                        <span class="text-[10px] font-bold text-brand-pink uppercase tracking-wider">Festa: ${dataFesta}</span>
+                    </div>
+                    <p class="font-bold text-brand-dark text-sm mb-1">${p.modelo_barraca} (${p.qtd_barracas}x)</p>
+                    <p class="text-xs text-slate-500 truncate"><span class="font-bold">Itens:</span> ${itens.join(", ") || "-"}</p>
+                    <p class="text-xs text-slate-500 truncate"><span class="font-bold">Menu:</span> ${alim.join(", ") || "-"}</p>
+                </div>`;
+          });
+          document.getElementById("modal-historico").classList.remove("hidden");
       }
+
+      // --- 2. LÓGICA DE ZOOM E SIMULADOR ---
+      function abrirZoom() {
+          const dataUrl = canvas.toDataURL();
+          document.getElementById('img-ampliada').src = dataUrl;
+          document.getElementById('modal-zoom').classList.remove('hidden');
+      }
+      function fecharZoom() {
+          document.getElementById('modal-zoom').classList.add('hidden');
+      }
+
+      function obterSufixoArquivo(nomeSelect) {
+          if (!nomeSelect) return 'indio';
+          const nome = nomeSelect.toLowerCase();
+          if (nome.includes('pijama') || nome.includes('tenda')) return 'pijama';
+          if (nome.includes('indio') || nome.includes('tipi')) return 'indio';
+          return 'indio';
+      }
+
+      function getAssetPath(modeloNome, item, estado) {
+         const tipo = obterSufixoArquivo(modeloNome); 
+         if (item === 'base') {
+            return estado === 'com_luz' ? `/assets/base_${tipo}_luz.png` : `/assets/base_${tipo}.png`;
+         }
+         return `/assets/item_${item}_${tipo}.png`;
+      }
+
+      function carregarImagem(src) {
+          return new Promise((resolve) => {
+              const img = new Image();
+              img.src = src;
+              img.onload = () => resolve(img);
+              img.onerror = () => resolve(null);
+          });
+      }
+
+      async function atualizarSimulador() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          const checkedValues = Array.from(document.querySelectorAll('#container-personalizacao input:checked')).map(input => input.value);
+          const chavesAtivas = checkedValues.map(val => mapaVisualizacao[val]).filter(v => v);
+
+          const temLuz = chavesAtivas.includes('luz');
+          const temColchonete = chavesAtivas.includes('colchonete');
+          const temAlmofadas = chavesAtivas.includes('almofadas');
+          const temMesa = chavesAtivas.includes('mesa');
+          
+          const selectModelo = document.getElementById('modelo_barraca');
+          const modeloNome = selectModelo.options[selectModelo.selectedIndex]?.text || '';
+
+          const camadas = [];
+          camadas.push(getAssetPath(modeloNome, 'base', temLuz ? 'com_luz' : 'sem_luz'));
+          if(temColchonete) camadas.push(getAssetPath(modeloNome, 'colchonete'));
+          if(temAlmofadas) camadas.push(getAssetPath(modeloNome, 'almofadas'));
+          if(temMesa) camadas.push(getAssetPath(modeloNome, 'mesa'));
+
+          const imagens = await Promise.all(camadas.map(src => carregarImagem(src)));
+          imagens.forEach(img => {
+              if(img) ctx.drawImage(img, 0, 0, 1080, 1080);
+          });
+      }
+
+      // --- 3. CARREGAMENTO DA API ---
+      async function carregarDadosAPI() {
+          try {
+              const res = await fetch("/api/itens-disponiveis");
+              const itens = await res.json();
+              
+              const selModelo = document.getElementById("modelo_barraca");
+              const divPersonalizacao = document.getElementById("container-personalizacao");
+              const divAlimentacao = document.getElementById("container-alimentacao");
+              
+              selModelo.innerHTML = ''; 
+              divPersonalizacao.innerHTML = '';
+              divAlimentacao.innerHTML = '';
+
+              // Tendas
+              const tendas = itens.filter(i => i.categoria === 'tendas');
+              if(tendas.length > 0) {
+                  tendas.forEach(t => {
+                      const opt = document.createElement("option");
+                      opt.value = t.descricao;
+                      opt.textContent = t.descricao;
+                      selModelo.appendChild(opt);
+                  });
+              } else {
+                  selModelo.innerHTML = '<option value="Cabana Padrão">Cabana Padrão</option>';
+              }
+
+              // Itens Padrão
+              itens.filter(i => i.categoria === 'padrao').forEach(item => {
+                  const html = `
+                    <label class="item-card flex items-center gap-3 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-pink/30 transition-colors">
+                        <input type="checkbox" value="${item.descricao}" checked onchange="atualizarSimulador()" class="chk-padrao custom-checkbox w-5 h-5 text-brand-pink">
+                        <span class="text-sm font-bold text-slate-600">${item.descricao}</span>
+                    </label>`;
+                  divPersonalizacao.innerHTML += html;
+              });
+
+              // Alimentação
+              itens.filter(i => i.categoria === 'alimentacao').forEach(item => {
+                  const html = `
+                    <label class="item-card flex items-center gap-3 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-pink/30 transition-colors">
+                        <input type="checkbox" value="${item.descricao}" class="chk-alim custom-checkbox w-5 h-5 text-brand-pink">
+                        <span class="text-sm font-bold text-slate-600">${item.descricao}</span>
+                    </label>`;
+                  divAlimentacao.innerHTML += html;
+              });
+
+              atualizarSimulador();
+          } catch(e) {
+              console.error("Erro API", e);
+          }
+      }
+
+      // --- 4. ENVIO E SALVAMENTO (LOCALSTORAGE) ---
+      document.getElementById("orcamentoForm").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          
+          const btn = e.target.querySelector("button[type=submit]");
+          const textoOriginal = btn.innerHTML;
+          btn.innerHTML = "Enviando...";
+          btn.disabled = true;
+
+          const itensPadrao = [];
+          document.querySelectorAll('.chk-padrao:checked').forEach(el => itensPadrao.push(el.value));
+          
+          const alimentacao = [];
+          document.querySelectorAll('.chk-alim:checked').forEach(el => alimentacao.push(el.value));
+
+          const formData = {
+              nome: document.getElementById('nome').value,
+              whatsapp: document.getElementById('whatsapp').value,
+              endereco: document.getElementById('endereco').value,
+              qtd_criancas: document.getElementById('qtd_criancas').value,
+              faixa_etaria: document.getElementById('faixa_etaria').value,
+              modelo_barraca: document.getElementById('modelo_barraca').value,
+              qtd_barracas: document.getElementById('qtd_barracas').value,
+              cores: document.getElementById('cores').value,
+              tema: document.getElementById('tema').value,
+              itens_padrao: itensPadrao,
+              itens_adicionais: document.getElementById('itens_adicionais').value,
+              data_festa: document.getElementById('data_festa').value,
+              horario: document.getElementById('horario').value,
+              alimentacao: alimentacao,
+              alergias: document.getElementById('alergias').value
+          };
+
+          try {
+              const res = await fetch("/api/orcamento", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(formData)
+              });
+
+              if(res.ok) {
+                  // --- AQUI ACONTECE A MÁGICA DO HISTÓRICO LOCAL ---
+                  let hist = JSON.parse(localStorage.getItem("historicoPedidosCabana") || "[]");
+                  hist.unshift({
+                      ...formData,
+                      data_pedido_local: new Date().toISOString()
+                  });
+                  localStorage.setItem("historicoPedidosCabana", JSON.stringify(hist));
+                  
+                  // Atualiza interface
+                  verificarHistorico();
+                  document.getElementById("modal-sucesso").classList.remove("hidden");
+                  e.target.reset();
+                  
+                  // Reset visual do simulador
+                  document.querySelectorAll('.chk-padrao').forEach(c => c.checked = true);
+                  document.querySelectorAll('.chk-alim').forEach(c => c.checked = false);
+                  atualizarSimulador();
+              } else {
+                  alert("Erro ao enviar pedido.");
+              }
+          } catch(err) {
+              alert("Erro de conexão.");
+          } finally {
+              btn.innerHTML = textoOriginal;
+              btn.disabled = false;
+          }
+      });
+
+      // Inicialização
+      window.addEventListener('load', () => {
+          verificarHistorico(); // Verifica se já existe histórico ao carregar
+          carregarDadosAPI();
+      });
     </script>
   </body>
 </html>

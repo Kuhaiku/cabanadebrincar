@@ -734,21 +734,42 @@
         const itens = safeParse(pedidoAtual.itens_padrao);
         const comida = safeParse(pedidoAtual.alimentacao);
 
-        document.getElementById("conteudo-detalhes").innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <div><p class="text-xs font-bold text-slate-400 uppercase">CLIENTE</p><p class="font-bold text-slate-800 text-lg">${pedidoAtual.nome}</p></div>
-                    <div><p class="text-xs font-bold text-slate-400 uppercase">FESTA</p><p class="font-bold text-slate-800">${dataFesta}</p></div>
-                </div>
-                <div class="mt-4 text-sm text-slate-600 space-y-4">
-                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                        <p class="font-bold text-indigo-700">${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</p>
-                        <p class="text-xs font-bold text-indigo-500 uppercase mt-1">Tema: ${pedidoAtual.tema || "-"} (${pedidoAtual.cores})</p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><p class="font-bold text-xs text-slate-400 uppercase">Itens:</p>${itens.length > 0 ? `<ul class="list-disc ml-4 text-xs">${itens.map((i) => `<li>${i}</li>`).join("")}</ul>` : '<p class="italic text-xs">Nenhum</p>'}</div>
-                        <div><p class="font-bold text-xs text-slate-400 uppercase">Comida:</p>${comida.length > 0 ? `<ul class="list-disc ml-4 text-xs">${comida.map((c) => `<li>${c}</li>`).join("")}</ul>` : '<p class="italic text-xs">Nenhuma</p>'}</div>
-                    </div>
-                </div>`;
+// ... dentro da função verDetalhes(id) ...
+
+document.getElementById("conteudo-detalhes").innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <div>
+            <p class="text-xs font-bold text-slate-400 uppercase">CLIENTE</p>
+            <p class="font-bold text-slate-800 text-lg">${pedidoAtual.nome}</p>
+            <p class="text-xs text-slate-500 mt-1">${pedidoAtual.whatsapp}</p>
+        </div>
+        <div>
+            <p class="text-xs font-bold text-slate-400 uppercase">FESTA</p>
+            <p class="font-bold text-slate-800">${dataFesta} às ${pedidoAtual.horario}</p>
+            <p class="text-xs text-slate-500 mt-1">${pedidoAtual.endereco}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-indigo-50/50 p-2 rounded border border-indigo-100">
+             <p class="text-[10px] font-bold text-indigo-400 uppercase">Qtd. Crianças</p>
+             <p class="font-bold text-indigo-900">${pedidoAtual.qtd_criancas || '-'}</p>
+        </div>
+        <div class="bg-indigo-50/50 p-2 rounded border border-indigo-100">
+             <p class="text-[10px] font-bold text-indigo-400 uppercase">Faixa Etária</p>
+             <p class="font-bold text-indigo-900">${pedidoAtual.faixa_etaria || '-'}</p>
+        </div>
+    </div>
+    <div class="mt-4 text-sm text-slate-600 space-y-4">
+        <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+            <p class="font-bold text-indigo-700">${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</p>
+            <p class="text-xs font-bold text-indigo-500 uppercase mt-1">Tema: ${pedidoAtual.tema || "-"} (${pedidoAtual.cores})</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><p class="font-bold text-xs text-slate-400 uppercase">Itens:</p>${itens.length > 0 ? `<ul class="list-disc ml-4 text-xs">${itens.map((i) => `<li>${i}</li>`).join("")}</ul>` : '<p class="italic text-xs">Nenhum</p>'}</div>
+            <div><p class="font-bold text-xs text-slate-400 uppercase">Comida:</p>${comida.length > 0 ? `<ul class="list-disc ml-4 text-xs">${comida.map((c) => `<li>${c}</li>`).join("")}</ul>` : '<p class="italic text-xs">Nenhuma</p>'}</div>
+        </div>
+    </div>`;
 
         calcularOrcamento();
         document.getElementById("modal-detalhes").classList.remove("hidden");

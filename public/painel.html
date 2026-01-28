@@ -174,7 +174,7 @@
           <div
             class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
           >
-            <p class="text-xs font-bold text-slate-400 uppercase">Custos</p>
+            <p class="text-xs font-bold text-slate-400 uppercase">Custos (Manual)</p>
             <p id="card-gastos" class="text-2xl font-bold text-red-500">
               R$ 0,00
             </p>
@@ -182,7 +182,7 @@
           <div
             class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
           >
-            <p class="text-xs font-bold text-slate-400 uppercase">Lucro</p>
+            <p class="text-xs font-bold text-slate-400 uppercase">Lucro Est.</p>
             <p id="card-lucro" class="text-2xl font-bold text-green-600">
               R$ 0,00
             </p>
@@ -199,7 +199,7 @@
           <div
             class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 text-sm"
           >
-            Histórico Financeiro
+            Histórico e Edição Financeira
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-600">
@@ -209,10 +209,8 @@
                 <tr>
                   <th class="p-4">Data</th>
                   <th class="p-4">Cliente</th>
-                  <th class="p-4 w-32">Final</th>
-                  <th class="p-4 w-32">Extras</th>
-                  <th class="p-4 w-32">Custos</th>
-                  <th class="p-4">Lucro</th>
+                  <th class="p-4 w-40">Valor Final</th>
+                  <th class="p-4 w-40">Extras</th>
                   <th class="p-4 text-center">Ações</th>
                 </tr>
               </thead>
@@ -463,7 +461,6 @@
       let isModalOpen = false;
       let chartInstance = null;
 
-      // --- MAPA DE CORREÇÃO (NOMES EXATOS DO BANCO) ---
       const mapaItens = {
         "Mesa de Café": "mesa",
         "Kit Almofadas": "almofadas",
@@ -471,7 +468,6 @@
         "Luzinhas LED": "luz",
       };
 
-      // --- FUNÇÃO BLINDADA PARA LER JSON ---
       function safeParse(jsonString) {
         if (!jsonString) return [];
         if (Array.isArray(jsonString)) return jsonString;
@@ -484,22 +480,22 @@
         }
       }
 
-      // --- LÓGICA DE NOMES DE ARQUIVO (CORRIGIDA) ---
-      // Esta função foi reescrita para garantir que 'tenda' nunca seja usado.
+      // --- CORREÇÃO DE IMAGEM ---
       function getArquivoImagem(tipoBarraca, itemKey, temLuz) {
         const nomeNormalizado = (tipoBarraca || "").toLowerCase();
         
-        // REGRA DE OURO: Se tem "indio" -> retorna "indio".
-        // Qualquer outra coisa (Tenda, Cabana, Pijama, etc) -> retorna "pijama".
+        // Se tem "indio", é indio (item_..._indio.png)
+        // Se não, é pijama (Item_..._pijama.png - com I maiúsculo nos itens)
         const tipo = nomeNormalizado.includes("indio") ? "indio" : "pijama";
 
-        // Lógica do Cenário Base
         if (itemKey === "base") {
+          // Bases sempre são minúsculas: base_pijama.png ou base_indio.png
           return temLuz ? `base_${tipo}_luz.png` : `base_${tipo}.png`;
         }
 
-        // Lógica dos Itens (sempre minúsculo e com prefixo item_)
-        return `item_${itemKey}_${tipo}.png`;
+        // Itens: Pijama usa Capitalizado (Item_), Índio usa minúsculo (item_)
+        const prefix = tipo === 'pijama' ? 'Item' : 'item';
+        return `${prefix}_${itemKey}_${tipo}.png`;
       }
 
       // --- SISTEMA ---
@@ -553,7 +549,6 @@
         }
       }
 
-      // --- ABA PROJETOS: LISTA ---
       function renderizarListaProjetos() {
         const div = document.getElementById("lista-clientes-projeto");
         if (
@@ -571,9 +566,8 @@
         });
       }
 
-      // --- ABA PROJETOS: LÓGICA VISUAL ---
       async function carregarProjetoNoCanvas(id) {
-        const p = pedidosCache.find((x) => x.id == id); // Comparação flexível para IDs
+        const p = pedidosCache.find((x) => x.id == id);
         if (!p) return;
         
         document.getElementById("projeto-cliente-nome").innerText =
@@ -614,15 +608,12 @@
         const temLuz = document.getElementById("chk-manual-luz").checked;
         const listaFinal = [];
 
-        // 1. Base
         listaFinal.push(getArquivoImagem(modeloBarraca, "base", temLuz));
 
-        // 2. Itens
         const checkBoxes = Array.from(
           document.querySelectorAll(".chk-layer-visual:checked"),
         ).map((c) => c.getAttribute("data-key"));
 
-        // ORDEM FIXA DE PINTURA (Z-INDEX)
         if (checkBoxes.includes("colchonete"))
           listaFinal.push(getArquivoImagem(modeloBarraca, "colchonete", false));
         if (checkBoxes.includes("almofadas"))
@@ -630,7 +621,6 @@
         if (checkBoxes.includes("mesa"))
           listaFinal.push(getArquivoImagem(modeloBarraca, "mesa", false));
 
-        // 3. Carrega
         const loadingPromises = listaFinal.map((arquivo) => {
           return new Promise((resolve) => {
             const img = new Image();
@@ -658,7 +648,6 @@
         link.click();
       }
 
-      // --- ORÇAMENTO & DETALHES ---
       function calcularOrcamento() {
         if (!pedidoAtual) return;
         let total = 0;
@@ -834,7 +823,42 @@
         }
       }
 
-      // Funções auxiliares
+      // --- NOVA FUNÇÃO: SALVAR EDIÇÃO RÁPIDA NA TABELA ---
+      async function atualizarFinanceiroLinha(id, campo, valor) {
+          const s = document.getElementById("adminPass").value;
+          const p = pedidosCache.find(x => x.id == id);
+          if(!p) return;
+
+          // Atualiza cache local
+          p[campo] = valor;
+
+          // Prepara dados
+          const payload = {
+              valor_final: p.valor_final,
+              valor_itens_extras: p.valor_itens_extras,
+              descricao_itens_extras: p.descricao_itens_extras || ""
+          };
+
+          try {
+             const res = await fetch(`/api/admin/pedidos/${id}/financeiro`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-admin-password": s,
+                },
+                body: JSON.stringify(payload),
+              });
+              
+              if(res.ok) {
+                  atualizarGrafico(); 
+              } else {
+                  alert("Erro ao salvar alteração.");
+              }
+          } catch(e) {
+              console.error(e);
+          }
+      }
+
       function mudarAba(a) {
         [
           "view-pedidos",
@@ -859,6 +883,7 @@
         if (a === "precos") renderizarPrecosAdmin();
         if (a === "projetos") renderizarListaProjetos();
       }
+
       function renderizarTabelas() {
         const t1 = document.getElementById("tabela-pendentes");
         const t2 = document.getElementById("tabela-concluidos");
@@ -875,7 +900,36 @@
             h = true;
             t1.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors"><td class="p-4 font-medium text-indigo-600">${d}<br><span class="text-xs text-slate-400 font-normal">${p.horario}</span></td><td class="p-4 font-bold text-slate-700">${p.nome}</td><td class="p-4 text-xs">${p.qtd_barracas}x ${p.modelo_barraca}</td><td class="p-4 flex gap-2 justify-center"><button onclick="verDetalhes(${p.id})" class="text-indigo-600 p-2 border rounded"><i data-lucide="eye" class="w-4 h-4"></i></button><button onclick="mudarStatus(${p.id},'concluido')" class="text-green-600 p-2 border rounded"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600 p-2 border rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
           } else {
-            t2.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-xs">${d}</td><td class="p-4 font-bold">${p.nome}</td><td class="p-4">R$ ${p.valor_final}</td><td class="p-4">R$ ${p.valor_itens_extras}</td><td class="p-4 text-green-600 font-bold">R$ ${p.valor_final}</td><td class="p-4 flex gap-2 justify-center"><button onclick="mudarStatus(${p.id},'pendente')" class="text-yellow-600"><i data-lucide="rotate-ccw"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600"><i data-lucide="trash-2"></i></button></td></tr>`;
+            // TABELA COM INPUTS EDITÁVEIS
+            t2.innerHTML += `
+            <tr class="hover:bg-slate-50 border-b">
+                <td class="p-4 text-xs">${d}</td>
+                <td class="p-4 font-bold text-slate-700">${p.nome}</td>
+                <td class="p-4">
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs text-slate-400">R$</span>
+                        <input type="number" step="0.01" value="${p.valor_final}" 
+                               onchange="atualizarFinanceiroLinha(${p.id}, 'valor_final', this.value)"
+                               class="w-24 p-2 border border-slate-200 rounded text-slate-700 font-bold focus:border-indigo-500 focus:outline-none">
+                    </div>
+                </td>
+                <td class="p-4">
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs text-slate-400">R$</span>
+                        <input type="number" step="0.01" value="${p.valor_itens_extras}" 
+                               onchange="atualizarFinanceiroLinha(${p.id}, 'valor_itens_extras', this.value)"
+                               class="w-24 p-2 border border-slate-200 rounded text-slate-600 focus:border-indigo-500 focus:outline-none">
+                    </div>
+                </td>
+                <td class="p-4 flex gap-2 justify-center">
+                    <button onclick="mudarStatus(${p.id},'pendente')" class="text-yellow-600 hover:bg-yellow-50 p-2 rounded transition-colors" title="Reabrir Pedido">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="apagarPedido(${p.id})" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors" title="Excluir">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>`;
           }
         });
         document.getElementById("empty-pendentes").className = h
@@ -883,6 +937,7 @@
           : "p-10 text-center text-slate-400 bg-slate-50";
         lucide.createIcons();
       }
+
       function renderizarPrecosAdmin() {
         const c = document.getElementById("lista-precos-editaveis");
         if (document.activeElement.classList.contains("input-preco-edit"))
@@ -903,13 +958,14 @@
             });
           }
         });
-        // IMPORTANTE: Renderiza ícones de lixeira
         lucide.createIcons();
       }
+
       function fecharModal(id) {
         document.getElementById(id).classList.add("hidden");
         isModalOpen = false;
       }
+
       async function criarNovoItem() {
         const n = document.getElementById("novo-item-nome").value;
         const v = document.getElementById("novo-item-valor").value;
@@ -927,6 +983,7 @@
         document.getElementById("novo-item-nome").value = "";
         fetchDados(s);
       }
+
       async function atualizarPreco(id, v) {
         const s = document.getElementById("adminPass").value;
         await fetch(`/api/admin/precos/${id}`, {
@@ -938,6 +995,7 @@
           body: JSON.stringify({ valor: v }),
         });
       }
+
       async function deletarItem(id) {
         if (confirm("Apagar?")) {
           const s = document.getElementById("adminPass").value;
@@ -948,14 +1006,13 @@
           fetchDados(s);
         }
       }
+
       async function mudarStatus(id, st) {
         const s = document.getElementById("adminPass").value;
-        const p = pedidosCache.find((x) => x.id == id); // Comparação solta para garantir
+        const p = pedidosCache.find((x) => x.id == id);
         
         let pl = { status: st };
         if (st === "concluido" && p) {
-            // Lógica blindada contra erro 500
-            // Se o valor_final for undefined, usa 0.00 para não quebrar o banco
             let vFinal = p.valor_final; 
             if (vFinal === undefined || vFinal === null) vFinal = p.totalCalculado;
             if (vFinal === undefined || vFinal === null) vFinal = 0;
@@ -984,6 +1041,7 @@
             alert("Erro de conexão ao mudar status.");
         }
       }
+
       async function apagarPedido(id) {
         if (confirm("Excluir?")) {
           const s = document.getElementById("adminPass").value;
@@ -994,6 +1052,7 @@
           fetchDados(s);
         }
       }
+
       function atualizarGrafico() {
         const ctx = document.getElementById("financeChart");
         if (!ctx) return;

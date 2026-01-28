@@ -238,7 +238,7 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
     },
   );
 });
-
+//
 // 10. Criar Novo Item de Preço
 app.post("/api/admin/precos", checkAuth, (req, res) => {
   const { descricao, valor, categoria } = req.body;

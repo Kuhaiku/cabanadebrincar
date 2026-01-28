@@ -29,7 +29,7 @@ const db = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true, // Mantém a conexão viva
   keepAliveInitialDelay: 0,
-  testOnBorrow: true, // Testa se a conexão está ativa antes de usar
+
 });
 
 // Sistema de "Ping" para evitar que o banco remoto derrube a conexão por inatividade
@@ -152,13 +152,12 @@ app.put("/api/admin/pedidos/:id/status", checkAuth, (req, res) => {
   if (status === "concluido") {
     sql = `
             UPDATE orcamentos 
-            SET status = ?, valor_final = ?, custos = ?, valor_itens_extras = ?, descricao_itens_extras = ? 
+            SET status = ?, valor_final = ?, valor_itens_extras = ?, descricao_itens_extras = ? 
             WHERE id = ?
         `;
     params = [
       status,
       parseFloat(valor_final) || 0,
-      0, // Inicializa o custo como 0 para evitar erro de NOT NULL
       parseFloat(valor_itens_extras) || 0,
       descricao_itens_extras || "",
       id,
@@ -166,28 +165,37 @@ app.put("/api/admin/pedidos/:id/status", checkAuth, (req, res) => {
   }
 
   db.query(sql, params, (err) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) {
+      console.error("Database error on /api/admin/pedidos/:id/status:", err);
+      return res.status(500).json({ error: err });
+    }
     res.json({ success: true });
   });
 });
 
 // 6. Atualizar Dados Financeiros (Botão Salvar do Painel)
 app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
-  const { valor_final, custos, valor_itens_extras, descricao_itens_extras } =
+  const { valor_final, valor_itens_extras, descricao_itens_extras } =
     req.body;
   const id = req.params.id;
 
   const sql = `
         UPDATE orcamentos 
-        SET valor_final = ?, custos = ?, valor_itens_extras = ?, descricao_itens_extras = ? 
+        SET valor_final = ?, valor_itens_extras = ?, descricao_itens_extras = ? 
         WHERE id = ?
     `;
 
   db.query(
     sql,
-    [valor_final, custos, valor_itens_extras, descricao_itens_extras, id],
+    [valor_final, valor_itens_extras, descricao_itens_extras, id],
     (err) => {
-      if (err) return res.status(500).json({ error: err });
+      if (err) {
+        console.error(
+          "Database error on /api/admin/pedidos/:id/financeiro:",
+          err,
+        );
+        return res.status(500).json({ error: err });
+      }
       res.json({ success: true });
     },
   );

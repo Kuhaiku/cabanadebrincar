@@ -787,7 +787,6 @@
             },
             body: JSON.stringify({
               valor_final: pedidoAtual.totalCalculado,
-              custos: pedidoAtual.custos || 0,
               valor_itens_extras: valorExtra,
               descricao_itens_extras: descExtra,
             }),
@@ -876,7 +875,7 @@
             h = true;
             t1.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors"><td class="p-4 font-medium text-indigo-600">${d}<br><span class="text-xs text-slate-400 font-normal">${p.horario}</span></td><td class="p-4 font-bold text-slate-700">${p.nome}</td><td class="p-4 text-xs">${p.qtd_barracas}x ${p.modelo_barraca}</td><td class="p-4 flex gap-2 justify-center"><button onclick="verDetalhes(${p.id})" class="text-indigo-600 p-2 border rounded"><i data-lucide="eye" class="w-4 h-4"></i></button><button onclick="mudarStatus(${p.id},'concluido')" class="text-green-600 p-2 border rounded"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600 p-2 border rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
           } else {
-            t2.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-xs">${d}</td><td class="p-4 font-bold">${p.nome}</td><td class="p-4">R$ ${p.valor_final}</td><td class="p-4">R$ ${p.valor_itens_extras}</td><td class="p-4">R$ ${p.custos}</td><td class="p-4 text-green-600 font-bold">R$ ${(p.valor_final - p.custos).toFixed(2)}</td><td class="p-4 flex gap-2 justify-center"><button onclick="mudarStatus(${p.id},'pendente')" class="text-yellow-600"><i data-lucide="rotate-ccw"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600"><i data-lucide="trash-2"></i></button></td></tr>`;
+            t2.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-xs">${d}</td><td class="p-4 font-bold">${p.nome}</td><td class="p-4">R$ ${p.valor_final}</td><td class="p-4">R$ ${p.valor_itens_extras}</td><td class="p-4 text-green-600 font-bold">R$ ${p.valor_final}</td><td class="p-4 flex gap-2 justify-center"><button onclick="mudarStatus(${p.id},'pendente')" class="text-yellow-600"><i data-lucide="rotate-ccw"></i></button><button onclick="apagarPedido(${p.id})" class="text-red-600"><i data-lucide="trash-2"></i></button></td></tr>`;
           }
         });
         document.getElementById("empty-pendentes").className = h
@@ -1000,7 +999,7 @@
         if (!ctx) return;
         const c = pedidosCache.filter((p) => p.status === "concluido");
         const fat = c.reduce((s, p) => s + Number(p.valor_final || 0), 0);
-        const cus = c.reduce((s, p) => s + Number(p.custos || 0), 0);
+        const cus = 0;
         document.getElementById("card-faturamento").innerText =
           `R$ ${fat.toFixed(2)}`;
         document.getElementById("card-gastos").innerText =
@@ -1014,14 +1013,9 @@
             labels: c.map((p) => p.nome.split(" ")[0]),
             datasets: [
               {
-                label: "Lucro",
-                data: c.map((p) => Number(p.valor_final) - Number(p.custos)),
+                label: "Faturamento",
+                data: c.map((p) => Number(p.valor_final)),
                 backgroundColor: "#22c55e",
-              },
-              {
-                label: "Custos",
-                data: c.map((p) => Number(p.custos)),
-                backgroundColor: "#ef4444",
               },
             ],
           },

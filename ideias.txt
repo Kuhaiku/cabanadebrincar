@@ -1,3 +1,7 @@
+Vamos montar um plano de ação e vamos modificar as seguintes coisas:
+
+A parte index vai ter
+
 
 
 a pagina chamada Painel, vai ser um index para todas as seguintes paginas:
@@ -7,7 +11,7 @@ não vai mais ter o financeiro, o painel vai virar uma pagina "pedidos" onde vã
 
 Pagina da Agenda, é uma pagina onde vai ser um grande calendário, onde os dias que tem reserva para festa vão estar listados e afins, aqui é onde vamos gerenciar as festas, ao clicar na reserva vamos poder ver TODOS os detalhes dela, e de dentro da agenda a gente vai poder lançar para "serviços concluidos" e nela vai ter o botão para gerar o link para avaliar tambem.
 
-Pagina dos comentários: o cliente vai receber uma página com o link dele, cada um vai receber um link, vai poder escerver até 350 caractéres e vai poder colocar as estrelinhas de 1 a 5, as estrelas ja vem as 5 preenchidas por padrão
+Pagina dos comentários: o cliente vai receber uma página com o link dele, cada um vai receber um link, vai poder escerver até 350 caractéres e vai poder colocar as estrelinhas de 1 a 5, as estrelas ja vem as 5 preenchidas por padrão, e o cliente vai poder adicionar fotos tambem, até 5 fotos
 
 página serviços concluidos, aqui é onde vamos poder abrir e anotar os gastos que tivemos para cada uma das festas, e salvar.
 

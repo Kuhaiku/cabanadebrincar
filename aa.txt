@@ -1,1 +1,0 @@
-Fazer o metodo de pagamento usando o mercado livre etc para fechar esses pedidos, no caso isso ficaria logo depois do cliente ter enviado o formulário o calculo seria automatico basean

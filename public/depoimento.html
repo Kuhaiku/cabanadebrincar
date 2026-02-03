@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avalie sua Experiência - Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: { pink: '#FF6B95', dark: '#2D2A4A' } }, fontFamily: { sans: ['Nunito'], display: ['Fredoka'] } } }
+        }
+    </script>
+</head>
+<body class="bg-pink-50 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center" id="form-container">
+        <div class="mb-6">
+            <div class="w-20 h-20 bg-brand-pink/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="heart" class="w-10 h-10 text-brand-pink fill-brand-pink"></i>
+            </div>
+            <h1 class="font-display text-2xl font-bold text-brand-dark">Como foi a festa?</h1>
+            <p class="text-slate-500 mt-2">Sua opinião ajuda a criar mais magia!</p>
+        </div>
+
+        <form id="reviewForm" class="space-y-6">
+            <div class="flex justify-center gap-2 group" id="star-container">
+                </div>
+            <input type="hidden" id="rating" name="rating" value="0">
+
+            <textarea id="comment" rows="4" 
+                class="w-full p-4 rounded-xl border-2 border-slate-100 focus:border-brand-pink focus:outline-none resize-none text-slate-600"
+                placeholder="Conte o que achou da experiência..."></textarea>
+
+            <button type="submit" 
+                class="w-full bg-brand-pink text-white font-bold py-4 rounded-xl shadow-lg shadow-pink-200 hover:bg-pink-500 transition-all">
+                Enviar Avaliação
+            </button>
+        </form>
+    </div>
+
+    <div id="success-screen" class="hidden bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center">
+        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="check" class="w-10 h-10 text-green-500"></i>
+        </div>
+        <h2 class="font-display text-2xl font-bold text-brand-dark">Obrigado!</h2>
+        <p class="text-slate-500 mt-2 mb-6">Ficamos muito felizes com seu feedback.</p>
+        <a href="index.html" class="text-brand-pink font-bold hover:underline">Voltar ao site</a>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Lógica das Estrelas
+        const starContainer = document.getElementById('star-container');
+        const ratingInput = document.getElementById('rating');
+        let currentRating = 0;
+
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('i');
+            star.setAttribute('data-lucide', 'star');
+            star.classList.add('w-8', 'h-8', 'cursor-pointer', 'transition-colors', 'text-slate-200');
+            star.dataset.value = i;
+            
+            star.addEventListener('mouseover', () => highlightStars(i));
+            star.addEventListener('mouseleave', () => highlightStars(currentRating));
+            star.addEventListener('click', () => {
+                currentRating = i;
+                ratingInput.value = i;
+                highlightStars(i);
+            });
+
+            starContainer.appendChild(star);
+        }
+        lucide.createIcons(); // Recarregar icones novos
+
+        function highlightStars(count) {
+            const stars = starContainer.querySelectorAll('svg'); // Lucide transforma <i> em <svg>
+            stars.forEach((s, index) => {
+                if (index < count) {
+                    s.classList.remove('text-slate-200');
+                    s.classList.add('text-yellow-400', 'fill-yellow-400');
+                } else {
+                    s.classList.add('text-slate-200');
+                    s.classList.remove('text-yellow-400', 'fill-yellow-400');
+                }
+            });
+        }
+
+        // Envio do Formulário
+        document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Pegar token da URL (ex: depoimento.html?token=12345)
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if(!token) {
+                alert('Link inválido ou expirado.');
+                return;
+            }
+
+            const nota = document.getElementById('rating').value;
+            const comentario = document.getElementById('comment').value;
+
+            if(nota == 0) {
+                alert('Por favor, selecione as estrelas.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/avaliar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, nota, comentario })
+                });
+
+                if (response.ok) {
+                    document.getElementById('form-container').classList.add('hidden');
+                    document.getElementById('success-screen').classList.remove('hidden');
+                } else {
+                    alert('Erro ao enviar. Tente novamente.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Erro de conexão.');
+            }
+        });
+    </script>
+</body>
+</html>

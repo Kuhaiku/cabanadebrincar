@@ -201,7 +201,58 @@
             </a>
         </div>
     </section>
+    <section id="depoimentos" class="py-20 bg-white relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-32 h-32 bg-yellow-100 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="font-display text-3xl font-bold text-brand-dark mb-4">O que dizem sobre nós?</h2>
+                <p class="text-slate-400">Famílias felizes e memórias criadas.</p>
+            </div>
 
+            <div id="grid-depoimentos" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <p class="text-center col-span-3 text-slate-300">Carregando magia...</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Adicione isso ao final do script existente ou numa tag nova
+        async function carregarDepoimentos() {
+            try {
+                const res = await fetch('/api/depoimentos/publicos');
+                const data = await res.json();
+                const container = document.getElementById('grid-depoimentos');
+                
+                if(data.length === 0) {
+                    container.innerHTML = '<p class="text-center col-span-3 text-slate-400">Em breve, nossos primeiros depoimentos! ✨</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.forEach(d => {
+                    const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
+                    let fotosHtml = '';
+                    if(d.fotos && d.fotos.length > 0) {
+                        fotosHtml = `<div class="flex gap-2 mt-3 overflow-x-auto pb-2">
+                            ${d.fotos.map(f => `<img src="${f}" class="w-12 h-12 rounded-lg object-cover border border-slate-100">`).join('')}
+                        </div>`;
+                    }
+
+                    container.innerHTML += `
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:shadow-lg transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="font-bold text-brand-dark">${d.nome_cliente}</div>
+                                <div class="text-yellow-400 text-sm tracking-widest">${estrelas}</div>
+                            </div>
+                            <p class="text-slate-500 text-sm italic leading-relaxed">"${d.texto}"</p>
+                            ${fotosHtml}
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error("Erro depoimentos", e); }
+        }
+        carregarDepoimentos();
+    </script>
     <footer class="bg-white pt-16 pb-8 border-t border-slate-100">
         <div class="container mx-auto px-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">

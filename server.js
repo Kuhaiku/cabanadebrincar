@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
-const { v4: uuidv4 } = require("uuid");
+const { randomUUID: uuidv4 } = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;

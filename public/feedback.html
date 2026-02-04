@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avalie sua Experiência | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-pink-50 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white max-w-lg w-full rounded-3xl shadow-2xl p-8 text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-400 to-purple-500"></div>
+        
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">Como foi a festa?</h1>
+        <p class="text-slate-500 text-sm mb-8">Sua opinião ajuda a criar mais magia!</p>
+
+        <form id="form-feedback" class="space-y-6 text-left">
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2 text-center">Sua Nota</label>
+                <div class="flex justify-center gap-2 text-3xl text-slate-200 cursor-pointer" id="star-rating">
+                    <span data-val="1" class="hover:text-yellow-400 transition-colors">★</span>
+                    <span data-val="2" class="hover:text-yellow-400 transition-colors">★</span>
+                    <span data-val="3" class="hover:text-yellow-400 transition-colors">★</span>
+                    <span data-val="4" class="hover:text-yellow-400 transition-colors">★</span>
+                    <span data-val="5" class="hover:text-yellow-400 transition-colors">★</span>
+                </div>
+                <input type="hidden" name="nota" id="input-nota" value="5">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Seu Comentário (máx 350)</label>
+                <textarea name="texto" maxlength="350" rows="4" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-pink-500" placeholder="Conte o que mais gostou..."></textarea>
+                <p class="text-right text-xs text-slate-300 mt-1"><span id="char-count">0</span>/350</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Fotos da Festa (Opcional)</label>
+                <div class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 transition-colors relative">
+                    <input type="file" name="fotos" multiple accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewFotos(this)">
+                    <i data-lucide="image-plus" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                    <p class="text-sm text-slate-400">Toque para adicionar até 5 fotos</p>
+                </div>
+                <div id="preview-area" class="flex gap-2 mt-4 overflow-x-auto"></div>
+            </div>
+
+            <button type="submit" class="w-full bg-pink-500 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-pink-600 transition-all transform hover:scale-[1.02]">
+                Enviar Avaliação
+            </button>
+        </form>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Lógica das Estrelas
+        const stars = document.querySelectorAll('#star-rating span');
+        const inputNota = document.getElementById('input-nota');
+        
+        function setStars(n) {
+            inputNota.value = n;
+            stars.forEach(s => {
+                s.classList.toggle('text-yellow-400', s.dataset.val <= n);
+                s.classList.toggle('text-slate-200', s.dataset.val > n);
+            });
+        }
+        setStars(5); // Padrão
+        stars.forEach(s => s.addEventListener('click', () => setStars(s.dataset.val)));
+
+        // Contador de Caracteres
+        document.querySelector('textarea').addEventListener('input', function() {
+            document.getElementById('char-count').innerText = this.value.length;
+        });
+
+        // Preview Fotos
+        function previewFotos(input) {
+            const area = document.getElementById('preview-area');
+            area.innerHTML = '';
+            if(input.files.length > 5) {
+                alert("Máximo de 5 fotos!");
+                input.value = '';
+                return;
+            }
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    area.innerHTML += `<img src="${e.target.result}" class="w-16 h-16 rounded-lg object-cover shadow-sm">`;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Envio
+        document.getElementById('form-feedback').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('t');
+            
+            if(!token) return alert("Link inválido.");
+
+            const formData = new FormData(e.target);
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Enviando...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/feedback/${token}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if(res.ok) {
+                    document.body.innerHTML = `
+                        <div class="text-center p-10 bg-white rounded-3xl shadow-xl animate-bounce">
+                            <div class="text-5xl mb-4">💖</div>
+                            <h1 class="text-2xl font-bold text-slate-800">Obrigado!</h1>
+                            <p class="text-slate-500">Ficamos felizes com seu carinho.</p>
+                        </div>
+                    `;
+                } else {
+                    alert("Erro ao enviar. Tente novamente.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch(err) {
+                console.error(err);
+                alert("Erro de conexão.");
+            }
+        });
+    </script>
+</body>
+</html>

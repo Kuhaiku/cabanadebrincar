@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+        body { font-family: 'Quicksand', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 p-6">
+
+    <div class="max-w-6xl mx-auto mb-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <a href="painel.html" class="text-slate-400 hover:text-pink-500"><i data-lucide="arrow-left"></i></a>
+            Gestão de Pedidos
+        </h1>
+        <button onclick="carregarPedidos()" class="bg-white p-2 rounded-lg text-slate-500 hover:text-pink-500 shadow-sm">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-400 uppercase font-bold text-xs">
+                <tr>
+                    <th class="p-4">Data Festa</th>
+                    <th class="p-4">Cliente</th>
+                    <th class="p-4">Resumo</th>
+                    <th class="p-4 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="lista-pedidos" class="divide-y divide-slate-100">
+                </tbody>
+        </table>
+        <div id="loading" class="p-8 text-center text-slate-400">Carregando pedidos...</div>
+    </div>
+
+    <div id="modal-detalhes" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 relative shadow-2xl">
+            <button onclick="fecharModal()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 bg-slate-100 p-2 rounded-full">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <h3 class="text-xl font-bold text-pink-600 mb-6 flex items-center gap-2">
+                <i data-lucide="file-text"></i> Detalhes & Orçamento
+            </h3>
+
+            <div id="conteudo-detalhes" class="text-sm space-y-4 mb-6"></div>
+
+            <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                <h4 class="font-bold text-slate-700 mb-3 uppercase text-xs">Calculadora</h4>
+                
+                <div id="container-taxas" class="mb-4 space-y-2"></div>
+                
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="desc-extra" placeholder="Item Extra (ex: Frete Especial)" class="flex-1 p-2 border rounded text-sm">
+                    <div class="flex items-center w-32">
+                        <span class="p-2 bg-slate-200 rounded-l border border-slate-200 text-slate-600 text-sm">R$</span>
+                        <input type="number" id="valor-extra" value="0" step="0.01" onchange="calcularTotal()" class="w-full p-2 border rounded-r text-sm font-bold">
+                    </div>
+                </div>
+
+                <div id="resumo-valores" class="space-y-1 text-xs text-slate-500 border-t border-slate-200 pt-3 mb-3 font-mono"></div>
+                
+                <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-200 mb-4">
+                    <span class="font-bold text-slate-700">TOTAL FINAL:</span>
+                    <span id="valor-total-display" class="font-bold text-2xl text-green-600">R$ 0,00</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button onclick="copiarOrcamento()" class="bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 flex justify-center gap-2">
+                        <i data-lucide="copy"></i> Copiar P/ WhatsApp
+                    </button>
+                    
+                    <button onclick="enviarParaAgenda()" class="bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 flex justify-center gap-2">
+                        <i data-lucide="calendar-check"></i> Aprovar & Agendar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração
+        const API_URL = '/api';
+        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
+        if(!ADMIN_TOKEN) window.location.href = 'painel.html';
+
+        let pedidos = [];
+        let precos = [];
+        let pedidoAtual = null;
+
+        // Inicialização
+        async function init() {
+            await Promise.all([carregarPrecos(), carregarPedidos()]);
+            lucide.createIcons();
+        }
+
+        async function carregarPrecos() {
+            const res = await fetch(`${API_URL}/admin/precos`, { headers: { 'x-admin-password': ADMIN_TOKEN } });
+            precos = await res.json();
+        }
+
+        async function carregarPedidos() {
+            const res = await fetch(`${API_URL}/admin/pedidos`, { headers: { 'x-admin-password': ADMIN_TOKEN } });
+            pedidos = await res.json();
+            renderizarLista();
+        }
+
+        function renderizarLista() {
+            const tbody = document.getElementById('lista-pedidos');
+            const loading = document.getElementById('loading');
+            tbody.innerHTML = '';
+            
+            // Filtra apenas pedidos pendentes (que não foram para agenda ainda)
+            const pendentes = pedidos.filter(p => p.status_agenda === 'pendente' || !p.status_agenda);
+
+            if(pendentes.length === 0) {
+                loading.innerText = "Nenhum pedido pendente!";
+                loading.classList.remove('hidden');
+                return;
+            }
+            loading.classList.add('hidden');
+
+            pendentes.forEach(p => {
+                const dataFesta = new Date(p.data_festa).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors border-b">
+                        <td class="p-4">
+                            <div class="font-bold text-slate-700">${dataFesta}</div>
+                            <div class="text-xs text-slate-400">${p.horario}</div>
+                        </td>
+                        <td class="p-4 font-bold text-indigo-600">${p.nome}</td>
+                        <td class="p-4 text-xs text-slate-500">${p.qtd_barracas}x ${p.modelo_barraca}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="abrirModal(${p.id})" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-100 font-bold text-sm">
+                                Ver / Orçar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function safeParse(json) {
+            try { return JSON.parse(json) || []; } catch { return []; }
+        }
+
+        function abrirModal(id) {
+            pedidoAtual = pedidos.find(p => p.id === id);
+            if(!pedidoAtual) return;
+
+            // Renderiza Dados do Cliente
+            const itens = safeParse(pedidoAtual.itens_padrao);
+            const alim = safeParse(pedidoAtual.alimentacao);
+            
+            document.getElementById('conteudo-detalhes').innerHTML = `
+                <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg mb-4">
+                    <div>
+                        <p class="text-xs text-slate-400 font-bold uppercase">Cliente</p>
+                        <p class="font-bold">${pedidoAtual.nome}</p>
+                        <p class="text-xs text-green-600 font-mono mt-1">${pedidoAtual.whatsapp}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-bold uppercase">Local</p>
+                        <p class="text-sm">${pedidoAtual.endereco}</p>
+                    </div>
+                </div>
+                <div class="text-xs bg-yellow-50 p-3 rounded border border-yellow-100 text-yellow-800">
+                    <strong>Itens:</strong> ${itens.join(', ') || 'Nenhum'}<br>
+                    <strong>Comida:</strong> ${alim.join(', ') || 'Nenhuma'}<br>
+                    <strong>Obs:</strong> ${pedidoAtual.itens_adicionais || '-'}
+                </div>
+            `;
+
+            // Renderiza Taxas do Sistema (Preços)
+            const divTaxas = document.getElementById('container-taxas');
+            divTaxas.innerHTML = '';
+            precos.filter(p => p.categoria === 'sistema').forEach(t => {
+                divTaxas.innerHTML += `
+                    <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-2 rounded">
+                        <input type="checkbox" class="chk-taxa w-4 h-4 text-pink-600 rounded" 
+                               value="${t.valor}" data-nome="${t.descricao}" onchange="calcularTotal()">
+                        <span class="text-xs text-slate-600 font-bold">${t.descricao} (+R$ ${t.valor})</span>
+                    </label>
+                `;
+            });
+
+            // Reseta valores extras
+            document.getElementById('valor-extra').value = pedidoAtual.valor_itens_extras || 0;
+            document.getElementById('desc-extra').value = pedidoAtual.descricao_itens_extras || '';
+
+            calcularTotal();
+            document.getElementById('modal-detalhes').classList.remove('hidden');
+        }
+
+        function calcularTotal() {
+            if(!pedidoAtual) return;
+            let total = 0;
+            let htmlResumo = '';
+
+            // Barracas
+            const precoBarraca = parseFloat(precos.find(p => p.descricao === pedidoAtual.modelo_barraca)?.valor || 0);
+            const subBarraca = precoBarraca * pedidoAtual.qtd_barracas;
+            total += subBarraca;
+            htmlResumo += `<div>${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}: R$ ${subBarraca.toFixed(2)}</div>`;
+
+            // Itens e Comida
+            [...safeParse(pedidoAtual.itens_padrao), ...safeParse(pedidoAtual.alimentacao)].forEach(nome => {
+                const item = precos.find(p => p.descricao === nome);
+                if(item) {
+                    const val = parseFloat(item.valor);
+                    // Se for comida, multiplica por crianças (lógica antiga) ou fixo?
+                    // Assumindo lógica do arquivo antigo: Comida * Qtd Crianças
+                    const isComida = precos.find(p => p.descricao === nome && p.categoria === 'alimentacao');
+                    const sub = isComida ? (val * pedidoAtual.qtd_criancas) : val;
+                    total += sub;
+                    htmlResumo += `<div>${isComida ? pedidoAtual.qtd_criancas+'x ' : ''}${nome}: R$ ${sub.toFixed(2)}</div>`;
+                }
+            });
+
+            // Taxas
+            document.querySelectorAll('.chk-taxa:checked').forEach(chk => {
+                total += parseFloat(chk.value);
+                htmlResumo += `<div>Taxa ${chk.dataset.nome}: R$ ${parseFloat(chk.value).toFixed(2)}</div>`;
+            });
+
+            // Extras
+            const extra = parseFloat(document.getElementById('valor-extra').value) || 0;
+            total += extra;
+            if(extra > 0) htmlResumo += `<div>Extra Manual: R$ ${extra.toFixed(2)}</div>`;
+
+            document.getElementById('resumo-valores').innerHTML = htmlResumo;
+            document.getElementById('valor-total-display').innerText = `R$ ${total.toFixed(2)}`;
+            pedidoAtual.totalCalculado = total.toFixed(2);
+        }
+
+        async function copiarOrcamento() {
+            // Mesma lógica de copiar texto do arquivo anterior
+            const texto = `Olá ${pedidoAtual.nome}! O valor total da sua festa ficou R$ ${pedidoAtual.totalCalculado}.`;
+            await navigator.clipboard.writeText(texto);
+            alert("Resumo copiado!");
+        }
+
+        async function enviarParaAgenda() {
+            if(!confirm(`Confirmar agendamento para ${pedidoAtual.nome}?`)) return;
+
+            // 1. Salvar Financeiro Primeiro
+            const extraVal = document.getElementById('valor-extra').value;
+            const extraDesc = document.getElementById('desc-extra').value;
+            
+            await fetch(`${API_URL}/admin/pedidos/${pedidoAtual.id}/financeiro`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-admin-password': ADMIN_TOKEN 
+                },
+                body: JSON.stringify({
+                    valor_final: pedidoAtual.totalCalculado,
+                    valor_itens_extras: extraVal,
+                    descricao_itens_extras: extraDesc
+                })
+            });
+
+            // 2. Mover para Agenda
+            const res = await fetch(`${API_URL}/admin/agenda/aprovar/${pedidoAtual.id}`, {
+                method: 'PUT',
+                headers: { 'x-admin-password': ADMIN_TOKEN }
+            });
+
+            if(res.ok) {
+                alert("✅ Pedido enviado para Agenda com sucesso!");
+                fecharModal();
+                init(); // Recarrega lista
+            } else {
+                alert("Erro ao agendar.");
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-detalhes').classList.add('hidden');
+        }
+
+        init();
+    </script>
+</body>
+</html>

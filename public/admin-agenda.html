@@ -12,6 +12,8 @@
         body { font-family: 'Quicksand', sans-serif; }
         .fc-event { cursor: pointer; border: none !important; }
         .fc-daygrid-day.fc-day-today { background-color: #fdf2f8 !important; }
+        .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 700; color: #334155; }
+        .fc-button-primary { background-color: #ec4899 !important; border-color: #ec4899 !important; }
     </style>
 </head>
 <body class="bg-slate-50 p-6">
@@ -44,7 +46,7 @@
             <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm space-y-3 mb-6">
                 <p><strong>📍 Endereço:</strong> <span id="agenda-endereco" class="text-slate-600"></span></p>
                 <p><strong>⛺ Barracas:</strong> <span id="agenda-barracas" class="text-slate-600"></span></p>
-                <p><strong>💰 Valor Final:</strong> <span id="agenda-valor" class="text-green-600 font-bold"></span></p>
+                <p><strong>💰 Valor Previsto:</strong> <span id="agenda-valor" class="text-green-600 font-bold"></span></p>
             </div>
 
             <div class="space-y-3">
@@ -58,7 +60,7 @@
                 </div>
 
                 <button onclick="concluirServico()" class="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200 flex items-center justify-center gap-2 transition-transform active:scale-95">
-                    <i data-lucide="check-circle-2"></i> Concluir Serviço (Lançar Custos)
+                    <i data-lucide="check-circle-2"></i> Concluir & Lançar Receita
                 </button>
             </div>
         </div>
@@ -87,11 +89,8 @@
                     .then(res => res.json())
                     .then(data => {
                         const events = data.map(d => {
-                            // Correção da data para garantir formato ISO
                             let dataFesta = d.data_festa;
-                            if(dataFesta && dataFesta.includes('T')) {
-                                dataFesta = dataFesta.split('T')[0];
-                            }
+                            if(dataFesta && dataFesta.includes('T')) dataFesta = dataFesta.split('T')[0];
                             const hora = d.horario ? d.horario : '12:00:00';
                             
                             return {
@@ -120,11 +119,15 @@
         function abrirModalAgenda(dados) {
             eventoSelecionado = dados;
             document.getElementById('agenda-cliente').innerText = dados.nome;
-            const dataFesta = new Date(dados.data_festa).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-            document.getElementById('agenda-data').innerText = `${dataFesta} às ${dados.horario}`;
+            
+            let d = dados.data_festa;
+            if(d.includes('T')) d = d.split('T')[0];
+            const dataFormatada = new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+
+            document.getElementById('agenda-data').innerText = `${dataFormatada} às ${dados.horario}`;
             document.getElementById('agenda-endereco').innerText = dados.endereco;
             document.getElementById('agenda-barracas').innerText = `${dados.qtd_barracas}x ${dados.modelo_barraca}`;
-            document.getElementById('agenda-valor').innerText = `R$ ${dados.valor_final || dados.totalCalculado || '0,00'}`;
+            document.getElementById('agenda-valor').innerText = `R$ ${dados.valor_final || '0.00'}`;
             
             document.getElementById('box-link').classList.add('hidden');
             document.getElementById('btn-gerar-link').classList.remove('hidden');
@@ -155,15 +158,33 @@
         }
 
         async function concluirServico() {
-            if(!confirm("Deseja marcar esta festa como CONCLUÍDA? Ela sairá da agenda.")) return;
+            // AQUI ESTÁ A LÓGICA DE CONFIRMAÇÃO DO VALOR
+            const valorAtual = eventoSelecionado.valor_final || "0.00";
+            const valorReal = prompt("Confirmar valor FINAL recebido nesta festa (R$):", valorAtual);
 
-            await fetch(`/api/admin/agenda/concluir/${eventoSelecionado.id}`, {
-                method: 'PUT',
-                headers: { 'x-admin-password': ADMIN_TOKEN }
-            });
-            
-            alert("Festa concluída!");
-            location.reload();
+            if(valorReal === null) return; // Se cancelar, não faz nada
+
+            if(!confirm("A festa será marcada como CONCLUÍDA e o valor de R$ " + valorReal + " entrará no financeiro.")) return;
+
+            try {
+                const res = await fetch(`/api/admin/agenda/concluir/${eventoSelecionado.id}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': ADMIN_TOKEN 
+                    },
+                    body: JSON.stringify({ valor_final: valorReal })
+                });
+
+                if(res.ok) {
+                    alert("✅ Festa concluída! Receita lançada no financeiro.");
+                    location.reload();
+                } else {
+                    alert("Erro ao salvar.");
+                }
+            } catch(e) {
+                alert("Erro de conexão.");
+            }
         }
 
         function fecharModal() {

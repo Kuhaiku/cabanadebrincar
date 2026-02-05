@@ -6,7 +6,6 @@
     <title>Financeiro | Cabana de Brincar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap'); body{font-family:'Quicksand',sans-serif}</style>
 </head>
 <body class="bg-slate-50 p-6">
@@ -25,7 +24,7 @@
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p class="text-xs font-bold text-slate-400 uppercase">Faturamento Total</p>
             <p id="total-faturamento" class="text-3xl font-bold text-green-600">R$ 0,00</p>
-            <p class="text-[10px] text-slate-400 mt-1">Festas + Receitas Extras</p>
+            <p class="text-[10px] text-slate-400 mt-1">Festas Realizadas + Entradas</p>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p class="text-xs font-bold text-slate-400 uppercase">Despesas Totais</p>
@@ -39,26 +38,36 @@
     </div>
 
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Lançamentos Gerais (Extras)</div>
-            <div class="max-h-96 overflow-y-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-50 text-xs text-slate-400 uppercase">
-                        <tr>
-                            <th class="p-3">Descrição</th>
-                            <th class="p-3 text-right">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-gerais" class="divide-y divide-slate-100"></tbody>
-                </table>
+        
+        <div class="space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-green-50 font-bold text-green-700 flex items-center gap-2">
+                    <i data-lucide="party-popper" class="w-4 h-4"></i> Receita de Festas Concluídas
+                </div>
+                <div class="max-h-64 overflow-y-auto">
+                    <table class="w-full text-sm text-left">
+                        <tbody id="lista-receita-festas" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Outras Entradas / Saídas</div>
+                <div class="max-h-64 overflow-y-auto">
+                    <table class="w-full text-sm text-left">
+                        <tbody id="lista-gerais" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Custos Vinculados a Festas</div>
-            <div class="max-h-96 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-fit">
+            <div class="p-4 border-b border-slate-100 bg-red-50 font-bold text-red-700 flex items-center gap-2">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i> Custos por Festa
+            </div>
+            <div class="max-h-[600px] overflow-y-auto">
                 <table class="w-full text-sm text-left">
-                    <tbody id="lista-festas" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="lista-custos-festas" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
@@ -99,19 +108,11 @@
                 const data = await res.json();
                 
                 // --- CÁLCULOS ---
-                // 1. Faturamento de Festas Concluídas
                 let fatFestas = data.faturamento.reduce((acc, i) => acc + Number(i.valor_final || 0), 0);
-                
-                // 2. Receitas Extras (Lançamentos 'entrada')
                 let receitasExtras = data.gerais.filter(i => i.tipo === 'entrada').reduce((acc, i) => acc + Number(i.valor), 0);
-                
-                // 3. Despesas Gerais (Lançamentos 'saida')
                 let despesasGerais = data.gerais.filter(i => i.tipo === 'saida').reduce((acc, i) => acc + Number(i.valor), 0);
-                
-                // 4. Despesas de Festas (Custos diretos)
                 let despesasFestas = data.festas.reduce((acc, i) => acc + Number(i.valor), 0);
 
-                // Totais
                 let totalFaturamento = fatFestas + receitasExtras;
                 let totalDespesas = despesasGerais + despesasFestas;
 
@@ -120,7 +121,24 @@
                 document.getElementById('total-lucro').innerText = `R$ ${(totalFaturamento - totalDespesas).toFixed(2)}`;
 
                 // --- TABELAS ---
-                // Tabela Gerais (Mistura entradas e saídas com cores diferentes)
+
+                // 1. Receitas de Festas (Listar festas concluídas)
+                const listaReceita = document.getElementById('lista-receita-festas');
+                if(data.faturamento.length === 0) {
+                    listaReceita.innerHTML = '<tr><td class="p-4 text-slate-400 text-xs italic">Nenhuma festa concluída ainda.</td></tr>';
+                } else {
+                    listaReceita.innerHTML = data.faturamento.map(f => `
+                        <tr class="hover:bg-green-50 transition-colors">
+                            <td class="p-3">
+                                <div class="font-bold text-slate-700">${f.nome}</div>
+                                <div class="text-[10px] text-slate-400">${new Date(f.data_festa).toLocaleDateString('pt-BR')}</div>
+                            </td>
+                            <td class="p-3 text-right font-bold text-green-600">+ R$ ${Number(f.valor_final).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // 2. Gerais (Extras e Despesas)
                 const listaGerais = document.getElementById('lista-gerais');
                 listaGerais.innerHTML = data.gerais.map(i => {
                     const isEntrada = i.tipo === 'entrada';
@@ -137,8 +155,9 @@
                     `;
                 }).join('');
 
-                const listaFestas = document.getElementById('lista-festas');
-                listaFestas.innerHTML = data.festas.map(i => `
+                // 3. Custos das Festas
+                const listaCustos = document.getElementById('lista-custos-festas');
+                listaCustos.innerHTML = data.festas.map(i => `
                     <tr class="hover:bg-slate-50 border-b border-slate-50">
                         <td class="p-3">
                             <div class="text-slate-600 font-bold">${i.nome_cliente}</div>
@@ -151,7 +170,6 @@
                 lucide.createIcons();
             } catch (e) {
                 console.error("Erro financeiro:", e);
-                alert("Erro ao carregar dados financeiros.");
             }
         }
 
@@ -171,10 +189,8 @@
             });
             
             document.getElementById('modal-gasto').classList.add('hidden');
-            // Limpa campos
             document.getElementById('input-titulo').value = '';
             document.getElementById('input-valor').value = '';
-            
             carregarFinanceiro();
         }
 

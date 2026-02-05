@@ -156,16 +156,23 @@ app.put("/api/admin/agenda/aprovar/:id", checkAuth, (req, res) => {
   );
 });
 
-// Concluir Serviço (Lançar para Serviços Concluídos)
+// Rota de Conclusão CORRIGIDA (Salva o valor no financeiro)
 app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
-  db.query(
-    "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?",
-    [req.params.id],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ success: true });
-    },
-  );
+    const { valor_final } = req.body;
+    
+    // Se enviou um valor, atualiza ele junto com o status
+    let sql = "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?";
+    let params = [req.params.id];
+
+    if (valor_final !== undefined && valor_final !== null) {
+        sql = "UPDATE orcamentos SET status_agenda = 'concluido', valor_final = ? WHERE id = ?";
+        params = [valor_final, req.params.id];
+    }
+
+    db.query(sql, params, (err) => {
+        if (err) return res.status(500).json(err);
+        res.json({ success: true });
+    });
 });
 
 // Salvar Custos da Festa

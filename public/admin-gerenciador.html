@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Preços | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+        body { font-family: 'Quicksand', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 p-6 min-h-screen">
+
+    <div class="max-w-4xl mx-auto mb-8 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors"><i data-lucide="arrow-left"></i></a>
+            Gerenciador de Itens e Preços
+        </h1>
+        <div class="text-sm text-slate-500">
+            Administração
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <div class="md:col-span-1">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
+                <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <div class="bg-green-100 p-2 rounded-lg text-green-600"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                    Novo Item
+                </h2>
+                
+                <form id="form-novo-item" onsubmit="adicionarItem(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Descrição do Item</label>
+                        <input type="text" id="nova-descricao" required placeholder="Ex: Cabana Índio" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Categoria</label>
+                        <div class="relative">
+                            <select id="nova-categoria" required class="w-full p-3 border border-slate-200 rounded-xl text-sm appearance-none bg-white focus:outline-none focus:border-pink-500 transition-colors cursor-pointer">
+                                <option value="" disabled selected>Selecione...</option>
+                                <option value="tendas">🏕️ Modelo de Barraca</option>
+                                <option value="padrao">📦 Item do Pacote (Padrão)</option>
+                                <option value="alimentacao">🍽️ Alimentação</option>
+                                <option value="sistema">⚙️ Taxa / Sistema</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Valor (R$)</label>
+                        <input type="number" id="novo-valor" required step="0.01" placeholder="0.00" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors">
+                    </div>
+
+                    <button type="submit" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 flex justify-center items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Salvar Item
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="md:col-span-2 space-y-6" id="container-listas">
+            <div class="text-center py-10 text-slate-400">
+                <i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2"></i>
+                Carregando tabela de preços...
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
+        
+        // Verifica Autenticação
+        if(!ADMIN_TOKEN) window.location.href = 'painel.html';
+
+        // Categorias e seus "Nomes Bonitos" e ícones
+        const CATEGORIAS = {
+            'tendas': { titulo: 'Modelos de Barracas', icon: 'tent', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            'padrao': { titulo: 'Itens Inclusos no Pacote', icon: 'package', color: 'text-blue-600', bg: 'bg-blue-50' },
+            'alimentacao': { titulo: 'Opções de Alimentação', icon: 'utensils', color: 'text-pink-600', bg: 'bg-pink-50' },
+            'sistema': { titulo: 'Taxas e Extras do Sistema', icon: 'settings', color: 'text-slate-600', bg: 'bg-slate-100' }
+        };
+
+        async function init() {
+            lucide.createIcons();
+            carregarItens();
+        }
+
+        async function carregarItens() {
+            try {
+                const res = await fetch(`${API_URL}/admin/precos`, {
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                const itens = await res.json();
+                renderizarListas(itens);
+            } catch (error) {
+                console.error("Erro ao carregar itens:", error);
+                alert("Erro ao carregar dados. Verifique sua conexão ou login.");
+            }
+        }
+
+        function renderizarListas(itens) {
+            const container = document.getElementById('container-listas');
+            container.innerHTML = '';
+
+            // Agrupar itens por categoria
+            const grupos = { tendas: [], padrao: [], alimentacao: [], sistema: [] };
+            
+            itens.forEach(item => {
+                if (grupos[item.categoria]) {
+                    grupos[item.categoria].push(item);
+                } else {
+                    // Caso tenha alguma categoria antiga ou diferente no banco
+                    if(!grupos['outros']) grupos['outros'] = [];
+                    grupos['outros'].push(item);
+                }
+            });
+
+            // Gerar HTML para cada grupo
+            for (const [key, lista] of Object.entries(grupos)) {
+                if (lista.length === 0) continue;
+
+                const config = CATEGORIAS[key] || { titulo: 'Outros', icon: 'list', color: 'text-gray-600', bg: 'bg-gray-50' };
+
+                let htmlItens = lista.map(item => `
+                    <div class="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg group transition-colors border-b border-slate-50 last:border-0">
+                        <div class="flex-1">
+                            <span class="font-medium text-slate-700 text-sm block">${item.descricao}</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">R$</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       value="${item.valor}" 
+                                       class="w-24 pl-6 pr-2 py-1 border border-slate-200 rounded text-sm text-right font-bold text-slate-600 focus:border-green-500 focus:text-green-600 focus:outline-none transition-colors"
+                                       onchange="atualizarPreco(${item.id}, this.value)"
+                                >
+                            </div>
+                            
+                            <button onclick="deletarItem(${item.id})" class="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all" title="Excluir">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                const section = `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex items-center gap-3 ${config.bg}">
+                            <i data-lucide="${config.icon}" class="w-5 h-5 ${config.color}"></i>
+                            <h3 class="font-bold text-slate-700">${config.titulo}</h3>
+                        </div>
+                        <div class="p-2">
+                            ${htmlItens}
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML += section;
+            }
+            lucide.createIcons();
+        }
+
+        async function adicionarItem(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Salvando...';
+            lucide.createIcons();
+
+            const descricao = document.getElementById('nova-descricao').value;
+            const categoria = document.getElementById('nova-categoria').value;
+            const valor = document.getElementById('novo-valor').value;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/precos`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': ADMIN_TOKEN
+                    },
+                    body: JSON.stringify({ descricao, categoria, valor })
+                });
+
+                if (res.ok) {
+                    // Limpar form
+                    document.getElementById('form-novo-item').reset();
+                    // Recarregar lista
+                    await carregarItens();
+                } else {
+                    alert("Erro ao salvar item.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Erro de conexão.");
+            } finally {
+                btn.innerHTML = originalText;
+                lucide.createIcons();
+            }
+        }
+
+        async function atualizarPreco(id, novoValor) {
+            try {
+                const res = await fetch(`${API_URL}/admin/precos/${id}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': ADMIN_TOKEN 
+                    },
+                    body: JSON.stringify({ valor: novoValor })
+                });
+
+                if (!res.ok) {
+                    alert("Erro ao atualizar preço. Recarregue a página.");
+                } else {
+                    // Feedback visual sutil (opcional, já que o input mantém o valor)
+                    // console.log("Preço atualizado com sucesso");
+                }
+            } catch (error) {
+                alert("Erro de conexão ao tentar atualizar.");
+            }
+        }
+
+        async function deletarItem(id) {
+            if(!confirm("Tem certeza que deseja excluir este item permanentemente?")) return;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/precos/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+
+                if (res.ok) {
+                    carregarItens();
+                } else {
+                    alert("Erro ao excluir item.");
+                }
+            } catch (error) {
+                alert("Erro de conexão.");
+            }
+        }
+
+        // Inicializa a página
+        init();
+    </script>
+</body>
+</html>

@@ -46,6 +46,14 @@
         opacity: 0.5;
         animation: float 6s ease-in-out infinite;
       }
+      /* Ocultar barra de rolagem mas permitir scroll */
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
       @keyframes float {
         0% { transform: translateY(0px); }
         50% { transform: translateY(-20px); }
@@ -54,6 +62,27 @@
     </style>
   </head>
   <body class="font-sans text-slate-600 bg-white antialiased">
+
+    <div id="modal-depoimento" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-brand-dark/80 backdrop-blur-sm transition-opacity" onclick="fecharModal()"></div>
+
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="absolute top-4 right-4">
+                            <button type="button" onclick="fecharModal()" class="rounded-full bg-slate-100 p-2 text-slate-400 hover:text-brand-pink hover:bg-pink-50 transition-colors">
+                                <i data-lucide="x" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="modal-content" class="mt-2">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <header class="fixed w-full bg-white/90 backdrop-blur-md border-b border-slate-100 z-50">
       <div class="container mx-auto px-6 py-4 flex items-center justify-between">
@@ -201,58 +230,32 @@
             </a>
         </div>
     </section>
+
     <section id="depoimentos" class="py-20 bg-white relative overflow-hidden">
         <div class="absolute top-0 left-0 w-32 h-32 bg-yellow-100 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-12">
                 <h2 class="font-display text-3xl font-bold text-brand-dark mb-4">O que dizem sobre nós?</h2>
-                <p class="text-slate-400">Famílias felizes e memórias criadas.</p>
+                <p class="text-slate-400">Clique nos cartões para ver os detalhes.</p>
             </div>
 
-            <div id="grid-depoimentos" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <p class="text-center col-span-3 text-slate-300">Carregando magia...</p>
+            <div class="relative group max-w-7xl mx-auto">
+                <button onclick="scrollCarousel(-1)" class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
+                    <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                </button>
+
+                <div id="carousel-depoimentos" class="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide py-4 px-4 -mx-4 md:mx-0">
+                    <p class="text-center w-full text-slate-300">Carregando magia...</p>
+                </div>
+
+                <button onclick="scrollCarousel(1)" class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
+                    <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                </button>
             </div>
         </div>
     </section>
 
-    <script>
-        // Adicione isso ao final do script existente ou numa tag nova
-        async function carregarDepoimentos() {
-            try {
-                const res = await fetch('/api/depoimentos/publicos');
-                const data = await res.json();
-                const container = document.getElementById('grid-depoimentos');
-                
-                if(data.length === 0) {
-                    container.innerHTML = '<p class="text-center col-span-3 text-slate-400">Em breve, nossos primeiros depoimentos! ✨</p>';
-                    return;
-                }
-
-                container.innerHTML = '';
-                data.forEach(d => {
-                    const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
-                    let fotosHtml = '';
-                    if(d.fotos && d.fotos.length > 0) {
-                        fotosHtml = `<div class="flex gap-2 mt-3 overflow-x-auto pb-2">
-                            ${d.fotos.map(f => `<img src="${f}" class="w-12 h-12 rounded-lg object-cover border border-slate-100">`).join('')}
-                        </div>`;
-                    }
-
-                    container.innerHTML += `
-                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:shadow-lg transition-all">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="font-bold text-brand-dark">${d.nome_cliente}</div>
-                                <div class="text-yellow-400 text-sm tracking-widest">${estrelas}</div>
-                            </div>
-                            <p class="text-slate-500 text-sm italic leading-relaxed">"${d.texto}"</p>
-                            ${fotosHtml}
-                        </div>
-                    `;
-                });
-            } catch(e) { console.error("Erro depoimentos", e); }
-        }
-        carregarDepoimentos();
-    </script>
     <footer class="bg-white pt-16 pb-8 border-t border-slate-100">
         <div class="container mx-auto px-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -292,7 +295,150 @@
     </footer>
 
     <script>
-      lucide.createIcons();
+        // Dados globais para acesso no modal
+        let depoimentosData = [];
+
+        async function carregarDepoimentos() {
+            try {
+                const res = await fetch('/api/depoimentos/publicos');
+                const data = await res.json();
+                depoimentosData = data;
+                
+                const container = document.getElementById('carousel-depoimentos');
+                
+                if(data.length === 0) {
+                    container.innerHTML = '<p class="text-center w-full text-slate-400">Em breve, nossos primeiros depoimentos! ✨</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                
+                data.forEach((d, index) => {
+                    const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
+                    
+                    // Lógica para mostrar fotos no card (agora maiores)
+                    let fotosPreview = '';
+                    if(d.fotos && d.fotos.length > 0) {
+                        // Mostra até 3 fotos, mas maiores que antes
+                        fotosPreview = `
+                        <div class="flex gap-2 mt-4 overflow-hidden h-24 w-full rounded-xl">
+                            ${d.fotos.slice(0, 3).map(f => `
+                                <img src="${f}" class="flex-1 object-cover h-full border border-slate-100 hover:scale-110 transition-transform duration-500">
+                            `).join('')}
+                        </div>`;
+                    } else {
+                        // Placeholder se não tiver foto
+                        fotosPreview = `
+                        <div class="h-24 w-full bg-brand-soft rounded-xl mt-4 flex items-center justify-center border border-slate-100">
+                             <i data-lucide="image" class="w-8 h-8 text-pink-200"></i>
+                        </div>`;
+                    }
+
+                    // Card do Carrossel
+                    container.innerHTML += `
+                        <div onclick="abrirModalDepoimento(${index})" class="
+                            min-w-[300px] md:min-w-[380px] snap-center 
+                            bg-slate-50 p-6 rounded-2xl border border-slate-100 
+                            hover:shadow-xl hover:border-brand-pink/30 hover:-translate-y-1 
+                            transition-all cursor-pointer group-card flex flex-col justify-between
+                        ">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink font-bold text-lg">
+                                            ${d.nome_cliente.charAt(0)}
+                                        </div>
+                                        <div class="font-bold text-brand-dark line-clamp-1">${d.nome_cliente}</div>
+                                    </div>
+                                    <div class="text-yellow-400 text-sm tracking-widest">${estrelas}</div>
+                                </div>
+                                <p class="text-slate-500 text-sm italic leading-relaxed line-clamp-3 mb-2">"${d.texto}"</p>
+                                <span class="text-brand-pink text-xs font-bold underline decoration-brand-pink/30">Ler tudo</span>
+                            </div>
+                            ${fotosPreview}
+                        </div>
+                    `;
+                });
+                
+                // Reinicializa ícones para os novos elementos
+                lucide.createIcons();
+
+            } catch(e) { console.error("Erro depoimentos", e); }
+        }
+
+        // Função de Scroll do Carrossel
+        function scrollCarousel(direction) {
+            const container = document.getElementById('carousel-depoimentos');
+            const scrollAmount = 400; // Tamanho aproximado de um card + gap
+            container.scrollBy({
+                left: direction * scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        // Lógica do Modal
+        function abrirModalDepoimento(index) {
+            const d = depoimentosData[index];
+            if(!d) return;
+
+            const modal = document.getElementById('modal-depoimento');
+            const content = document.getElementById('modal-content');
+            const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
+
+            // Construção das fotos grandes para o modal
+            let galeriaHtml = '';
+            if(d.fotos && d.fotos.length > 0) {
+                galeriaHtml = `
+                <div class="mt-6">
+                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Fotos do Cliente</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        ${d.fotos.map(f => `
+                            <div class="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+                                <img src="${f}" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-700">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }
+
+            content.innerHTML = `
+                <div class="flex flex-col gap-2 mb-6 border-b border-slate-100 pb-6">
+                    <div class="flex items-center justify-between">
+                         <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-full bg-brand-pink text-white flex items-center justify-center font-display font-bold text-2xl shadow-lg shadow-pink-200">
+                                ${d.nome_cliente.charAt(0)}
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-display font-bold text-brand-dark">${d.nome_cliente}</h3>
+                                <div class="text-yellow-400 text-lg tracking-widest">${estrelas}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-brand-soft/50 p-6 rounded-2xl border border-brand-pink/10">
+                    <i data-lucide="quote" class="w-8 h-8 text-brand-pink/20 mb-2"></i>
+                    <p class="text-slate-600 text-lg leading-relaxed whitespace-pre-line italic">"${d.texto}"</p>
+                </div>
+
+                ${galeriaHtml}
+            `;
+            
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+            // Prevenir rolagem do corpo
+            document.body.style.overflow = 'hidden';
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('modal-depoimento');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Inicializa
+        carregarDepoimentos();
+        lucide.createIcons();
     </script>
   </body>
 </html>

@@ -1,172 +1,118 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hub Administrativo | Cabana de Brincar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-  </head>
-  <body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
-    <div
-      id="login-screen"
-      class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center"
-    >
-      <div
-        class="bg-brand-pink/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-pink-500"
-      >
-        <i data-lucide="lock" class="w-8 h-8"></i>
-      </div>
-      <h2 class="text-2xl font-bold text-slate-700 mb-6">Acesso Restrito</h2>
-      <input
-        type="password"
-        id="adminPass"
-        placeholder="Senha Mestra"
-        class="w-full p-3 border rounded-xl mb-4 text-center"
-      />
-      <button
-        onclick="entrar()"
-        class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl transition-all"
-      >
-        Entrar
-      </button>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+
+    <div id="login-screen" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
+        <div class="bg-brand-pink/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-pink-500">
+            <i data-lucide="lock" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-700 mb-6">Acesso Restrito</h2>
+        <input type="password" id="adminPass" placeholder="Senha Mestra" class="w-full p-3 border rounded-xl mb-4 text-center">
+        <button onclick="fazerLogin()" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl transition-all">Entrar</button>
     </div>
 
     <div id="hub-screen" class="hidden w-full max-w-4xl">
-      <header class="flex justify-between items-center mb-8">
-        <div>
-          <h1 class="text-3xl font-bold text-slate-800">Olá, Administrador!</h1>
-          <p class="text-slate-500">O que vamos gerenciar hoje?</p>
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Olá, Administrador!</h1>
+                <p class="text-slate-500">O que vamos gerenciar hoje?</p>
+            </div>
+            <button onclick="sair()" class="text-red-500 font-bold hover:bg-red-50 px-4 py-2 rounded-lg">Sair</button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <a href="admin-pedidos.html" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group">
+                <div class="bg-blue-100 w-12 h-12 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="inbox" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-700">Pedidos</h3>
+                <p class="text-sm text-slate-400 mt-2">Novas solicitações e orçamentos.</p>
+            </a>
+
+            <a href="admin-agenda.html" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group">
+                <div class="bg-purple-100 w-12 h-12 rounded-xl flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="calendar" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-700">Agenda</h3>
+                <p class="text-sm text-slate-400 mt-2">Gestão visual de festas agendadas.</p>
+            </a>
+
+            <a href="admin-financeiro.html" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group">
+                <div class="bg-green-100 w-12 h-12 rounded-xl flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="dollar-sign" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-700">Financeiro</h3>
+                <p class="text-sm text-slate-400 mt-2">Custos, receitas e lucro.</p>
+            </a>
+
+            <a href="admin-gerenciador.html" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group">
+                <div class="bg-orange-100 w-12 h-12 rounded-xl flex items-center justify-center text-orange-600 mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="settings-2" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-700">Formulário</h3>
+                <p class="text-sm text-slate-400 mt-2">Gerenciar itens e preços do site.</p>
+            </a>
+
+            <a href="admin-avaliacoes.html" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group">
+                <div class="bg-pink-100 w-12 h-12 rounded-xl flex items-center justify-center text-pink-600 mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="star" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-700">Avaliações</h3>
+                <p class="text-sm text-slate-400 mt-2">Moderar depoimentos.</p>
+            </a>
+
+            <a href="admin-pedidos.html?tab=projetos" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group opacity-70">
+                <div class="bg-slate-100 w-12 h-12 rounded-xl flex items-center justify-center text-slate-600 mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="palette" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-700">Gerador Projeto</h3>
+                <p class="text-sm text-slate-400 mt-2">Acessado via Pedidos.</p>
+            </a>
         </div>
-        <button
-          onclick="location.reload()"
-          class="text-red-500 font-bold hover:bg-red-50 px-4 py-2 rounded-lg"
-        >
-          Sair
-        </button>
-      </header>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <a
-          href="admin-pedidos.html"
-          onclick="navegar(event, this.href)"
-          class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group"
-        >
-          <div
-            class="bg-blue-100 w-12 h-12 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform"
-          >
-            <i data-lucide="inbox" class="w-6 h-6"></i>
-          </div>
-          <h3 class="font-bold text-xl text-slate-700">Pedidos</h3>
-          <p class="text-sm text-slate-400 mt-2">
-            Novas solicitações e orçamentos.
-          </p>
-        </a>
-
-        <a
-          href="admin-agenda.html"
-          onclick="navegar(event, this.href)"
-          class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group"
-        >
-          <div
-            class="bg-purple-100 w-12 h-12 rounded-xl flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform"
-          >
-            <i data-lucide="calendar" class="w-6 h-6"></i>
-          </div>
-          <h3 class="font-bold text-xl text-slate-700">Agenda</h3>
-          <p class="text-sm text-slate-400 mt-2">
-            Gestão visual de festas agendadas.
-          </p>
-        </a>
-
-        <a
-          href="admin-financeiro.html"
-          onclick="navegar(event, this.href)"
-          class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group"
-        >
-          <div
-            class="bg-green-100 w-12 h-12 rounded-xl flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform"
-          >
-            <i data-lucide="dollar-sign" class="w-6 h-6"></i>
-          </div>
-          <h3 class="font-bold text-xl text-slate-700">Financeiro</h3>
-          <p class="text-sm text-slate-400 mt-2">
-            Custos gerais e faturamento.
-          </p>
-        </a>
-
-        <a
-          href="admin-gerenciador.html"
-          onclick="navegar(event, this.href)"
-          class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group"
-        >
-          <div
-            class="bg-orange-100 w-12 h-12 rounded-xl flex items-center justify-center text-orange-600 mb-4 group-hover:scale-110 transition-transform"
-          >
-            <i data-lucide="settings-2" class="w-6 h-6"></i>
-          </div>
-          <h3 class="font-bold text-xl text-slate-700">Formulário</h3>
-          <p class="text-sm text-slate-400 mt-2">
-            Gerenciar itens e preços do site.
-          </p>
-        </a>
-
-        <a
-          href="admin-avaliacoes.html"
-          onclick="navegar(event, this.href)"
-          class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group"
-        >
-          <div
-            class="bg-pink-100 w-12 h-12 rounded-xl flex items-center justify-center text-pink-600 mb-4 group-hover:scale-110 transition-transform"
-          >
-            <i data-lucide="star" class="w-6 h-6"></i>
-          </div>
-          <h3 class="font-bold text-xl text-slate-700">Avaliações</h3>
-          <p class="text-sm text-slate-400 mt-2">
-            Moderar depoimentos dos clientes.
-          </p>
-        </a>
-
-        <a
-          href="admin-pedidos.html?tab=projetos"
-          onclick="navegar(event, this.href)"
-          class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-slate-100 group opacity-70"
-        >
-          <div
-            class="bg-slate-100 w-12 h-12 rounded-xl flex items-center justify-center text-slate-600 mb-4 group-hover:scale-110 transition-transform"
-          >
-            <i data-lucide="palette" class="w-6 h-6"></i>
-          </div>
-          <h3 class="font-bold text-xl text-slate-700">Gerador Projeto</h3>
-          <p class="text-sm text-slate-400 mt-2">Acessado via Pedidos.</p>
-        </a>
-      </div>
     </div>
 
     <script>
-      lucide.createIcons();
+        lucide.createIcons();
 
-      function entrar() {
-        const pass = document.getElementById("adminPass").value;
-        if (pass) {
-          localStorage.setItem("cabana_admin_token", pass);
-          document.getElementById("login-screen").classList.add("hidden");
-          document.getElementById("hub-screen").classList.remove("hidden");
+        // Verifica login ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('cabana_admin_token');
+            if (token) {
+                mostrarHub();
+            } else {
+                mostrarLogin();
+            }
+        });
+
+        function fazerLogin() {
+            const pass = document.getElementById('adminPass').value;
+            if(pass) {
+                localStorage.setItem('cabana_admin_token', pass);
+                mostrarHub();
+            }
         }
-      }
 
-      function navegar(e, url) {
-        e.preventDefault();
-        const token = localStorage.getItem("cabana_admin_token");
-        // Passa o token via URL hash ou sessionStorage para as outras paginas
-        // Aqui vamos assumir que as outras paginas leem do localStorage
-        window.location.href = url;
-      }
+        function sair() {
+            localStorage.removeItem('cabana_admin_token');
+            mostrarLogin();
+        }
 
-      // Auto login se ja tiver token
-      if (localStorage.getItem("cabana_admin_token")) {
-        entrar();
-      }
+        function mostrarHub() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('hub-screen').classList.remove('hidden');
+        }
+
+        function mostrarLogin() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('hub-screen').classList.add('hidden');
+        }
     </script>
-  </body>
+</body>
 </html>

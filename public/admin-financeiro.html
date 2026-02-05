@@ -16,19 +16,21 @@
             <a href="painel.html" class="text-slate-400 hover:text-green-600"><i data-lucide="arrow-left"></i></a>
             Controle Financeiro
         </h1>
-        <button onclick="abrirModalGasto()" class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 flex gap-2 shadow-lg shadow-red-200">
-            <i data-lucide="minus-circle"></i> Lançar Despesa
+        <button onclick="abrirModalGasto()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 flex gap-2 shadow-lg shadow-indigo-200">
+            <i data-lucide="plus-circle"></i> Novo Lançamento
         </button>
     </div>
 
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <p class="text-xs font-bold text-slate-400 uppercase">Faturamento (Festas)</p>
+            <p class="text-xs font-bold text-slate-400 uppercase">Faturamento Total</p>
             <p id="total-faturamento" class="text-3xl font-bold text-green-600">R$ 0,00</p>
+            <p class="text-[10px] text-slate-400 mt-1">Festas + Receitas Extras</p>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p class="text-xs font-bold text-slate-400 uppercase">Despesas Totais</p>
             <p id="total-despesas" class="text-3xl font-bold text-red-500">R$ 0,00</p>
+            <p class="text-[10px] text-slate-400 mt-1">Custos Festas + Gerais</p>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p class="text-xs font-bold text-slate-400 uppercase">Lucro Líquido</p>
@@ -38,16 +40,22 @@
 
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Despesas Gerais</div>
+            <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Lançamentos Gerais (Extras)</div>
             <div class="max-h-96 overflow-y-auto">
                 <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-xs text-slate-400 uppercase">
+                        <tr>
+                            <th class="p-3">Descrição</th>
+                            <th class="p-3 text-right">Valor</th>
+                        </tr>
+                    </thead>
                     <tbody id="lista-gerais" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Custos por Festa</div>
+            <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Custos Vinculados a Festas</div>
             <div class="max-h-96 overflow-y-auto">
                 <table class="w-full text-sm text-left">
                     <tbody id="lista-festas" class="divide-y divide-slate-100"></tbody>
@@ -58,12 +66,23 @@
 
     <div id="modal-gasto" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h3 class="font-bold text-lg mb-4 text-slate-700">Lançar Despesa Geral</h3>
-            <input id="input-titulo" type="text" placeholder="Descrição (ex: Energia)" class="w-full mb-3 p-3 border rounded-lg">
-            <input id="input-valor" type="number" step="0.01" placeholder="Valor (R$)" class="w-full mb-4 p-3 border rounded-lg">
+            <h3 class="font-bold text-lg mb-4 text-slate-700">Novo Lançamento</h3>
+            
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Tipo</label>
+            <select id="input-tipo" class="w-full mb-3 p-3 border rounded-lg bg-white text-slate-700 font-bold">
+                <option value="saida">🔴 Despesa (Saída)</option>
+                <option value="entrada">🟢 Receita Extra (Entrada)</option>
+            </select>
+
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Descrição</label>
+            <input id="input-titulo" type="text" placeholder="Ex: Energia, Venda de Ativo..." class="w-full mb-3 p-3 border rounded-lg">
+            
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Valor</label>
+            <input id="input-valor" type="number" step="0.01" placeholder="0,00" class="w-full mb-4 p-3 border rounded-lg">
+            
             <div class="flex gap-2">
                 <button onclick="document.getElementById('modal-gasto').classList.add('hidden')" class="flex-1 bg-slate-100 py-3 rounded-lg font-bold text-slate-500">Cancelar</button>
-                <button onclick="salvarGasto()" class="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold hover:bg-red-600">Salvar</button>
+                <button onclick="salvarGasto()" class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700">Salvar</button>
             </div>
         </div>
     </div>
@@ -73,42 +92,67 @@
         if(!ADMIN_TOKEN) window.location.href = 'painel.html';
 
         async function carregarFinanceiro() {
-            const res = await fetch('/api/admin/financeiro/relatorio', {
-                headers: { 'x-admin-password': ADMIN_TOKEN }
-            });
-            const data = await res.json();
-            
-            // Cálculos
-            let faturamento = data.faturamento.reduce((acc, i) => acc + Number(i.valor_final || 0), 0);
-            let despesasGerais = data.gerais.filter(i => i.tipo === 'saida').reduce((acc, i) => acc + Number(i.valor), 0);
-            let despesasFestas = data.festas.reduce((acc, i) => acc + Number(i.valor), 0);
-            let totalDespesas = despesasGerais + despesasFestas;
+            try {
+                const res = await fetch('/api/admin/financeiro/relatorio', {
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                const data = await res.json();
+                
+                // --- CÁLCULOS ---
+                // 1. Faturamento de Festas Concluídas
+                let fatFestas = data.faturamento.reduce((acc, i) => acc + Number(i.valor_final || 0), 0);
+                
+                // 2. Receitas Extras (Lançamentos 'entrada')
+                let receitasExtras = data.gerais.filter(i => i.tipo === 'entrada').reduce((acc, i) => acc + Number(i.valor), 0);
+                
+                // 3. Despesas Gerais (Lançamentos 'saida')
+                let despesasGerais = data.gerais.filter(i => i.tipo === 'saida').reduce((acc, i) => acc + Number(i.valor), 0);
+                
+                // 4. Despesas de Festas (Custos diretos)
+                let despesasFestas = data.festas.reduce((acc, i) => acc + Number(i.valor), 0);
 
-            document.getElementById('total-faturamento').innerText = `R$ ${faturamento.toFixed(2)}`;
-            document.getElementById('total-despesas').innerText = `R$ ${totalDespesas.toFixed(2)}`;
-            document.getElementById('total-lucro').innerText = `R$ ${(faturamento - totalDespesas).toFixed(2)}`;
+                // Totais
+                let totalFaturamento = fatFestas + receitasExtras;
+                let totalDespesas = despesasGerais + despesasFestas;
 
-            // Renderizar Listas
-            const listaGerais = document.getElementById('lista-gerais');
-            listaGerais.innerHTML = data.gerais.map(i => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3 text-slate-600">${i.titulo}</td>
-                    <td class="p-3 font-bold text-red-500 text-right">- R$ ${Number(i.valor).toFixed(2)}</td>
-                </tr>
-            `).join('');
+                document.getElementById('total-faturamento').innerText = `R$ ${totalFaturamento.toFixed(2)}`;
+                document.getElementById('total-despesas').innerText = `R$ ${totalDespesas.toFixed(2)}`;
+                document.getElementById('total-lucro').innerText = `R$ ${(totalFaturamento - totalDespesas).toFixed(2)}`;
 
-            const listaFestas = document.getElementById('lista-festas');
-            listaFestas.innerHTML = data.festas.map(i => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3">
-                        <div class="text-slate-600 font-bold">${i.nome_cliente}</div>
-                        <div class="text-xs text-slate-400">${i.descricao}</div>
-                    </td>
-                    <td class="p-3 font-bold text-red-500 text-right">- R$ ${Number(i.valor).toFixed(2)}</td>
-                </tr>
-            `).join('');
-            
-            lucide.createIcons();
+                // --- TABELAS ---
+                // Tabela Gerais (Mistura entradas e saídas com cores diferentes)
+                const listaGerais = document.getElementById('lista-gerais');
+                listaGerais.innerHTML = data.gerais.map(i => {
+                    const isEntrada = i.tipo === 'entrada';
+                    const cor = isEntrada ? 'text-green-600' : 'text-red-500';
+                    const sinal = isEntrada ? '+ ' : '- ';
+                    return `
+                    <tr class="hover:bg-slate-50 border-b border-slate-50">
+                        <td class="p-3 text-slate-600">
+                            ${i.titulo}
+                            <span class="text-[10px] ml-2 px-2 py-0.5 rounded ${isEntrada ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${isEntrada ? 'Receita' : 'Despesa'}</span>
+                        </td>
+                        <td class="p-3 font-bold ${cor} text-right">${sinal}R$ ${Number(i.valor).toFixed(2)}</td>
+                    </tr>
+                    `;
+                }).join('');
+
+                const listaFestas = document.getElementById('lista-festas');
+                listaFestas.innerHTML = data.festas.map(i => `
+                    <tr class="hover:bg-slate-50 border-b border-slate-50">
+                        <td class="p-3">
+                            <div class="text-slate-600 font-bold">${i.nome_cliente}</div>
+                            <div class="text-xs text-slate-400">${i.descricao}</div>
+                        </td>
+                        <td class="p-3 font-bold text-red-500 text-right">- R$ ${Number(i.valor).toFixed(2)}</td>
+                    </tr>
+                `).join('');
+                
+                lucide.createIcons();
+            } catch (e) {
+                console.error("Erro financeiro:", e);
+                alert("Erro ao carregar dados financeiros.");
+            }
         }
 
         function abrirModalGasto() { document.getElementById('modal-gasto').classList.remove('hidden'); }
@@ -116,15 +160,21 @@
         async function salvarGasto() {
             const titulo = document.getElementById('input-titulo').value;
             const valor = document.getElementById('input-valor').value;
-            if(!titulo || !valor) return alert("Preencha tudo!");
+            const tipo = document.getElementById('input-tipo').value;
+
+            if(!titulo || !valor) return alert("Preencha todos os campos!");
 
             await fetch('/api/admin/financeiro/geral', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
-                body: JSON.stringify({ titulo, tipo: 'saida', valor })
+                body: JSON.stringify({ titulo, tipo, valor })
             });
             
             document.getElementById('modal-gasto').classList.add('hidden');
+            // Limpa campos
+            document.getElementById('input-titulo').value = '';
+            document.getElementById('input-valor').value = '';
+            
             carregarFinanceiro();
         }
 

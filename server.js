@@ -107,48 +107,68 @@ async function criarLinkMP(titulo, valor, pedidoId) {
 
 // --- ROTAS DE WEBHOOK (MERCADO PAGO) ---
 
+// --- WEBHOOK DE TESTE (CONSOLE LOG) ---
 app.post("/api/webhook", async (req, res) => {
-  const { query } = req;
+  // 1. Resposta IMEDIATA para o Mercado Pago não ficar tentando de novo
+  res.status(200).send("OK");
 
-  // Verifica se é uma notificação de pagamento
-  if (query.type === "payment" || query.topic === "payment") {
-    const paymentId = query.id || query["data.id"];
+  const notification = req.body || {};
+  const query = req.query || {};
 
+  // Pega o ID e o Tipo
+  const topic = notification.topic || notification.type || query.topic || query.type;
+  const id = notification.data?.id || notification.id || query.id || query['data.id'];
+
+  // Só processa se for pagamento
+  if (topic === "payment" && id) {
     try {
-      // Consulta o status atualizado na API do Mercado Pago
-      const response = await fetch(
-        `https://api.mercadopago.com/v1/payments/${paymentId}`,
-        {
-          headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
-        },
-      );
-      const paymentData = await response.json();
+      // 2. Pergunta ao Mercado Pago os detalhes desse ID
+      const response = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+        headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` }
+      });
+      
+      if (response.ok) {
+        const paymentData = await response.json();
+        
+        // Se estiver Aprovado
+        if (paymentData.status === 'approved') {
+          const pedidoId = paymentData.external_reference;
+          
+          // Data do Pagamento (vem do Mercado Pago)
+          const dataPagamento = new Date(paymentData.date_approved);
+          
+          // Formata data e hora
+          const dia = dataPagamento.getDate().toString().padStart(2, '0');
+          const mes = (dataPagamento.getMonth() + 1).toString().padStart(2, '0');
+          const ano = dataPagamento.getFullYear();
+          const hora = dataPagamento.getHours().toString().padStart(2, '0');
+          const min = dataPagamento.getMinutes().toString().padStart(2, '0');
+          const seg = dataPagamento.getSeconds().toString().padStart(2, '0');
 
-      // Se estiver aprovado, atualiza o banco
-      if (paymentData.status === "approved") {
-        const pedidoId = paymentData.external_reference;
+          // 3. Busca o Nome e WhatsApp no seu Banco de Dados
+          db.query("SELECT nome, whatsapp FROM orcamentos WHERE id = ?", [pedidoId], (err, results) => {
+             if(!err && results.length > 0) {
+                 const cliente = results[0];
 
-        console.log(
-          `💰 Pagamento Aprovado! Pedido ID: ${pedidoId}, Valor: ${paymentData.transaction_amount}`,
-        );
-
-        const sql =
-          "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?";
-        db.query(sql, [pedidoId], (err, result) => {
-          if (err) console.error("Erro ao atualizar DB via Webhook:", err);
-          else
-            console.log(
-              `✅ Pedido ${pedidoId} atualizado para 'pago' no banco.`,
-            );
-        });
+                 // --- AQUI ESTÁ O QUE VOCÊ PEDIU NO CONSOLE ---
+                 console.log("\n");
+                 console.log("🟢 === PAGAMENTO CONFIRMADO! ===");
+                 console.log(`👤 Nome: ${cliente.nome}`);
+                 console.log(`📱 Número: ${cliente.whatsapp}`);
+                 console.log(`📅 Data: ${dia}/${mes}/${ano}`);
+                 console.log(`⏰ Horário: ${hora}:${min}:${seg}`);
+                 console.log("================================\n");
+                 
+                 // Atualiza status no banco para não perder o controle
+                 db.query("UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?", [pedidoId]);
+             }
+          });
+        }
       }
-    } catch (e) {
-      console.error("Webhook Error:", e.message);
+    } catch (e) { 
+        console.error("Erro no Webhook:", e.message); 
     }
   }
-
-  // Responde OK para o Mercado Pago não reenviar
-  res.sendStatus(200);
 });
 
 // --- ROTAS PÚBLICAS ---

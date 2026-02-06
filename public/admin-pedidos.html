@@ -425,7 +425,11 @@
             if(pedidoAtual.itens_adicionais) {
                 txt += `\n📝 *Obs:* ${pedidoAtual.itens_adicionais}\n`;
             }
-
+            
+            if(pedidoAtual.alergias) {
+                txt += `\n⚠️ *Alergias:* ${pedidoAtual.alergias}\n`;
+            }
+            
             txt += `\n------------------------------------\n`;
             txt += `💰 *Valor Total Final: R$ ${pedidoAtual.totalCalculado}*\n`;
             txt += `------------------------------------\n\n`;

@@ -12,14 +12,12 @@ const { randomUUID: uuidv4 } = require("crypto");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Configuração Multer
 const upload = multer({ dest: "uploads/" });
 
 app.use(cors());
@@ -38,7 +36,6 @@ const db = mysql.createPool({
   enableKeepAlive: true,
 });
 
-// Ping no banco
 setInterval(() => {
   db.query("SELECT 1", (err) => {
     if (err) console.error("Ping Error:", err.code);
@@ -52,11 +49,7 @@ function checkAuth(req, res, next) {
   next();
 }
 
-// ==========================================
-//              ROTAS PÚBLICAS
-// ==========================================
-
-// 1. Listar Itens Disponíveis
+// --- ROTAS PÚBLICAS (Resumidas) ---
 app.get("/api/itens-disponiveis", (req, res) => {
   db.query(
     "SELECT descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'alimentacao', 'tendas') AND disponivel = TRUE ORDER BY categoria, descricao",
@@ -67,7 +60,6 @@ app.get("/api/itens-disponiveis", (req, res) => {
   );
 });
 
-// 2. Criar Orçamento
 app.post("/api/orcamento", (req, res) => {
   const data = req.body;
   const sql = `INSERT INTO orcamentos (nome, whatsapp, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -94,15 +86,8 @@ app.post("/api/orcamento", (req, res) => {
   });
 });
 
-// 3. Depoimentos Públicos
 app.get("/api/depoimentos/publicos", (req, res) => {
-  const sql = `
-        SELECT d.*, GROUP_CONCAT(f.url_foto) as fotos 
-        FROM depoimentos d 
-        LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id 
-        WHERE d.aprovado = TRUE 
-        GROUP BY d.id 
-        ORDER BY d.data_criacao DESC LIMIT 10`;
+  const sql = `SELECT d.*, GROUP_CONCAT(f.url_foto) as fotos FROM depoimentos d LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id WHERE d.aprovado = TRUE GROUP BY d.id ORDER BY d.data_criacao DESC LIMIT 10`;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     const formatado = results.map((r) => ({
@@ -113,21 +98,17 @@ app.get("/api/depoimentos/publicos", (req, res) => {
   });
 });
 
-// 4. Receber Feedback
 app.post("/api/feedback/:token", upload.array("fotos", 5), async (req, res) => {
   const token = req.params.token;
   const { nota, texto } = req.body;
-
   db.query(
     "SELECT id, nome FROM orcamentos WHERE token_avaliacao = ?",
     [token],
     async (err, result) => {
       if (err || result.length === 0)
         return res.status(404).json({ error: "Token inválido" });
-
       const orcamentoId = result[0].id;
       const nomeCliente = result[0].nome;
-
       try {
         const insertDep = await db
           .promise()
@@ -136,7 +117,6 @@ app.post("/api/feedback/:token", upload.array("fotos", 5), async (req, res) => {
             [orcamentoId, nomeCliente, texto.substring(0, 350), nota],
           );
         const depoimentoId = insertDep[0].insertId;
-
         if (req.files && req.files.length > 0) {
           for (const file of req.files) {
             const uploadRes = await cloudinary.uploader.upload(file.path, {
@@ -159,11 +139,9 @@ app.post("/api/feedback/:token", upload.array("fotos", 5), async (req, res) => {
   );
 });
 
-// 5. Galeria de Fotos
 app.get("/api/galeria_fotos", (req, res) => {
   const directoryPath = path.join(__dirname, "public/fotos");
   if (!fs.existsSync(directoryPath)) return res.json([]);
-
   fs.readdir(directoryPath, (err, files) => {
     if (err) return res.status(500).send("Erro ao ler diretório");
     const fotos = files
@@ -173,11 +151,7 @@ app.get("/api/galeria_fotos", (req, res) => {
   });
 });
 
-// ==========================================
-//               ROTAS ADMIN
-// ==========================================
-
-// --- AGENDA & PEDIDOS ---
+// --- ROTAS ADMIN ---
 
 app.get("/api/admin/agenda", checkAuth, (req, res) => {
   db.query(
@@ -204,13 +178,11 @@ app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
   const { valor_final } = req.body;
   let sql = "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?";
   let params = [req.params.id];
-
   if (valor_final !== undefined && valor_final !== null) {
     sql =
       "UPDATE orcamentos SET status_agenda = 'concluido', valor_final = ? WHERE id = ?";
     params = [valor_final, req.params.id];
   }
-
   db.query(sql, params, (err) => {
     if (err) return res.status(500).json(err);
     res.json({ success: true });
@@ -239,9 +211,8 @@ app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
   );
 });
 
-// --- FINANCEIRO (CORRIGIDO) ---
+// --- FINANCEIRO ---
 
-// Salvar Custo da Festa
 app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
   const { descricao, valor } = req.body;
   db.query(
@@ -261,12 +232,12 @@ app.delete("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
   });
 });
 
-// Salvar Custo Geral (CORREÇÃO AQUI: 'data_registro' em vez de 'data')
+// Salvar Custo Geral (CORRIGIDO: 'data_registro' e captura de erro)
 app.post("/api/admin/financeiro/geral", checkAuth, (req, res) => {
   const { titulo, tipo, valor, data } = req.body;
   const dataRegistro = data || new Date();
 
-  // A coluna no banco é 'data_registro', não 'data'
+  // Garante que usamos 'data_registro' e passamos o tipo vindo do front (entrada/saida)
   const sql =
     "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, ?, ?, ?)";
 
@@ -305,26 +276,23 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
     const [gerais] = await db
       .promise()
       .query("SELECT * FROM custos_gerais ORDER BY data_registro DESC");
-
-    const [custos_festas] = await db.promise().query(`
-            SELECT cf.*, o.nome as nome_cliente, o.data_festa 
-            FROM custos_festa cf 
-            JOIN orcamentos o ON cf.orcamento_id = o.id
-        `);
-
+    const [custos_festas] = await db
+      .promise()
+      .query(
+        `SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id`,
+      );
     const [faturamento] = await db
       .promise()
       .query(
         "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'",
       );
-
     res.json({ gerais, festas: custos_festas, faturamento });
   } catch (e) {
     res.status(500).json(e);
   }
 });
 
-// --- GERENCIADOR DE PREÇOS ---
+// --- PREÇOS ---
 
 app.get("/api/admin/precos", checkAuth, (req, res) => {
   db.query(
@@ -350,7 +318,6 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
   const { valor, categoria, descricao, disponivel } = req.body;
   let campos = [];
   let valores = [];
-
   if (valor !== undefined) {
     campos.push("valor = ?");
     valores.push(valor);
@@ -367,12 +334,9 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
     campos.push("disponivel = ?");
     valores.push(disponivel);
   }
-
   if (campos.length === 0) return res.json({ success: true });
-
   valores.push(req.params.id);
   const sql = `UPDATE tabela_precos SET ${campos.join(", ")} WHERE id = ?`;
-
   db.query(sql, valores, (err) => {
     if (err) return res.status(500).json(err);
     res.json({ success: true });
@@ -403,11 +367,7 @@ app.post("/api/admin/gerar-token/:id", checkAuth, (req, res) => {
 });
 
 app.get("/api/admin/avaliacoes", checkAuth, (req, res) => {
-  const sql = `
-        SELECT d.*, o.data_festa 
-        FROM depoimentos d 
-        LEFT JOIN orcamentos o ON d.orcamento_id = o.id 
-        ORDER BY d.data_criacao DESC`;
+  const sql = `SELECT d.*, o.data_festa FROM depoimentos d LEFT JOIN orcamentos o ON d.orcamento_id = o.id ORDER BY d.data_criacao DESC`;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     res.json(results);

@@ -9,23 +9,64 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { randomUUID: uuidv4 } = require("crypto");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
+const nodemailer = require("nodemailer");
+const venom = require("venom-bot"); // BIBLIOTECA DO WHATSAPP
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- CONFIGURAÇÕES ---
 
-// Mercado Pago
+// 1. Mercado Pago
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
-// Cloudinary
+// 2. Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+// 3. E-mail (Gmail)
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// 4. INICIALIZAÇÃO DO ROBÔ WHATSAPP
+let whatsappClient = null;
+
+// Inicia o Venom-bot
+venom
+  .create(
+    "sessao-cabana", // Nome da sessão
+    (base64Qr, asciiQR) => {
+      // Callback para mostrar o QR Code no terminal
+      console.log("\n📷 ESCANEIE O QR CODE ABAIXO PARA CONECTAR O WHATSAPP:\n");
+      console.log(asciiQR); // Imprime o QR Code no terminal
+    },
+    (statusSession, session) => {
+      console.log("Status Sessão WhatsApp:", statusSession);
+    },
+    {
+      headless: "new", // Executa sem abrir janela (ideal para servidor)
+      useChrome: false, // Tenta usar o Chromium baixado automaticamente
+      logQR: false, // Desabilitamos o log nativo para controlar acima
+      browserArgs: ["--no-sandbox", "--disable-setuid-sandbox"], // Necessário para rodar em servidores Linux/Docker
+    }
+  )
+  .then((client) => {
+    console.log("✅ Robô do WhatsApp conectado com sucesso!");
+    whatsappClient = client;
+  })
+  .catch((erro) => {
+    console.error("Erro ao iniciar o WhatsApp:", erro);
+  });
 
 const upload = multer({ dest: "uploads/" });
 
@@ -46,7 +87,6 @@ const db = mysql.createPool({
   enableKeepAlive: true,
 });
 
-// Ping para manter conexão ativa
 setInterval(() => {
   db.query("SELECT 1", (err) => {
     if (err) console.error("Ping Error:", err.code);
@@ -66,7 +106,6 @@ async function criarLinkMP(titulo, valor, pedidoId) {
   try {
     const preference = new Preference(mpClient);
 
-    // Configura o domínio corretamente (remove barras finais se houver)
     let domain = process.env.DOMAIN || `localhost:${PORT}`;
     domain = domain.replace(/\/$/, "");
     if (!domain.startsWith("http")) {
@@ -83,13 +122,13 @@ async function criarLinkMP(titulo, valor, pedidoId) {
             currency_id: "BRL",
           },
         ],
-        external_reference: String(pedidoId), // ID para o Webhook identificar o pedido
+        external_reference: String(pedidoId),
         back_urls: {
           success: `${domain}/sucesso.html`,
           failure: `${domain}/index.html`,
         },
         auto_return: "approved",
-        notification_url: `${domain}/api/webhook`, // URL do Webhook
+        notification_url: `${domain}/api/webhook`,
       },
     });
     return result.init_point;
@@ -99,83 +138,124 @@ async function criarLinkMP(titulo, valor, pedidoId) {
   }
 }
 
-// --- WEBHOOK (A LÓGICA DE TESTE QUE VOCÊ PEDIU) ---
+async function enviarEmailConfirmacao(nome, email, valor) {
+  if (!email) return;
+  const mailOptions = {
+    from: `"Cabana de Brincar" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "🎉 Pagamento Confirmado! - Cabana de Brincar",
+    html: `
+            <div style="font-family: Arial, sans-serif; color: #333;">
+                <h1 style="color: #e91e63;">Olá, ${nome}!</h1>
+                <p>Recebemos a confirmação do seu pagamento de <strong>R$ ${valor}</strong>.</p>
+                <p>Sua data está oficialmente reservada! ⛺✨</p>
+                <hr>
+                <p>Em breve entraremos em contato para finalizar os detalhes.</p>
+            </div>
+        `,
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`📧 E-mail enviado para ${email}`);
+  } catch (error) {
+    console.error("Erro ao enviar e-mail:", error);
+  }
+}
+
+// --- FUNÇÃO DO ROBÔ GRATUITO ---
+async function enviarWhatsapp(nome, telefone, valor) {
+  if (!whatsappClient) {
+    console.log("⚠️ WhatsApp ainda não conectado. Mensagem não enviada.");
+    return;
+  }
+
+  // Tratamento do número para o formato internacional (DDI + DDD + Numero)
+  // Ex: 5521999999999@c.us
+  let numeroLimpo = telefone.replace(/\D/g, "");
+
+  // Se o número não tiver DDI (55), adicionamos
+  if (numeroLimpo.length <= 11) {
+    numeroLimpo = `55${numeroLimpo}`;
+  }
+
+  // O sufixo @c.us é obrigatório para enviar para pessoas (não grupos)
+  const chatId = `${numeroLimpo}@c.us`;
+
+  const mensagem = `Olá *${nome}*! ⛺✨\n\nRecebemos a confirmação do seu pagamento de *R$ ${valor}* na Cabana de Brincar.\n\nSua reserva está garantida! 🎉\nEm breve entraremos em contato para combinar os detalhes.`;
+
+  try {
+    await whatsappClient.sendText(chatId, mensagem);
+    console.log(`📱 Mensagem WhatsApp enviada para ${numeroLimpo}`);
+  } catch (error) {
+    console.error("Erro ao enviar WhatsApp:", error);
+  }
+}
+
+// --- WEBHOOK ---
 
 app.post("/api/webhook", async (req, res) => {
-  // 1. Resposta IMEDIATA para o Mercado Pago (obrigatório para não dar erro)
   res.status(200).send("OK");
 
   const notification = req.body || {};
   const query = req.query || {};
-
-  // Pega o ID e o Tipo (tenta pegar do body ou da query)
   const topic =
     notification.topic || notification.type || query.topic || query.type;
   const id =
     notification.data?.id || notification.id || query.id || query["data.id"];
 
-  // Só processa se for um pagamento
   if (topic === "payment" && id) {
     try {
-      // 2. Consulta a API do Mercado Pago para pegar os dados reais
       const response = await fetch(
         `https://api.mercadopago.com/v1/payments/${id}`,
         {
           headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
-        },
+        }
       );
 
       if (response.ok) {
         const paymentData = await response.json();
 
-        // Se estiver Aprovado
         if (paymentData.status === "approved") {
           const pedidoId = paymentData.external_reference;
+          const valorPago = paymentData.transaction_amount;
 
-          // Data do Pagamento (vem do Mercado Pago)
-          const dataPagamento = new Date(paymentData.date_approved);
+          console.log(`✅ Pagamento Aprovado! Pedido: ${pedidoId}`);
 
-          // Formatação da Data e Hora para o Console
-          // Ajusta para horário local (simples) ou usa UTC
-          const dia = dataPagamento.getDate().toString().padStart(2, "0");
-          const mes = (dataPagamento.getMonth() + 1)
-            .toString()
-            .padStart(2, "0");
-          const ano = dataPagamento.getFullYear();
-          const hora = dataPagamento.getHours().toString().padStart(2, "0");
-          const min = dataPagamento.getMinutes().toString().padStart(2, "0");
-          const seg = dataPagamento.getSeconds().toString().padStart(2, "0");
-
-          // 3. Busca o Nome e WhatsApp no seu Banco de Dados usando o ID do Pedido
           db.query(
-            "SELECT nome, whatsapp FROM orcamentos WHERE id = ?",
+            "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?",
             [pedidoId],
-            (err, results) => {
-              if (!err && results.length > 0) {
-                const cliente = results[0];
+            (err) => {
+              if (err) return console.error("Erro DB Update:", err);
 
-                // --- IMPRESSÃO NO CONSOLE ---
-                console.log("\n");
-                console.log("🟢 === PAGAMENTO CONFIRMADO! ===");
-                console.log(`👤 Nome: ${cliente.nome}`);
-                console.log(`📱 Número: ${cliente.whatsapp}`);
-                console.log(`📅 Data: ${dia}/${mes}/${ano}`);
-                console.log(`⏰ Horário: ${hora}:${min}:${seg}`);
-                console.log(`💰 Valor: R$ ${paymentData.transaction_amount}`);
-                console.log("================================\n");
-
-                // Atualiza status no banco
-                db.query(
-                  "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?",
-                  [pedidoId],
-                );
-              }
-            },
+              db.query(
+                "SELECT nome, email, whatsapp FROM orcamentos WHERE id = ?",
+                [pedidoId],
+                (err, results) => {
+                  if (!err && results.length > 0) {
+                    const cliente = results[0];
+                    
+                    // Dispara E-mail
+                    enviarEmailConfirmacao(
+                      cliente.nome,
+                      cliente.email,
+                      valorPago
+                    );
+                    
+                    // Dispara WhatsApp (Robô Gratuito)
+                    enviarWhatsapp(
+                      cliente.nome,
+                      cliente.whatsapp,
+                      valorPago
+                    );
+                  }
+                }
+              );
+            }
           );
         }
       }
     } catch (e) {
-      console.error("Erro no Webhook:", e.message);
+      console.error("Erro processando Webhook:", e.message);
     }
   }
 });
@@ -188,17 +268,17 @@ app.get("/api/itens-disponiveis", (req, res) => {
     (err, results) => {
       if (err) return res.status(500).json([]);
       res.json(results);
-    },
+    }
   );
 });
 
 app.post("/api/orcamento", (req, res) => {
   const data = req.body;
-  // Garante que o status_pagamento entre como 'pendente'
-  const sql = `INSERT INTO orcamentos (nome, whatsapp, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`;
+  const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`;
   const values = [
     data.nome,
     data.whatsapp,
+    data.email || "",
     data.endereco,
     data.qtd_criancas,
     data.faixa_etaria,
@@ -241,7 +321,7 @@ app.get("/api/feedback/:token", (req, res) => {
       if (results.length === 0)
         return res.status(404).json({ error: "Token inválido ou expirado" });
       res.json(results[0]);
-    },
+    }
   );
 });
 
@@ -261,7 +341,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
           .promise()
           .query(
             "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado) VALUES (?, ?, ?, ?, 0)",
-            [orcamentoId, nomeCliente, texto.substring(0, 350), nota],
+            [orcamentoId, nomeCliente, texto.substring(0, 350), nota]
           );
         const depoimentoId = insertDep[0].insertId;
         if (req.files && req.files.length > 0) {
@@ -273,7 +353,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
               .promise()
               .query(
                 "INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)",
-                [depoimentoId, uploadRes.secure_url],
+                [depoimentoId, uploadRes.secure_url]
               );
             fs.unlinkSync(file.path);
           }
@@ -282,7 +362,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
       } catch (e) {
         res.status(500).json({ error: "Erro ao processar" });
       }
-    },
+    }
   );
 });
 
@@ -306,7 +386,7 @@ app.get("/api/admin/agenda", checkAuth, (req, res) => {
     (err, results) => {
       if (err) return res.status(500).json(err);
       res.json(results);
-    },
+    }
   );
 });
 
@@ -317,7 +397,7 @@ app.put("/api/admin/agenda/aprovar/:id", checkAuth, (req, res) => {
     (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
-    },
+    }
   );
 });
 
@@ -342,7 +422,7 @@ app.get("/api/admin/pedidos", checkAuth, (req, res) => {
     (err, results) => {
       if (err) return res.status(500).json(err);
       res.json(results);
-    },
+    }
   );
 });
 
@@ -354,11 +434,10 @@ app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
     (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
-    },
+    }
   );
 });
 
-// NOVA ROTA: Geração de links Mercado Pago
 app.post("/api/admin/gerar-links-mp/:id", checkAuth, (req, res) => {
   db.query(
     "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
@@ -375,12 +454,12 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, (req, res) => {
       const linkReserva = await criarLinkMP(
         `Reserva (40%) - ${results[0].nome}`,
         (vTotal * 0.4).toFixed(2),
-        req.params.id, // Importante: Passa o ID do pedido
+        req.params.id
       );
       const linkIntegral = await criarLinkMP(
         `Total (5% desc) - ${results[0].nome}`,
         (vTotal * 0.95).toFixed(2),
-        req.params.id, // Importante: Passa o ID do pedido
+        req.params.id
       );
 
       res.json({
@@ -390,7 +469,7 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, (req, res) => {
         linkIntegral,
         restante: (vTotal * 0.6).toFixed(2),
       });
-    },
+    }
   );
 });
 
@@ -411,7 +490,7 @@ app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
     (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
-    },
+    }
   );
 });
 
@@ -448,12 +527,12 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
     const [custos_festas] = await db
       .promise()
       .query(
-        "SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id",
+        "SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id"
       );
     const [faturamento] = await db
       .promise()
       .query(
-        "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'",
+        "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'"
       );
     res.json({ gerais, festas: custos_festas, faturamento });
   } catch (e) {
@@ -466,7 +545,7 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
 app.get("/api/admin/precos", checkAuth, (req, res) => {
   db.query(
     "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
-    (err, r) => res.json(r),
+    (err, r) => res.json(r)
   );
 });
 
@@ -479,7 +558,7 @@ app.post("/api/admin/precos", checkAuth, (req, res) => {
       req.body.valor,
       req.body.categoria,
     ],
-    (e) => res.json({ success: true }),
+    (e) => res.json({ success: true })
   );
 });
 
@@ -511,13 +590,13 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
     (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
-    },
+    }
   );
 });
 
 app.delete("/api/admin/precos/:id", checkAuth, (req, res) => {
   db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>
-    res.json({ success: true }),
+    res.json({ success: true })
   );
 });
 
@@ -534,7 +613,7 @@ app.post("/api/admin/gerar-token/:id", checkAuth, (req, res) => {
         token,
         link: `${req.protocol}://${req.get("host")}/feedback.html?t=${token}`,
       });
-    },
+    }
   );
 });
 
@@ -543,7 +622,7 @@ app.get("/api/admin/avaliacoes", checkAuth, (req, res) => {
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     res.json(
-      results.map((r) => ({ ...r, fotos: r.fotos ? r.fotos.split(",") : [] })),
+      results.map((r) => ({ ...r, fotos: r.fotos ? r.fotos.split(",") : [] }))
     );
   });
 });
@@ -556,7 +635,7 @@ app.put("/api/admin/avaliacoes/:id", checkAuth, (req, res) => {
     (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
-    },
+    }
   );
 });
 
@@ -575,7 +654,7 @@ app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
           return matches
             ? cloudinary.uploader.destroy(matches[1])
             : Promise.resolve();
-        }),
+        })
       );
     }
     await db

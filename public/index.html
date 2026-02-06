@@ -46,18 +46,18 @@
         opacity: 0.5;
         animation: float 6s ease-in-out infinite;
       }
-      /* Ocultar barra de rolagem mas permitir scroll */
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      
       @keyframes float {
         0% { transform: translateY(0px); }
         50% { transform: translateY(-20px); }
         100% { transform: translateY(0px); }
+      }
+
+      /* Transição suave para o carrossel do Hero */
+      .fade-img {
+          transition: opacity 1s ease-in-out;
       }
     </style>
   </head>
@@ -65,23 +65,27 @@
 
     <div id="modal-depoimento" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-brand-dark/80 backdrop-blur-sm transition-opacity" onclick="fecharModal()"></div>
-
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
                     <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="absolute top-4 right-4">
+                        <div class="absolute top-4 right-4 z-20">
                             <button type="button" onclick="fecharModal()" class="rounded-full bg-slate-100 p-2 text-slate-400 hover:text-brand-pink hover:bg-pink-50 transition-colors">
                                 <i data-lucide="x" class="w-6 h-6"></i>
                             </button>
                         </div>
-                        
-                        <div id="modal-content" class="mt-2">
-                            </div>
+                        <div id="modal-content" class="mt-2"></div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="lightbox" class="fixed inset-0 z-[110] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="fecharLightbox()">
+        <button class="absolute top-6 right-6 text-white hover:text-brand-pink transition-colors z-50">
+            <i data-lucide="x" class="w-10 h-10"></i>
+        </button>
+        <img id="lightbox-img" src="" class="max-h-[90vh] max-w-full rounded-lg shadow-2xl transition-transform duration-300 scale-95" onclick="event.stopPropagation()">
     </div>
 
     <header class="fixed w-full bg-white/90 backdrop-blur-md border-b border-slate-100 z-50">
@@ -94,8 +98,8 @@
             <a href="#galeria" class="hover:text-brand-pink transition-colors">Fotos</a>
             <a href="#depoimentos" class="hover:text-brand-pink transition-colors">Depoimentos</a>
          </nav>
-         <a href="orcamento.html" class="bg-brand-pink text-white px-6 py-2 rounded-full font-bold shadow-lg shadow-pink-200 hover:bg-pink-500 transition-all hover:-translate-y-0.5 text-sm">
-            Montar Minha Festa
+         <a href="orcamento.html" class="bg-brand-pink text-white px-4 py-2 md:px-6 rounded-full font-bold shadow-lg shadow-pink-200 hover:bg-pink-500 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex items-center gap-2">
+            <i data-lucide="wand-2" class="w-4 h-4"></i> Montar Festa
          </a>
       </div>
     </header>
@@ -131,11 +135,15 @@
                 </div>
             </div>
             
-            <div class="lg:w-1/2 relative">
-                <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500">
-                    <img src="fotos/fotos (1).webp" alt="Festa do Pijama" class="w-full h-auto object-cover">
+            <div class="lg:w-1/2 relative group">
+                <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500 h-[400px] md:h-[500px] bg-slate-200">
+                    <div id="hero-images-container" class="w-full h-full relative">
+                        <div class="absolute inset-0 flex items-center justify-center text-slate-400">
+                            <i data-lucide="loader-2" class="animate-spin w-8 h-8"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="absolute -inset-4 bg-brand-pink/20 rounded-[3rem] -z-10 -rotate-3"></div>
+                <div class="absolute -inset-4 bg-brand-pink/20 rounded-[3rem] -z-10 -rotate-3 group-hover:rotate-2 transition-transform duration-500"></div>
             </div>
         </div>
       </div>
@@ -157,7 +165,7 @@
                     </div>
                     <h3 class="font-display font-bold text-xl text-brand-dark mb-3">1. Você Monta</h3>
                     <p class="text-slate-500 text-sm leading-relaxed">
-                        Use nosso <a href="orcamento.html" class="text-brand-pink font-bold underline">simulador online</a>. Escolha o tema, quantidade de cabanas e itens extras. Você vê como fica na hora!
+                        Use nosso <a href="orcamento.html" class="text-brand-pink font-bold underline">simulador online</a>. Escolha o tema, quantidade de cabanas e itens extras.
                     </p>
                 </div>
 
@@ -196,19 +204,18 @@
                 </a>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 h-48 md:h-64 cursor-pointer">
-                    <img src="fotos/fotos (2).webp" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
+            <div class="relative group">
+                <button onclick="scrollGaleria(-1)" class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
+                    <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                </button>
+
+                <div id="galeria-lista" class="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide py-4 px-4 -mx-4 md:mx-0">
+                   <p class="text-center w-full text-slate-400">Carregando fotos...</p>
                 </div>
-                <div class="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 h-48 md:h-64 cursor-pointer">
-                    <img src="fotos/fotos (3).webp" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
-                </div>
-                <div class="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 h-48 md:h-64 cursor-pointer">
-                    <img src="fotos/fotos (4).webp" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
-                </div>
-                <div class="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 h-48 md:h-64 cursor-pointer">
-                    <img src="fotos/fotos (6).webp" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
-                </div>
+
+                <button onclick="scrollGaleria(1)" class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
+                    <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                </button>
             </div>
         </div>
     </section>
@@ -241,7 +248,7 @@
             </div>
 
             <div class="relative group max-w-7xl mx-auto">
-                <button onclick="scrollCarousel(-1)" class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
+                <button onclick="scrollDepoimentos(-1)" class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
                     <i data-lucide="chevron-left" class="w-6 h-6"></i>
                 </button>
 
@@ -249,7 +256,7 @@
                     <p class="text-center w-full text-slate-300">Carregando magia...</p>
                 </div>
 
-                <button onclick="scrollCarousel(1)" class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
+                <button onclick="scrollDepoimentos(1)" class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
                     <i data-lucide="chevron-right" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -295,31 +302,122 @@
     </footer>
 
     <script>
-        // Dados globais para acesso no modal
+        const API_URL = '/api';
         let depoimentosData = [];
+        let fotosGaleria = [];
+        let heroIndex = 0;
 
+        // --- INICIALIZAÇÃO GERAL ---
+        async function init() {
+            lucide.createIcons();
+            await Promise.all([
+                carregarFotos(),
+                carregarDepoimentos()
+            ]);
+        }
+
+        // --- LÓGICA DE FOTOS E CARROSSEL HERO ---
+        async function carregarFotos() {
+            try {
+                const res = await fetch(`${API_URL}/galeria_fotos`);
+                fotosGaleria = await res.json();
+
+                if (fotosGaleria.length > 0) {
+                    iniciarHeroCarousel();
+                    renderizarGaleriaHorizontal();
+                } else {
+                    document.getElementById('galeria-lista').innerHTML = '<p class="text-center w-full text-slate-400">Nenhuma foto encontrada.</p>';
+                    document.getElementById('hero-images-container').innerHTML = '<div class="flex items-center justify-center h-full bg-slate-100">Sem fotos</div>';
+                }
+            } catch (error) { console.error("Erro fotos:", error); }
+        }
+
+        function iniciarHeroCarousel() {
+            const container = document.getElementById('hero-images-container');
+            container.innerHTML = '';
+            
+            // Cria todas as imagens empilhadas
+            fotosGaleria.forEach((src, idx) => {
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = `absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}`;
+                container.appendChild(img);
+            });
+
+            // Loop de troca
+            setInterval(() => {
+                const imgs = container.querySelectorAll('img');
+                imgs[heroIndex].classList.remove('opacity-100', 'z-10');
+                imgs[heroIndex].classList.add('opacity-0', 'z-0');
+
+                heroIndex = (heroIndex + 1) % fotosGaleria.length;
+
+                imgs[heroIndex].classList.remove('opacity-0', 'z-0');
+                imgs[heroIndex].classList.add('opacity-100', 'z-10');
+            }, 4000);
+        }
+
+        function renderizarGaleriaHorizontal() {
+            const container = document.getElementById('galeria-lista');
+            container.innerHTML = '';
+
+            fotosGaleria.forEach(src => {
+                container.innerHTML += `
+                    <div onclick="abrirLightbox('${src}')" class="min-w-[280px] md:min-w-[350px] h-64 rounded-2xl overflow-hidden shadow-md cursor-pointer group relative snap-center border-4 border-white transition-all hover:scale-105 hover:shadow-xl hover:border-brand-pink/20 hover:-rotate-1">
+                        <img src="${src}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy">
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <i data-lucide="maximize-2" class="text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 drop-shadow-lg scale-0 group-hover:scale-100 duration-300"></i>
+                        </div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function scrollGaleria(direction) {
+            const container = document.getElementById('galeria-lista');
+            const scrollAmount = 350;
+            container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        }
+
+        // --- LÓGICA LIGHTBOX ---
+        function abrirLightbox(src) {
+            const lb = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            img.src = src;
+            lb.classList.remove('hidden');
+            setTimeout(() => { img.classList.replace('scale-95', 'scale-100'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function fecharLightbox() {
+            const lb = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            img.classList.replace('scale-100', 'scale-95');
+            setTimeout(() => { lb.classList.add('hidden'); }, 300);
+            document.body.style.overflow = '';
+        }
+
+        // --- LÓGICA DEPOIMENTOS ---
         async function carregarDepoimentos() {
             try {
-                const res = await fetch('/api/depoimentos/publicos');
-                const data = await res.json();
-                depoimentosData = data;
+                const res = await fetch(`${API_URL}/depoimentos/publicos`);
+                depoimentosData = await res.json();
                 
                 const container = document.getElementById('carousel-depoimentos');
                 
-                if(data.length === 0) {
+                if(depoimentosData.length === 0) {
                     container.innerHTML = '<p class="text-center w-full text-slate-400">Em breve, nossos primeiros depoimentos! ✨</p>';
                     return;
                 }
 
                 container.innerHTML = '';
                 
-                data.forEach((d, index) => {
+                depoimentosData.forEach((d, index) => {
                     const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
                     
-                    // Lógica para mostrar fotos no card (agora maiores)
                     let fotosPreview = '';
                     if(d.fotos && d.fotos.length > 0) {
-                        // Mostra até 3 fotos, mas maiores que antes
                         fotosPreview = `
                         <div class="flex gap-2 mt-4 overflow-hidden h-24 w-full rounded-xl">
                             ${d.fotos.slice(0, 3).map(f => `
@@ -327,14 +425,12 @@
                             `).join('')}
                         </div>`;
                     } else {
-                        // Placeholder se não tiver foto
                         fotosPreview = `
                         <div class="h-24 w-full bg-brand-soft rounded-xl mt-4 flex items-center justify-center border border-slate-100">
                              <i data-lucide="image" class="w-8 h-8 text-pink-200"></i>
                         </div>`;
                     }
 
-                    // Card do Carrossel
                     container.innerHTML += `
                         <div onclick="abrirModalDepoimento(${index})" class="
                             min-w-[300px] md:min-w-[380px] snap-center 
@@ -359,24 +455,15 @@
                         </div>
                     `;
                 });
-                
-                // Reinicializa ícones para os novos elementos
                 lucide.createIcons();
-
             } catch(e) { console.error("Erro depoimentos", e); }
         }
 
-        // Função de Scroll do Carrossel
-        function scrollCarousel(direction) {
+        function scrollDepoimentos(direction) {
             const container = document.getElementById('carousel-depoimentos');
-            const scrollAmount = 400; // Tamanho aproximado de um card + gap
-            container.scrollBy({
-                left: direction * scrollAmount,
-                behavior: 'smooth'
-            });
+            container.scrollBy({ left: direction * 400, behavior: 'smooth' });
         }
 
-        // Lógica do Modal
         function abrirModalDepoimento(index) {
             const d = depoimentosData[index];
             if(!d) return;
@@ -385,7 +472,6 @@
             const content = document.getElementById('modal-content');
             const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
 
-            // Construção das fotos grandes para o modal
             let galeriaHtml = '';
             if(d.fotos && d.fotos.length > 0) {
                 galeriaHtml = `
@@ -394,7 +480,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         ${d.fotos.map(f => `
                             <div class="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-                                <img src="${f}" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-700">
+                                <img src="${f}" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-700 cursor-zoom-in" onclick="abrirLightbox('${f}')">
                             </div>
                         `).join('')}
                     </div>
@@ -415,30 +501,24 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="bg-brand-soft/50 p-6 rounded-2xl border border-brand-pink/10">
                     <i data-lucide="quote" class="w-8 h-8 text-brand-pink/20 mb-2"></i>
                     <p class="text-slate-600 text-lg leading-relaxed whitespace-pre-line italic">"${d.texto}"</p>
                 </div>
-
                 ${galeriaHtml}
             `;
             
             modal.classList.remove('hidden');
             lucide.createIcons();
-            // Prevenir rolagem do corpo
             document.body.style.overflow = 'hidden';
         }
 
         function fecharModal() {
-            const modal = document.getElementById('modal-depoimento');
-            modal.classList.add('hidden');
+            document.getElementById('modal-depoimento').classList.add('hidden');
             document.body.style.overflow = '';
         }
 
-        // Inicializa
-        carregarDepoimentos();
-        lucide.createIcons();
+        init();
     </script>
   </body>
 </html>

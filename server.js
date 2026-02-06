@@ -9,19 +9,17 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { randomUUID: uuidv4 } = require("crypto");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
-const venom = require("venom-bot"); // BIBLIOTECA DO ROBÔ
+const venom = require("venom-bot");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- 1. CONFIGURAÇÕES ---
 
-// Mercado Pago
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
-// Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -34,7 +32,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// Banco de Dados
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -47,7 +44,6 @@ const db = mysql.createPool({
   enableKeepAlive: true,
 });
 
-// Ping Banco
 setInterval(() => {
   db.query("SELECT 1", (err) => {
     if (err) console.error("Ping Error:", err.code);
@@ -61,7 +57,7 @@ function checkAuth(req, res, next) {
   next();
 }
 
-// --- 2. INICIALIZAÇÃO DO ROBÔ WHATSAPP ---
+// --- 2. INICIALIZAÇÃO DO ROBÔ WHATSAPP (CORRIGIDO) ---
 
 let whatsappClient = null;
 
@@ -70,33 +66,36 @@ venom
     "sessao-cabana",
     (base64Qr, asciiQR) => {
       console.log("\n📷 ESCANEIE O QR CODE ABAIXO:\n");
-      console.log(asciiQR); // Tenta imprimir o QR no terminal
+      console.log(asciiQR);
     },
     (statusSession, session) => {
       console.log("Status Sessão WhatsApp:", statusSession);
     },
     {
-      headless: "new", // Modo sem cabeça (novo padrão)
-      useChrome: false, // Usa o Chromium interno baixado pelo script
-      logQR: false, // Desliga log nativo para usarmos o nosso
-      disableWelcome: true, // Remove mensagem de boas vindas
+      headless: "new", // Obrigatório para servidor
+      useChrome: false,
+      logQR: false,
+      disableWelcome: true, // Desativa msg de boas vindas (evita trava)
+      disableSpins: true, // Desativa animações no terminal (evita trava)
+      updatesLog: false, // Não verifica atualizações (acelera o boot)
+      autoClose: false, // Não fecha se der erro simples
       browserArgs: [
-        "--no-sandbox", 
+        "--no-sandbox",
         "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage", // Ajuda em containers com pouca memória
+        "--disable-dev-shm-usage",
         "--disable-accelerated-2d-canvas",
         "--no-first-run",
         "--no-zygote",
-        "--disable-gpu"
+        "--disable-gpu",
       ],
-    }
+    },
   )
   .then((client) => {
-    console.log("✅ Robô do WhatsApp conectado com sucesso!");
+    console.log("✅ Robô do WhatsApp conectado e PRONTO!");
     whatsappClient = client;
   })
   .catch((erro) => {
-    console.error("Erro ao iniciar o WhatsApp:", erro);
+    console.error("❌ Erro fatal ao iniciar o WhatsApp:", erro);
   });
 
 // --- 3. FUNÇÕES AUXILIARES ---
@@ -135,40 +134,42 @@ async function criarLinkMP(titulo, valor, pedidoId) {
   }
 }
 
-// Função que envia a mensagem usando o Robô
-async function enviarWhatsappViaRobo(nome, telefone, valor) {
+// Função de Envio com mais Paciência (20 tentativas = 60 segundos)
+async function enviarWhatsappViaRobo(nome, telefone, valor, tentativa = 1) {
   if (!whatsappClient) {
+    if (tentativa > 20) {
+      // Aumentei para 20 tentativas
+      console.log("❌ Robô demorou demais (>1min) para conectar. Desisti.");
+      return;
+    }
+
     console.log(
-      "⚠️ O Robô do WhatsApp ainda não está conectado. Mensagem não enviada.",
+      `⏳ Robô carregando... Tentativa ${tentativa}/20 em 3 segundos.`,
     );
+
+    setTimeout(() => {
+      enviarWhatsappViaRobo(nome, telefone, valor, tentativa + 1);
+    }, 3000);
     return;
   }
 
-  // Limpa o número (deixa apenas dígitos)
   let numeroLimpo = telefone.replace(/\D/g, "");
-
-  // Adiciona o DDI 55 (Brasil) se não tiver
-  if (numeroLimpo.length <= 11) {
-    numeroLimpo = `55${numeroLimpo}`;
-  }
-
-  // Adiciona o sufixo necessário para o Venom-bot enviar para pessoa
+  if (numeroLimpo.length <= 11) numeroLimpo = `55${numeroLimpo}`;
   const chatId = `${numeroLimpo}@c.us`;
 
   const mensagem = `Olá *${nome}*! ⛺✨\n\nRecebemos a confirmação do seu pagamento de *R$ ${valor}* na Cabana de Brincar.\n\nSua reserva está garantida! 🎉\nEm breve entraremos em contato para combinar os detalhes.`;
 
   try {
     await whatsappClient.sendText(chatId, mensagem);
-    console.log(`📱 Mensagem enviada com sucesso para ${numeroLimpo}`);
+    console.log(`📱 Mensagem WhatsApp enviada para ${numeroLimpo}`);
   } catch (error) {
-    console.error(`❌ Erro ao enviar mensagem para ${numeroLimpo}:`, error);
+    console.error("Erro ao enviar WhatsApp:", error);
   }
 }
 
-// --- 4. WEBHOOK (COM LOG DETALHADO + ENVIO WHATSAPP) ---
+// --- 4. WEBHOOK ---
 
 app.post("/api/webhook", async (req, res) => {
-  // 1. Responde rápido para o Mercado Pago
   res.status(200).send("OK");
 
   const notification = req.body || {};
@@ -178,7 +179,6 @@ app.post("/api/webhook", async (req, res) => {
   const id =
     notification.data?.id || notification.id || query.id || query["data.id"];
 
-  // Só processa se for pagamento
   if (topic === "payment" && id) {
     try {
       const response = await fetch(
@@ -191,23 +191,19 @@ app.post("/api/webhook", async (req, res) => {
       if (response.ok) {
         const paymentData = await response.json();
 
-        // Se estiver Aprovado
         if (paymentData.status === "approved") {
           const pedidoId = paymentData.external_reference;
           const valorPago = paymentData.transaction_amount;
 
-          // Formatação de Data/Hora para o Console
+          // Formatação para Log
           const dataPagamento = new Date(paymentData.date_approved);
           const dia = dataPagamento.getDate().toString().padStart(2, "0");
           const mes = (dataPagamento.getMonth() + 1)
             .toString()
             .padStart(2, "0");
-          const ano = dataPagamento.getFullYear();
           const hora = dataPagamento.getHours().toString().padStart(2, "0");
           const min = dataPagamento.getMinutes().toString().padStart(2, "0");
-          const seg = dataPagamento.getSeconds().toString().padStart(2, "0");
 
-          // Busca dados do cliente no banco
           db.query(
             "SELECT nome, whatsapp FROM orcamentos WHERE id = ?",
             [pedidoId],
@@ -215,23 +211,19 @@ app.post("/api/webhook", async (req, res) => {
               if (!err && results.length > 0) {
                 const cliente = results[0];
 
-                // --- LOG DETALHADO NO CONSOLE ---
                 console.log("\n");
                 console.log("🟢 === PAGAMENTO CONFIRMADO! ===");
                 console.log(`👤 Nome: ${cliente.nome}`);
-                console.log(`📱 Número: ${cliente.whatsapp}`);
-                console.log(`📅 Data: ${dia}/${mes}/${ano}`);
-                console.log(`⏰ Horário: ${hora}:${min}:${seg}`);
-                console.log(`💰 Valor: R$ ${valorPago}`);
+                console.log(`📱 WhatsApp: ${cliente.whatsapp}`);
+                console.log(`📅 Data: ${dia}/${mes} às ${hora}:${min}`);
                 console.log("================================\n");
 
-                // Atualiza status no banco
                 db.query(
                   "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?",
                   [pedidoId],
                 );
 
-                // --- ENVIA MENSAGEM PELO ROBÔ ---
+                // Tenta enviar a mensagem
                 enviarWhatsappViaRobo(
                   cliente.nome,
                   cliente.whatsapp,
@@ -248,7 +240,7 @@ app.post("/api/webhook", async (req, res) => {
   }
 });
 
-// --- 5. OUTRAS ROTAS (IGUAIS AO ANTERIOR) ---
+// --- 5. OUTRAS ROTAS ---
 
 app.get("/api/itens-disponiveis", (req, res) => {
   db.query(
@@ -426,7 +418,7 @@ app.delete("/api/admin/pedidos/:id", checkAuth, (req, res) => {
   );
 });
 
-// FINANCEIRO & PREÇOS & AVALIAÇÕES (Resumido para caber, mas mantendo funcionalidade)
+// FINANCEIRO & PREÇOS & AVALIAÇÕES
 app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) =>
   db.query(
     "INSERT INTO custos_festa (orcamento_id, descricao, valor) VALUES (?, ?, ?)",

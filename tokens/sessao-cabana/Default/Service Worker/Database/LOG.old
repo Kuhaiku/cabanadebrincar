@@ -1,3 +1,2 @@
-2026/02/06-05:30:48.599 2ad0 Reusing MANIFEST C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Service Worker\Database/MANIFEST-000001
-2026/02/06-05:30:48.601 2ad0 Recovering log #3
-2026/02/06-05:30:48.602 2ad0 Reusing old log C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Service Worker\Database/000003.log 
+2026/02/06-05:44:32.952 4d20 Creating DB C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Service Worker\Database since it was missing.
+2026/02/06-05:44:32.957 4d20 Reusing MANIFEST C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Service Worker\Database/MANIFEST-000001

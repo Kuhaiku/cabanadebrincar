@@ -1,3 +1,2 @@
-2026/02/06-05:30:48.609 820 Reusing MANIFEST C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Sync Data\LevelDB/MANIFEST-000001
-2026/02/06-05:30:48.610 820 Recovering log #3
-2026/02/06-05:30:48.610 820 Reusing old log C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Sync Data\LevelDB/000003.log 
+2026/02/06-05:44:32.816 4d20 Creating DB C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Sync Data\LevelDB since it was missing.
+2026/02/06-05:44:32.827 4d20 Reusing MANIFEST C:\Users\Raposobl\Desktop\cabanadebrincar\tokens\sessao-cabana\Default\Sync Data\LevelDB/MANIFEST-000001

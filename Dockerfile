@@ -1,20 +1,36 @@
-# Usa uma imagem leve do Node.js (Alpine Linux)
-FROM node:18-alpine
+FROM node:18
 
-# Define o diretório de trabalho dentro do container
+# 1. Instala dependências do Chrome/Puppeteer (Necessário para o Venom-bot)
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    ca-certificates \
+    procps \
+    libxss1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libnss3 \
+    libx11-xcb1 \
+    libxtst6 \
+    lsb-release \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Define diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos de dependência primeiro (para aproveitar o cache do Docker)
+# 3. Copia arquivos de dependência
 COPY package*.json ./
 
-# Instala as dependências do projeto
-RUN npm install --production
+# 4. Instala dependências do projeto
+RUN npm install
 
-# Copia todo o restante do código fonte para dentro do container
+# 5. Copia o restante do projeto
 COPY . .
 
-# Expõe a porta que o servidor usa (3000 definida no seu server.js)
+# 6. Expõe a porta
 EXPOSE 3000
 
-# Comando para iniciar a aplicação
+# 7. Comando de inicialização
 CMD ["node", "server.js"]

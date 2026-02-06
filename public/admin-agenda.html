@@ -14,13 +14,19 @@
         .fc-daygrid-day.fc-day-today { background-color: #fdf2f8 !important; }
         .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 700; color: #334155; }
         .fc-button-primary { background-color: #ec4899 !important; border-color: #ec4899 !important; }
+
+        /* Scrollbar estilizada igual a de Pedidos */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-50 p-6">
 
     <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
         <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <a href="painel.html" class="text-slate-400 hover:text-pink-500"><i data-lucide="arrow-left"></i></a>
+            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors"><i data-lucide="arrow-left"></i></a>
             Agenda de Festas
         </h1>
     </div>
@@ -29,39 +35,124 @@
         <div id='calendar'></div>
     </div>
 
-    <div id="modal-agenda" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
-            <button onclick="fecharModal()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500">
-                <i data-lucide="x"></i>
+    <div id="modal-agenda" class="fixed inset-0 bg-black/80 hidden z-50 backdrop-blur-sm flex items-center justify-center p-0 md:p-6">
+        
+        <div class="bg-white w-full h-full md:h-[90vh] md:rounded-2xl md:max-w-5xl shadow-2xl flex flex-col md:flex-row relative overflow-hidden">
+            
+            <button onclick="fecharModal()" class="absolute top-4 right-4 z-50 bg-white/90 p-2 rounded-full shadow-md text-slate-500 hover:text-red-500 border border-slate-100">
+                <i data-lucide="x" class="w-6 h-6"></i>
             </button>
 
-            <div class="text-center mb-6">
-                <div class="bg-pink-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-pink-600">
-                    <i data-lucide="party-popper" class="w-8 h-8"></i>
+            <div class="w-full md:w-3/5 bg-white flex flex-col h-full order-2 md:order-1 overflow-hidden">
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 pb-32 md:pb-8">
+                    <h3 class="text-xl font-bold text-pink-600 mb-6 flex items-center gap-2 border-b border-pink-100 pb-4 mt-8 md:mt-0">
+                        <i data-lucide="file-text"></i> Ficha do Evento
+                    </h3>
+
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cliente</p>
+                                <p class="font-bold text-slate-800 text-lg" id="det-nome"></p>
+                                <a id="det-whatsapp-link" href="#" target="_blank" class="flex items-center gap-1 text-xs text-green-600 font-bold hover:underline mt-1">
+                                    <i data-lucide="message-circle" class="w-3 h-3"></i> <span id="det-whatsapp"></span>
+                                </a>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data & Hora</p>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="calendar" class="w-4 h-4 text-pink-500"></i>
+                                    <span class="font-bold text-slate-800" id="det-data"></span>
+                                </div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <i data-lucide="clock" class="w-4 h-4 text-pink-500"></i>
+                                    <span class="text-sm text-slate-500" id="det-horario"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-200">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> Endereço</p>
+                            <p class="text-sm text-slate-600 font-medium mt-1 leading-relaxed" id="det-endereco"></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                            <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-3">Estrutura</p>
+                            <ul class="space-y-2 text-sm text-slate-700">
+                                <li><strong>Modelo:</strong> <span id="det-modelo"></span></li>
+                                <li><strong>Qtd:</strong> <span id="det-qtd-barracas" class="font-bold text-indigo-700"></span></li>
+                                <li><strong>Crianças:</strong> <span id="det-criancas"></span></li>
+                                <li><strong>Idade:</strong> <span id="det-faixa"></span></li>
+                            </ul>
+                        </div>
+                        <div class="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
+                            <p class="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-3">Decoração</p>
+                            <p class="text-xs text-slate-500">Tema:</p>
+                            <p class="font-bold text-slate-800 mb-2" id="det-tema"></p>
+                            <p class="text-xs text-slate-500">Cores:</p>
+                            <p class="font-medium text-slate-700 leading-tight" id="det-cores"></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Itens do Pacote</p>
+                        <div class="flex flex-wrap gap-2 mb-3" id="det-itens-tags"></div>
+                        
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4">Alimentação</p>
+                        <div class="flex flex-wrap gap-2" id="det-comida-tags"></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                            <p class="text-[10px] font-bold text-yellow-600 uppercase mb-1 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Observações</p>
+                            <p class="text-xs text-slate-700 italic" id="det-obs"></p>
+                        </div>
+                        <div id="box-alergias" class="bg-red-50 p-3 rounded-lg border border-red-200 hidden">
+                            <p class="text-[10px] font-bold text-red-600 uppercase mb-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Alergias</p>
+                            <p class="text-xs text-red-800 font-bold" id="det-alergias"></p>
+                        </div>
+                    </div>
                 </div>
-                <h3 id="agenda-cliente" class="text-xl font-bold text-slate-800">Cliente</h3>
-                <p id="agenda-data" class="text-pink-500 font-bold text-sm">Data</p>
             </div>
 
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm space-y-3 mb-6">
-                <p><strong>📍 Endereço:</strong> <span id="agenda-endereco" class="text-slate-600"></span></p>
-                <p><strong>⛺ Barracas:</strong> <span id="agenda-barracas" class="text-slate-600"></span></p>
-                <p><strong>💰 Valor Previsto:</strong> <span id="agenda-valor" class="text-green-600 font-bold"></span></p>
-            </div>
+            <div class="w-full md:w-2/5 bg-slate-50 border-l border-slate-200 flex flex-col h-full order-1 md:order-2 overflow-hidden">
+                
+                <div class="p-6 border-b border-slate-200 bg-slate-100/50 pt-16 md:pt-6">
+                    <h4 class="font-bold text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Gestão da Festa</h4>
+                </div>
+                
+                <div class="flex-1 p-6 flex flex-col items-center justify-center text-center">
+                    
+                    <div class="mb-8 w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-1">Valor Contratado</p>
+                        <p id="det-valor-final" class="text-3xl font-bold text-green-600 tracking-tight">R$ 0,00</p>
+                        <div class="mt-2 text-xs text-slate-500 bg-slate-100 inline-block px-3 py-1 rounded-full">
+                            Status: <span class="font-bold text-blue-600">Agendado</span>
+                        </div>
+                    </div>
 
-            <div class="space-y-3">
-                <button id="btn-gerar-link" onclick="gerarLinkAvaliacao()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-3 rounded-xl hover:bg-indigo-100 flex items-center justify-center gap-2 transition-colors">
-                    <i data-lucide="star"></i> Gerar Link Avaliação
-                </button>
-                <div id="box-link" class="hidden bg-slate-800 p-3 rounded-lg text-center">
-                    <p class="text-slate-400 text-xs mb-1">Link para o cliente:</p>
-                    <input type="text" id="input-link" class="w-full bg-transparent text-white text-center text-sm font-mono border-none focus:ring-0" readonly>
-                    <button onclick="copiarLink()" class="mt-2 text-xs bg-indigo-500 text-white px-3 py-1 rounded">Copiar</button>
+                    <div class="w-full space-y-4">
+                        <button id="btn-gerar-link" onclick="gerarLinkAvaliacao()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-4 rounded-xl hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-2 transition-colors">
+                            <i data-lucide="star"></i> Gerar Link Avaliação
+                        </button>
+
+                        <div id="box-link" class="hidden w-full bg-slate-800 p-4 rounded-xl text-center shadow-lg">
+                            <p class="text-slate-400 text-xs mb-2 uppercase font-bold tracking-wider">Link para o cliente</p>
+                            <input type="text" id="input-link" class="w-full bg-slate-700 text-white text-center text-sm font-mono border border-slate-600 rounded p-2 mb-2 focus:ring-0 focus:outline-none" readonly>
+                            <button onclick="copiarLink()" class="w-full bg-indigo-500 text-white text-xs font-bold py-2 rounded hover:bg-indigo-600 transition-colors">
+                                Copiar Link
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <button onclick="concluirServico()" class="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200 flex items-center justify-center gap-2 transition-transform active:scale-95">
-                    <i data-lucide="check-circle-2"></i> Concluir & Lançar Receita
-                </button>
+                <div class="p-6 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
+                    <button onclick="concluirServico()" class="w-full bg-green-500 text-white font-bold py-4 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200 flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i> Concluir & Lançar Receita
+                    </button>
+                    <p class="text-[10px] text-center text-slate-400 mt-2">Isso marcará a festa como realizada e atualizará o financeiro.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -116,22 +207,79 @@
             lucide.createIcons();
         });
 
+        // Função auxiliar para parsear JSON seguro
+        function safeParse(json) {
+            if(!json) return [];
+            try { 
+                return (typeof json === 'object') ? json : JSON.parse(json); 
+            } catch { return []; }
+        }
+
         function abrirModalAgenda(dados) {
             eventoSelecionado = dados;
-            document.getElementById('agenda-cliente').innerText = dados.nome;
             
+            // --- Preencher Ficha do Evento ---
+            document.getElementById('det-nome').innerText = dados.nome;
+            
+            const whatsappLimpo = dados.whatsapp ? dados.whatsapp.replace(/\D/g,'') : '';
+            document.getElementById('det-whatsapp').innerText = dados.whatsapp || '-';
+            document.getElementById('det-whatsapp-link').href = whatsappLimpo ? `https://wa.me/55${whatsappLimpo}` : '#';
+
             let d = dados.data_festa;
             if(d.includes('T')) d = d.split('T')[0];
             const dataFormatada = new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-
-            document.getElementById('agenda-data').innerText = `${dataFormatada} às ${dados.horario}`;
-            document.getElementById('agenda-endereco').innerText = dados.endereco;
-            document.getElementById('agenda-barracas').innerText = `${dados.qtd_barracas}x ${dados.modelo_barraca}`;
-            document.getElementById('agenda-valor').innerText = `R$ ${dados.valor_final || '0.00'}`;
+            document.getElementById('det-data').innerText = dataFormatada;
+            document.getElementById('det-horario').innerText = dados.horario || 'Não informado';
             
+            document.getElementById('det-endereco').innerText = dados.endereco;
+
+            // --- Estrutura ---
+            document.getElementById('det-modelo').innerText = dados.modelo_barraca;
+            document.getElementById('det-qtd-barracas').innerText = dados.qtd_barracas;
+            document.getElementById('det-criancas').innerText = dados.qtd_criancas || '-';
+            document.getElementById('det-faixa').innerText = dados.faixa_etaria || '-';
+
+            // --- Decoração ---
+            document.getElementById('det-tema').innerText = dados.tema || 'A definir';
+            document.getElementById('det-cores').innerText = dados.cores || 'A definir';
+
+            // --- Itens e Alimentação ---
+            const divItens = document.getElementById('det-itens-tags');
+            const divComida = document.getElementById('det-comida-tags');
+            divItens.innerHTML = '';
+            divComida.innerHTML = '';
+
+            const itens = safeParse(dados.itens_padrao);
+            if(itens.length === 0) divItens.innerHTML = '<span class="text-xs text-slate-400 italic">Nenhum item extra.</span>';
+            itens.forEach(i => {
+                divItens.innerHTML += `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded border border-indigo-100">${i}</span>`;
+            });
+
+            const comida = safeParse(dados.alimentacao);
+            if(comida.length === 0) divComida.innerHTML = '<span class="text-xs text-slate-400 italic">Sem alimentação inclusa.</span>';
+            comida.forEach(c => {
+                divComida.innerHTML += `<span class="bg-pink-50 text-pink-700 text-[10px] font-bold px-2 py-1 rounded border border-pink-100 flex items-center gap-1"><i data-lucide="utensils" class="w-3 h-3"></i> ${c}</span>`;
+            });
+
+            // --- Obs e Alergias ---
+            document.getElementById('det-obs').innerText = dados.itens_adicionais || 'Nenhuma.';
+            const boxAlergias = document.getElementById('box-alergias');
+            if(dados.alergias && dados.alergias.length > 2 && dados.alergias.toLowerCase() !== 'não') {
+                document.getElementById('det-alergias').innerText = dados.alergias;
+                boxAlergias.classList.remove('hidden');
+            } else {
+                boxAlergias.classList.add('hidden');
+            }
+
+            // --- Coluna Direita (Financeiro e Ações) ---
+            document.getElementById('det-valor-final').innerText = `R$ ${dados.valor_final || '0.00'}`;
+            
+            // Resetar estados dos botões
             document.getElementById('box-link').classList.add('hidden');
             document.getElementById('btn-gerar-link').classList.remove('hidden');
             document.getElementById('modal-agenda').classList.remove('hidden');
+
+            lucide.createIcons();
         }
 
         async function gerarLinkAvaliacao() {
@@ -158,11 +306,10 @@
         }
 
         async function concluirServico() {
-            // AQUI ESTÁ A LÓGICA DE CONFIRMAÇÃO DO VALOR
             const valorAtual = eventoSelecionado.valor_final || "0.00";
             const valorReal = prompt("Confirmar valor FINAL recebido nesta festa (R$):", valorAtual);
 
-            if(valorReal === null) return; // Se cancelar, não faz nada
+            if(valorReal === null) return; 
 
             if(!confirm("A festa será marcada como CONCLUÍDA e o valor de R$ " + valorReal + " entrará no financeiro.")) return;
 

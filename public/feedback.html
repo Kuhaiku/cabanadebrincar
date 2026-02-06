@@ -8,28 +8,35 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-pink-50 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white max-w-lg w-full rounded-3xl shadow-2xl p-8 text-center relative overflow-hidden">
+
+    <div id="loading" class="text-center">
+        <i data-lucide="loader-2" class="w-12 h-12 animate-spin text-pink-500 mx-auto"></i>
+        <p class="mt-4 text-slate-500 font-bold">Verificando link...</p>
+    </div>
+
+    <div id="error-screen" class="hidden bg-white max-w-md w-full rounded-3xl shadow-xl p-10 text-center">
+        <i data-lucide="alert-circle" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
+        <h2 class="text-xl font-bold text-slate-800 mb-2">Link Inválido ou Expirado</h2>
+        <p class="text-slate-500 mb-6">Não conseguimos encontrar este pedido. Verifique se o link está correto.</p>
+        <a href="index.html" class="bg-slate-100 text-slate-600 px-6 py-3 rounded-xl font-bold hover:bg-slate-200">Voltar ao Início</a>
+    </div>
+
+    <div id="main-content" class="hidden bg-white max-w-lg w-full rounded-3xl shadow-2xl p-8 text-center relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-400 to-purple-500"></div>
         
-        <h1 class="text-2xl font-bold text-slate-800 mb-2">Como foi a festa?</h1>
-        <p class="text-slate-500 text-sm mb-8">Sua opinião ajuda a criar mais magia!</p>
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">Olá, <span id="client-name" class="text-pink-500">Cliente</span>!</h1>
+        <p class="text-slate-500 text-sm mb-8">Como foi a festa? Sua opinião ajuda a criar mais magia!</p>
 
         <form id="form-feedback" class="space-y-6 text-left">
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase mb-2 text-center">Sua Nota</label>
-                <div class="flex justify-center gap-2 text-3xl text-slate-200 cursor-pointer" id="star-rating">
-                    <span data-val="1" class="hover:text-yellow-400 transition-colors">★</span>
-                    <span data-val="2" class="hover:text-yellow-400 transition-colors">★</span>
-                    <span data-val="3" class="hover:text-yellow-400 transition-colors">★</span>
-                    <span data-val="4" class="hover:text-yellow-400 transition-colors">★</span>
-                    <span data-val="5" class="hover:text-yellow-400 transition-colors">★</span>
-                </div>
+                <div class="flex justify-center gap-2 cursor-pointer" id="stars-container"></div>
                 <input type="hidden" name="nota" id="input-nota" value="5">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Seu Comentário (máx 350)</label>
-                <textarea name="texto" maxlength="350" rows="4" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-pink-500" placeholder="Conte o que mais gostou..."></textarea>
+                <textarea name="texto" maxlength="350" rows="4" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-pink-500 transition-all" placeholder="Conte o que mais gostou..."></textarea>
                 <p class="text-right text-xs text-slate-300 mt-1"><span id="char-count">0</span>/350</p>
             </div>
 
@@ -38,9 +45,9 @@
                 <div class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 transition-colors relative">
                     <input type="file" name="fotos" multiple accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewFotos(this)">
                     <i data-lucide="image-plus" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                    <p class="text-sm text-slate-400">Toque para adicionar até 5 fotos</p>
+                    <p class="text-sm text-slate-400">Toque para adicionar até 6 fotos</p>
                 </div>
-                <div id="preview-area" class="flex gap-2 mt-4 overflow-x-auto"></div>
+                <div id="preview-area" class="grid grid-cols-3 gap-2 mt-4"></div>
             </div>
 
             <button type="submit" class="w-full bg-pink-500 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-pink-600 transition-all transform hover:scale-[1.02]">
@@ -50,53 +57,96 @@
     </div>
 
     <script>
-        lucide.createIcons();
-        
-        // Lógica das Estrelas
-        const stars = document.querySelectorAll('#star-rating span');
-        const inputNota = document.getElementById('input-nota');
-        
-        function setStars(n) {
-            inputNota.value = n;
-            stars.forEach(s => {
-                s.classList.toggle('text-yellow-400', s.dataset.val <= n);
-                s.classList.toggle('text-slate-200', s.dataset.val > n);
-            });
-        }
-        setStars(5); // Padrão
-        stars.forEach(s => s.addEventListener('click', () => setStars(s.dataset.val)));
+        // 1. Inicialização e Validação do Link
+        const params = new URLSearchParams(window.location.search);
+        // Aceita tanto 't' quanto 'token'
+        const token = params.get('t') || params.get('token');
 
-        // Contador de Caracteres
-        document.querySelector('textarea').addEventListener('input', function() {
-            document.getElementById('char-count').innerText = this.value.length;
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            
+            if(!token) {
+                showError();
+                return;
+            }
+
+            try {
+                // Chama a nova rota GET que criamos no server.js
+                const res = await fetch(`/api/feedback/${token}`);
+                if(res.ok) {
+                    const data = await res.json();
+                    document.getElementById('client-name').innerText = data.nome.split(' ')[0]; // Só o primeiro nome
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    initForm(); // Carrega estrelas e eventos
+                } else {
+                    showError();
+                }
+            } catch(e) {
+                showError();
+            }
         });
 
-        // Preview Fotos
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-screen').classList.remove('hidden');
+        }
+
+        function initForm() {
+            // Lógica das Estrelas
+            const starsContainer = document.getElementById('stars-container');
+            const inputNota = document.getElementById('input-nota');
+            
+            function renderStars(rating) {
+                starsContainer.innerHTML = '';
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('i');
+                    star.setAttribute('data-lucide', 'star');
+                    const isActive = i <= rating;
+                    star.className = `w-10 h-10 transition-colors cursor-pointer ${isActive ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200 fill-slate-50'}`;
+                    star.onclick = () => {
+                        inputNota.value = i;
+                        renderStars(i);
+                    };
+                    starsContainer.appendChild(star);
+                }
+                lucide.createIcons();
+            }
+            renderStars(5); // Inicia com 5
+
+            // Contador
+            document.querySelector('textarea').addEventListener('input', function() {
+                document.getElementById('char-count').innerText = this.value.length;
+            });
+        }
+
+        // Preview de Fotos (Max 6)
         function previewFotos(input) {
             const area = document.getElementById('preview-area');
             area.innerHTML = '';
-            if(input.files.length > 5) {
-                alert("Máximo de 5 fotos!");
+            
+            if(input.files.length > 6) {
+                alert("Máximo de 6 fotos! Por favor selecione menos.");
                 input.value = '';
                 return;
             }
+
             Array.from(input.files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = e => {
-                    area.innerHTML += `<img src="${e.target.result}" class="w-16 h-16 rounded-lg object-cover shadow-sm">`;
+                    area.innerHTML += `
+                        <div class="relative aspect-square">
+                            <img src="${e.target.result}" class="w-full h-full rounded-lg object-cover shadow-sm border border-slate-100">
+                        </div>`;
                 };
                 reader.readAsDataURL(file);
             });
         }
 
-        // Envio
+        // Envio do Formulário
         document.getElementById('form-feedback').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const params = new URLSearchParams(window.location.search);
-            const token = params.get('t');
             
-            if(!token) return alert("Link inválido.");
-
             const formData = new FormData(e.target);
             const btn = e.target.querySelector('button');
             const originalText = btn.innerText;
@@ -108,14 +158,19 @@
                     method: 'POST',
                     body: formData
                 });
+                
                 if(res.ok) {
                     document.body.innerHTML = `
-                        <div class="text-center p-10 bg-white rounded-3xl shadow-xl animate-bounce">
-                            <div class="text-5xl mb-4">💖</div>
-                            <h1 class="text-2xl font-bold text-slate-800">Obrigado!</h1>
-                            <p class="text-slate-500">Ficamos felizes com seu carinho.</p>
+                        <div class="min-h-screen flex items-center justify-center bg-pink-50 p-4">
+                            <div class="text-center p-10 bg-white rounded-3xl shadow-xl animate-bounce max-w-md w-full">
+                                <div class="text-5xl mb-4">💖</div>
+                                <h1 class="text-2xl font-bold text-slate-800">Obrigado!</h1>
+                                <p class="text-slate-500 mb-4">Ficamos muito felizes com seu carinho.</p>
+                                <p class="text-xs text-slate-400">Redirecionando em 3s...</p>
+                            </div>
                         </div>
                     `;
+                    setTimeout(() => window.location.href = 'index.html', 3000);
                 } else {
                     alert("Erro ao enviar. Tente novamente.");
                     btn.innerText = originalText;
@@ -124,6 +179,8 @@
             } catch(err) {
                 console.error(err);
                 alert("Erro de conexão.");
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         });
     </script>

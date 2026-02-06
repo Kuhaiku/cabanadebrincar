@@ -3,235 +3,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Preços | Cabana de Brincar</title>
+    <title>Construtor de Formulário | Cabana Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
         body { font-family: 'Quicksand', sans-serif; }
-        /* Toggle Switch CSS */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #10B981;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #10B981;
-        }
+        .ghost { opacity: 0.5; background: #f0f9ff; border: 2px dashed #3b82f6; }
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
     </style>
 </head>
-<body class="bg-slate-50 p-6 min-h-screen">
+<body class="bg-slate-100 min-h-screen pb-20">
 
-    <div class="max-w-6xl mx-auto mb-8 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors"><i data-lucide="arrow-left"></i></a>
-            Gerenciador de Itens
-        </h1>
+    <div class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <a href="painel.html" class="bg-slate-100 p-2 rounded-lg hover:bg-slate-200 transition"><i data-lucide="arrow-left" class="w-5 h-5 text-slate-600"></i></a>
+            <h1 class="text-xl font-bold text-slate-800">Editor de Formulário</h1>
+        </div>
+        <button onclick="salvarFormulario()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:shadow-indigo-200 transition-all flex items-center gap-2">
+            <i data-lucide="save" class="w-4 h-4"></i> Salvar Alterações
+        </button>
     </div>
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="max-w-4xl mx-auto mt-8 px-4">
+        
+        <div id="lista-secoes" class="space-y-6">
+            </div>
 
-        <div class="lg:col-span-1">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
-                <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    <div class="bg-green-100 p-2 rounded-lg text-green-600"><i data-lucide="plus" class="w-4 h-4"></i></div>
-                    Novo Item
-                </h2>
-                
-                <form id="form-novo-item" onsubmit="adicionarItem(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Descrição</label>
-                        <input type="text" id="nova-descricao" required placeholder="Ex: Cabana Índio" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors">
-                    </div>
+        <button onclick="adicionarSecao()" class="mt-8 w-full border-2 border-dashed border-slate-300 rounded-2xl p-6 text-slate-400 font-bold hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex flex-col items-center justify-center gap-2">
+            <i data-lucide="plus-circle" class="w-8 h-8"></i>
+            Adicionar Nova Seção
+        </button>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Categoria</label>
-                        <div class="relative">
-                            <select id="nova-categoria" required class="w-full p-3 border border-slate-200 rounded-xl text-sm appearance-none bg-white focus:outline-none focus:border-pink-500 transition-colors cursor-pointer">
-                                <option value="" disabled selected>Selecione...</option>
-                                <option value="tendas">🏕️ Barracas</option>
-                                <option value="padrao">📦 Item Padrão</option>
-                                <option value="alimentacao">🍽️ Alimentação</option>
-                                <option value="sistema">⚙️ Taxa / Sistema</option>
-                            </select>
-                            <i data-lucide="chevron-down" class="absolute right-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none"></i>
-                        </div>
-                    </div>
+    </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Valor (R$)</label>
-                        <input type="number" id="novo-valor" required step="0.01" placeholder="0.00" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-pink-500 transition-colors">
-                    </div>
-
-                    <button type="submit" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 flex justify-center items-center gap-2">
-                        <i data-lucide="save" class="w-4 h-4"></i> Salvar
+    <template id="tpl-secao">
+        <div class="secao-item bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" data-id="">
+            <div class="bg-slate-50 p-4 border-b border-slate-100 flex items-center justify-between group">
+                <div class="flex items-center gap-3 flex-1">
+                    <i data-lucide="grip-vertical" class="drag-handle w-5 h-5 text-slate-300 hover:text-slate-600"></i>
+                    <input type="text" class="titulo-secao bg-transparent font-bold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded px-2 py-1 w-full" placeholder="Título da Seção (Ex: Dados Pessoais)">
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="alternarVisibilidade(this)" class="btn-visivel p-2 text-slate-400 hover:text-indigo-600 transition" title="Ocultar/Mostrar">
+                        <i data-lucide="eye"></i>
                     </button>
-                </form>
+                    <button onclick="removerElemento(this, '.secao-item')" class="p-2 text-slate-400 hover:text-red-500 transition" title="Excluir Seção">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-white">
+                <div class="lista-campos space-y-3 min-h-[50px]">
+                    </div>
+                
+                <button onclick="adicionarCampo(this)" class="mt-4 text-xs font-bold text-indigo-500 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg transition-colors">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Adicionar Campo
+                </button>
             </div>
         </div>
+    </template>
 
-        <div class="lg:col-span-3 space-y-6" id="container-listas">
-            <div class="text-center py-10 text-slate-400">
-                <i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2"></i>
-                Carregando tabela...
+    <template id="tpl-campo">
+        <div class="campo-item flex flex-col md:flex-row gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 transition-all group" data-id="">
+            <div class="flex items-center gap-2 md:w-8 pt-2 md:pt-0 justify-center">
+                <i data-lucide="grip-vertical" class="drag-handle w-4 h-4 text-slate-300 hover:text-slate-500 cursor-grab"></i>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2 flex-1">
+                <div class="md:col-span-4">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Rótulo (Label)</label>
+                    <input type="text" class="input-label w-full text-sm p-2 rounded border border-slate-200 focus:border-indigo-400 outline-none" placeholder="Ex: Nome Completo">
+                </div>
+                
+                <div class="md:col-span-3">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
+                    <select class="input-tipo w-full text-sm p-2 rounded border border-slate-200 focus:border-indigo-400 outline-none bg-white" onchange="toggleOpcoes(this)">
+                        <option value="text">Texto Curto</option>
+                        <option value="textarea">Texto Longo</option>
+                        <option value="number">Número</option>
+                        <option value="date">Data</option>
+                        <option value="time">Hora</option>
+                        <option value="tel">Telefone/Zap</option>
+                        <option value="select">Lista (Select)</option>
+                        <option value="checkbox_group">Múltipla Escolha</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-3">
+                     <label class="text-[10px] font-bold text-slate-400 uppercase">Chave (BD)</label>
+                     <input type="text" class="input-chave w-full text-sm p-2 rounded border border-slate-200 bg-slate-100 text-slate-500 outline-none" placeholder="auto" title="Usado no banco de dados">
+                </div>
+
+                <div class="md:col-span-2 flex items-end gap-2">
+                    <label class="flex items-center gap-1 cursor-pointer select-none bg-white border border-slate-200 px-2 py-2 rounded w-full justify-center">
+                        <input type="checkbox" class="input-required w-3 h-3 text-indigo-600 rounded">
+                        <span class="text-xs font-bold text-slate-600">Obrig.</span>
+                    </label>
+                </div>
+
+                <div class="container-opcoes hidden md:col-span-12 bg-white p-2 rounded border border-slate-200 mt-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Opções (Separar por vírgula) ou Fonte de Dados</label>
+                    <div class="flex gap-2">
+                         <input type="text" class="input-opcoes w-full text-xs p-2 rounded border border-slate-200 bg-slate-50" placeholder="Opção 1, Opção 2, Opção 3...">
+                         <select class="input-fonte w-1/3 text-xs p-2 rounded border border-slate-200 bg-slate-50">
+                             <option value="">Manual</option>
+                             <option value="padrao">BD: Itens Padrão</option>
+                             <option value="tendas">BD: Barracas</option>
+                             <option value="alimentacao">BD: Alimentação</option>
+                         </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col justify-start pt-1">
+                <button onclick="removerElemento(this, '.campo-item')" class="text-slate-300 hover:text-red-500 p-1 rounded transition">
+                    <i data-lucide="trash" class="w-4 h-4"></i>
+                </button>
             </div>
         </div>
-
-    </div>
+    </template>
 
     <script>
         const API_URL = '/api';
         const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
         if(!ADMIN_TOKEN) window.location.href = 'painel.html';
 
-        const CATEGORIAS = {
-            'tendas': { titulo: 'Modelos de Barracas', icon: 'tent', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-            'padrao': { titulo: 'Itens do Pacote', icon: 'package', color: 'text-blue-600', bg: 'bg-blue-50' },
-            'alimentacao': { titulo: 'Alimentação', icon: 'utensils', color: 'text-pink-600', bg: 'bg-pink-50' },
-            'sistema': { titulo: 'Taxas e Extras', icon: 'settings', color: 'text-slate-600', bg: 'bg-slate-100' }
-        };
-
-        const OPCOES_SELECT = [
-            {val: 'tendas', label: 'Barraca'},
-            {val: 'padrao', label: 'Item Padrão'},
-            {val: 'alimentacao', label: 'Alimentação'},
-            {val: 'sistema', label: 'Taxa'}
-        ];
+        let layoutAtual = [];
 
         async function init() {
-            lucide.createIcons();
-            carregarItens();
-        }
-
-        async function carregarItens() {
             try {
-                const res = await fetch(`${API_URL}/admin/precos`, { headers: { 'x-admin-password': ADMIN_TOKEN } });
-                const itens = await res.json();
-                renderizarListas(itens);
-            } catch (error) { console.error(error); }
-        }
-
-        function renderizarListas(itens) {
-            const container = document.getElementById('container-listas');
-            container.innerHTML = '';
-
-            const grupos = { tendas: [], padrao: [], alimentacao: [], sistema: [], outros: [] };
-            itens.forEach(item => {
-                const cat = grupos[item.categoria] ? item.categoria : 'outros';
-                grupos[cat].push(item);
-            });
-
-            for (const [key, lista] of Object.entries(grupos)) {
-                if (lista.length === 0) continue;
-                const config = CATEGORIAS[key] || { titulo: 'Outros', icon: 'list', color: 'text-gray-600', bg: 'bg-gray-50' };
-
-                let htmlItens = lista.map(item => {
-                    const isChecked = (item.disponivel === 1 || item.disponivel === true) ? 'checked' : '';
-                    const opacityClass = isChecked ? '' : 'opacity-50 grayscale bg-slate-50'; // Visual de desativado
-
-                    // Gera o select de categorias dinamicamente
-                    let selectCatHtml = `<select onchange="atualizarCampo(${item.id}, 'categoria', this.value)" class="text-xs bg-transparent border-none text-slate-500 focus:text-indigo-600 font-bold cursor-pointer focus:outline-none">`;
-                    OPCOES_SELECT.forEach(opt => {
-                        selectCatHtml += `<option value="${opt.val}" ${item.categoria === opt.val ? 'selected' : ''}>${opt.label}</option>`;
-                    });
-                    selectCatHtml += `</select>`;
-
-                    return `
-                    <div class="flex flex-col md:flex-row md:items-center gap-3 p-4 hover:bg-slate-50 rounded-lg group transition-all border-b border-slate-50 last:border-0 ${opacityClass}">
-                        
-                        <div class="flex items-center gap-2">
-                             <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" name="toggle" id="toggle-${item.id}" ${isChecked} 
-                                       class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 transition-all duration-300 ease-in-out top-0 left-0"
-                                       onchange="atualizarCampo(${item.id}, 'disponivel', this.checked ? 1 : 0)"/>
-                                <label for="toggle-${item.id}" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
-                            </div>
-                        </div>
-
-                        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <input type="text" value="${item.descricao}" 
-                                   class="bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-300 focus:bg-white rounded px-2 py-1 text-sm font-medium text-slate-700 w-full transition-all"
-                                   onchange="atualizarCampo(${item.id}, 'descricao', this.value)">
-                            
-                            <div class="flex items-center gap-2">
-                                ${selectCatHtml}
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center gap-3 justify-end mt-2 md:mt-0">
-                            <div class="relative w-24">
-                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">R$</span>
-                                <input type="number" step="0.01" value="${item.valor}" 
-                                       class="w-full pl-6 pr-2 py-1 border border-slate-200 rounded text-sm text-right font-bold text-slate-600 focus:border-green-500 focus:text-green-600 focus:outline-none transition-colors"
-                                       onchange="atualizarCampo(${item.id}, 'valor', this.value)">
-                            </div>
-                            
-                            <button onclick="deletarItem(${item.id})" class="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all" title="Excluir Definitivamente">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-                `}).join('');
-
-                container.innerHTML += `
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
-                        <div class="p-4 border-b border-slate-100 flex items-center gap-3 ${config.bg}">
-                            <i data-lucide="${config.icon}" class="w-5 h-5 ${config.color}"></i>
-                            <h3 class="font-bold text-slate-700">${config.titulo}</h3>
-                        </div>
-                        <div class="p-2">${htmlItens}</div>
-                    </div>
-                `;
+                const res = await fetch(`${API_URL}/form-config`);
+                layoutAtual = await res.json();
+                renderizarLayout();
+            } catch (e) {
+                console.error("Erro ao carregar layout", e);
             }
+        }
+
+        function renderizarLayout() {
+            const container = document.getElementById('lista-secoes');
+            container.innerHTML = '';
+            
+            layoutAtual.forEach(secao => {
+                adicionarSecaoDOM(secao);
+            });
+            
+            // Inicializa Sortable para as seções
+            new Sortable(container, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'ghost'
+            });
+        }
+
+        function adicionarSecaoDOM(dados = {}) {
+            const tpl = document.getElementById('tpl-secao');
+            const clone = tpl.content.cloneNode(true);
+            const el = clone.querySelector('.secao-item');
+            
+            el.dataset.id = dados.id || 'sec_' + Date.now();
+            el.querySelector('.titulo-secao').value = dados.titulo || '';
+            
+            // Visibilidade
+            const btnVisivel = el.querySelector('.btn-visivel');
+            if (dados.visivel === false) {
+                el.classList.add('opacity-50');
+                btnVisivel.innerHTML = '<i data-lucide="eye-off"></i>';
+            }
+
+            const listaCampos = el.querySelector('.lista-campos');
+            
+            if (dados.campos && dados.campos.length > 0) {
+                dados.campos.forEach(campo => adicionarCampoDOM(listaCampos, campo));
+            }
+
+            // Sortable para Campos dentro da Seção
+            new Sortable(listaCampos, {
+                animation: 150,
+                group: 'campos',
+                handle: '.drag-handle',
+                ghostClass: 'ghost'
+            });
+
+            document.getElementById('lista-secoes').appendChild(el);
             lucide.createIcons();
         }
 
-        async function adicionarItem(e) {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '...';
+        function adicionarCampoDOM(container, dados = {}) {
+            const tpl = document.getElementById('tpl-campo');
+            const clone = tpl.content.cloneNode(true);
+            const el = clone.querySelector('.campo-item');
+            
+            el.dataset.id = dados.id || 'f_' + Date.now();
+            el.querySelector('.input-label').value = dados.label || '';
+            el.querySelector('.input-chave').value = dados.chave || '';
+            el.querySelector('.input-tipo').value = dados.tipo || 'text';
+            el.querySelector('.input-required').checked = dados.required || false;
+            
+            if(dados.opcoes) el.querySelector('.input-opcoes').value = dados.opcoes;
+            if(dados.fonte_dados) {
+                el.querySelector('.input-fonte').value = dados.fonte_dados;
+                el.querySelector('.input-fonte').classList.add('text-indigo-600', 'font-bold');
+            }
 
-            const payload = {
-                descricao: document.getElementById('nova-descricao').value,
-                categoria: document.getElementById('nova-categoria').value,
-                valor: document.getElementById('novo-valor').value,
-                disponivel: 1
-            };
+            // Mostra opções se for select ou checkbox
+            if(['select', 'checkbox_group', 'radio'].includes(dados.tipo)) {
+                el.querySelector('.container-opcoes').classList.remove('hidden');
+            }
 
-            await fetch(`${API_URL}/admin/precos`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
-                body: JSON.stringify(payload)
-            });
-
-            document.getElementById('form-novo-item').reset();
-            btn.innerHTML = originalHtml;
-            carregarItens();
+            container.appendChild(el);
+            lucide.createIcons();
         }
 
-        async function atualizarCampo(id, campo, valor) {
-            // Se mudou a categoria, recarrega a lista para mover o item visualmente
-            const recarregar = campo === 'categoria' || campo === 'disponivel';
-            
+        function adicionarSecao() {
+            adicionarSecaoDOM({ titulo: 'Nova Seção', visivel: true, campos: [] });
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function adicionarCampo(btn) {
+            const container = btn.previousElementSibling; // div.lista-campos
+            adicionarCampoDOM(container, { label: 'Novo Campo' });
+        }
+
+        function removerElemento(btn, seletor) {
+            if(confirm('Tem certeza?')) {
+                btn.closest(seletor).remove();
+            }
+        }
+
+        function toggleOpcoes(select) {
+            const container = select.closest('.campo-item').querySelector('.container-opcoes');
+            if(['select', 'checkbox_group', 'radio'].includes(select.value)) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function alternarVisibilidade(btn) {
+            const item = btn.closest('.secao-item');
+            item.classList.toggle('opacity-50');
+            const icon = item.classList.contains('opacity-50') ? 'eye-off' : 'eye';
+            btn.innerHTML = `<i data-lucide="${icon}"></i>`;
+            lucide.createIcons();
+        }
+
+        async function salvarFormulario() {
+            const secoesDOM = document.querySelectorAll('.secao-item');
+            const novoLayout = [];
+
+            secoesDOM.forEach(sec => {
+                const id = sec.dataset.id;
+                const titulo = sec.querySelector('.titulo-secao').value;
+                const visivel = !sec.classList.contains('opacity-50');
+                
+                const campos = [];
+                sec.querySelectorAll('.campo-item').forEach(campo => {
+                    const tipo = campo.querySelector('.input-tipo').value;
+                    let chave = campo.querySelector('.input-chave').value;
+                    
+                    // Gera chave automática se vazia (slugify)
+                    if(!chave) {
+                        chave = titulo.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 5) + '_' + Math.floor(Math.random() * 1000);
+                    }
+
+                    campos.push({
+                        id: campo.dataset.id,
+                        label: campo.querySelector('.input-label').value,
+                        tipo: tipo,
+                        chave: chave,
+                        required: campo.querySelector('.input-required').checked,
+                        opcoes: campo.querySelector('.input-opcoes').value,
+                        fonte_dados: campo.querySelector('.input-fonte').value,
+                        largura: ['checkbox_group', 'textarea'].includes(tipo) ? 'inteira' : 'metade' // Lógica simples de layout
+                    });
+                });
+
+                novoLayout.push({ id, titulo, visivel, campos });
+            });
+
+            const btn = document.querySelector('button[onclick="salvarFormulario()"]');
+            const original = btn.innerHTML;
+            btn.innerHTML = 'Salvando...';
+
             try {
-                await fetch(`${API_URL}/admin/precos/${id}`, {
-                    method: 'PUT',
+                const res = await fetch(`${API_URL}/admin/form-config`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
-                    body: JSON.stringify({ [campo]: valor })
+                    body: JSON.stringify(novoLayout)
                 });
                 
-                if(recarregar) carregarItens();
+                if(res.ok) alert('Formulário atualizado com sucesso!');
+                else alert('Erro ao salvar.');
 
-            } catch(e) { alert("Erro ao salvar."); }
-        }
-
-        async function deletarItem(id) {
-            if(!confirm("Excluir permanentemente?")) return;
-            await fetch(`${API_URL}/admin/precos/${id}`, {
-                method: 'DELETE',
-                headers: { 'x-admin-password': ADMIN_TOKEN }
-            });
-            carregarItens();
+            } catch(e) {
+                alert('Erro de conexão');
+            } finally {
+                btn.innerHTML = original;
+            }
         }
 
         init();

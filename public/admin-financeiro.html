@@ -305,10 +305,20 @@
 
       async function init() {
         lucide.createIcons();
+        // CORREÇÃO DATA PADRÃO:
+        // Usa string YYYY-MM-DD local para garantir que o input date mostre o dia certo
         const hoje = new Date();
-        const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-        document.getElementById("filtro-inicio").valueAsDate = primeiroDia;
-        document.getElementById("filtro-fim").valueAsDate = hoje;
+        const ano = hoje.getFullYear();
+        const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+        const dia = String(hoje.getDate()).padStart(2, "0");
+        const dataHojeString = `${ano}-${mes}-${dia}`;
+
+        // Primeiro dia do mês
+        const dataInicioString = `${ano}-${mes}-01`;
+
+        document.getElementById("filtro-inicio").value = dataInicioString;
+        document.getElementById("filtro-fim").value = dataHojeString;
+
         await carregarDados();
       }
 
@@ -328,19 +338,25 @@
         }
       }
 
+      // --- CORREÇÃO PRINCIPAL NO FILTRO ---
       function aplicarFiltros() {
-        const dataInicio = new Date(
-          document.getElementById("filtro-inicio").value,
-        );
-        const dataFim = new Date(document.getElementById("filtro-fim").value);
-        dataFim.setHours(23, 59, 59);
+        const strInicio = document.getElementById("filtro-inicio").value;
+        const strFim = document.getElementById("filtro-fim").value;
 
+        // Ao adicionar 'T00:00:00', forçamos o navegador a tratar como Hora Local e não UTC.
+        const dataInicio = new Date(strInicio + "T00:00:00");
+        const dataFim = new Date(strFim + "T23:59:59.999");
+
+        // Filtragem Festas
         const festasFiltradas = DADOS_ORIGINAIS.festas.filter((f) => {
           const d = new Date(f.data_festa);
           return d >= dataInicio && d <= dataFim;
         });
 
+        // Filtragem Gerais
         const geraisFiltradas = DADOS_ORIGINAIS.gerais.filter((g) => {
+          // Se o banco salvou como UTC, o new Date() vai converter para o horário do navegador corretamente.
+          // Como dataInicio/Fim agora abrangem o dia inteiro local, vai casar certinho.
           const d = new Date(g.data_registro || new Date());
           return d >= dataInicio && d <= dataFim;
         });
@@ -349,16 +365,14 @@
       }
 
       function limparFiltros() {
-        document.getElementById("filtro-inicio").value = "";
-        document.getElementById("filtro-fim").value = "";
-        renderizarTelas(DADOS_ORIGINAIS.festas, DADOS_ORIGINAIS.gerais);
+        // Recarrega valores padrão
+        init();
       }
 
       function renderizarTelas(festas, gerais) {
         let totalReceita = 0;
         let totalDespesas = 0;
 
-        // 1. Processar Festas (Entradas) e seus custos (Saídas)
         const containerFestas = document.getElementById("lista-festas");
         containerFestas.innerHTML = "";
         if (festas.length === 0)
@@ -373,8 +387,8 @@
           const receita = parseFloat(festa.valor_final || 0);
           const lucroFesta = receita - custosDestaFesta;
 
-          totalReceita += receita; // Festa é Entrada
-          totalDespesas += custosDestaFesta; // Custo de Festa é Saída
+          totalReceita += receita;
+          totalDespesas += custosDestaFesta;
 
           containerFestas.innerHTML += `
                     <div onclick="abrirDetalhesFesta(${festa.id})" class="p-4 rounded-xl border border-slate-100 hover:border-pink-300 hover:shadow-md transition cursor-pointer bg-white group">
@@ -395,7 +409,6 @@
                 `;
         });
 
-        // 2. Processar Gerais (Pode ser Entrada ou Saída)
         const containerGerais = document.getElementById("lista-gerais");
         containerGerais.innerHTML = "";
         if (gerais.length === 0)
@@ -406,7 +419,6 @@
           const valor = parseFloat(item.valor);
           const isEntrada = item.tipo === "entrada";
 
-          // Lógica de cálculo baseada no ENUM
           if (isEntrada) {
             totalReceita += valor;
           } else {
@@ -550,11 +562,10 @@
         atualizarListaCustosFesta(FESTA_SELECIONADA_ID);
       }
 
-      // CORREÇÃO: Envia 'entrada' ou 'saida' corretamente
       async function salvarDespesaGeral(e) {
         e.preventDefault();
         const titulo = document.getElementById("geral-titulo").value;
-        const tipo = document.getElementById("geral-tipo").value; // 'entrada' ou 'saida'
+        const tipo = document.getElementById("geral-tipo").value;
         const valor = parseFloat(document.getElementById("geral-valor").value);
 
         try {

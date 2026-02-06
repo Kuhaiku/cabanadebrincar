@@ -24,6 +24,13 @@
         <p class="text-center text-slate-400 py-10">Carregando...</p>
     </div>
 
+    <div id="modal-imagem" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm" onclick="fecharImagem()">
+        <button onclick="fecharImagem()" class="absolute top-4 right-4 text-white hover:text-red-500 transition-colors z-50">
+            <i data-lucide="x" class="w-10 h-10"></i>
+        </button>
+        <img id="img-preview" src="" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain" onclick="event.stopPropagation()">
+    </div>
+
     <script>
         const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
         if(!ADMIN_TOKEN) window.location.href = 'painel.html';
@@ -47,6 +54,23 @@
                     const statusColor = d.aprovado ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
                     const statusText = d.aprovado ? 'Visível no Site' : 'Oculto / Pendente';
 
+                    // Lógica para montar o HTML das fotos com ONCLICK (Modal)
+                    let fotosHtml = '';
+                    if (d.fotos && d.fotos.length > 0) {
+                        fotosHtml = '<div class="flex gap-2 mt-3 flex-wrap">';
+                        d.fotos.forEach(foto => {
+                            fotosHtml += `
+                                <div onclick="abrirImagem('${foto}')" class="cursor-pointer relative group w-20 h-20">
+                                    <img src="${foto}" class="w-full h-full object-cover rounded-lg border border-slate-200 shadow-sm group-hover:opacity-80 transition-opacity">
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                                        <i data-lucide="eye" class="text-white w-6 h-6 drop-shadow-md"></i>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        fotosHtml += '</div>';
+                    }
+
                     container.innerHTML += `
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-6 items-start">
                             <div class="flex-1">
@@ -60,7 +84,9 @@
                                 
                                 <textarea id="texto-${d.id}" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-sm focus:outline-pink-500 mb-2" rows="3">${d.texto}</textarea>
                                 
-                                <div class="flex gap-2 items-center">
+                                ${fotosHtml}
+
+                                <div class="flex gap-2 items-center mt-4">
                                     <span class="text-xs font-bold px-2 py-1 rounded ${statusColor}">${statusText}</span>
                                 </div>
                             </div>
@@ -79,11 +105,28 @@
                         </div>
                     `;
                 });
+                lucide.createIcons();
             } catch (error) {
                 console.error('Erro ao carregar avaliações:', error);
             }
         }
 
+        // Funções do Modal
+        function abrirImagem(url) {
+            const modal = document.getElementById('modal-imagem');
+            const img = document.getElementById('img-preview');
+            img.src = url;
+            modal.classList.remove('hidden');
+        }
+
+        function fecharImagem() {
+            const modal = document.getElementById('modal-imagem');
+            const img = document.getElementById('img-preview');
+            modal.classList.add('hidden');
+            setTimeout(() => img.src = '', 200); // Limpa src após animação (opcional)
+        }
+
+        // Funções de Gerenciamento
         async function salvarAvaliacao(id, novoStatus) {
             const texto = document.getElementById(`texto-${id}`).value;
             await fetch(`/api/admin/avaliacoes/${id}`, {
@@ -100,18 +143,32 @@
         }
 
         async function excluir(id) {
-            if(confirm("Tem certeza que deseja apagar este depoimento?")) {
-                await fetch(`/api/admin/avaliacoes/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'x-admin-password': ADMIN_TOKEN }
-                });
-                carregarAvaliacoes();
+            if(confirm("Tem certeza que deseja apagar este depoimento e suas fotos? Esta ação não pode ser desfeita.")) {
+                try {
+                    const res = await fetch(`/api/admin/avaliacoes/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'x-admin-password': ADMIN_TOKEN }
+                    });
+                    if(res.ok) {
+                        carregarAvaliacoes();
+                    } else {
+                        alert("Erro ao excluir.");
+                    }
+                } catch(e) {
+                    alert("Erro de conexão.");
+                }
             }
         }
 
+        // Tecla ESC fecha modal
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                fecharImagem();
+            }
+        });
+
         // Inicialização
         carregarAvaliacoes();
-        lucide.createIcons(); // <--- LINHA ADICIONADA PARA CORRIGIR O ÍCONE
     </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20
 
 # 1. Instala dependências do Chrome/Puppeteer (Necessário para o Venom-bot)
 RUN apt-get update && apt-get install -y \

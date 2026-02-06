@@ -1,239 +1,384 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pedidos | Cabana de Brincar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
-        body { font-family: 'Quicksand', sans-serif; }
-        
-        /* Scrollbar visível e estilizada */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px; /* Largura um pouco maior para garantir visibilidade */
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-            border: 2px solid #f1f5f9; /* Borda para dar destaque */
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+      @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap");
+      body {
+        font-family: "Quicksand", sans-serif;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+        border: 2px solid #f1f5f9;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
     </style>
-</head>
-<body class="bg-slate-50 p-6">
-
+  </head>
+  <body class="bg-slate-50 p-6">
     <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors"><i data-lucide="arrow-left"></i></a>
-            Gestão de Pedidos
-        </h1>
-        <button onclick="carregarPedidos()" class="bg-white p-2 rounded-lg text-slate-500 hover:text-pink-500 shadow-sm transition-all hover:shadow-md">
-            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+      <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <a
+          href="painel.html"
+          class="text-slate-400 hover:text-pink-500 transition-colors"
+          ><i data-lucide="arrow-left"></i
+        ></a>
+        Gestão de Pedidos
+      </h1>
+      <button
+        onclick="carregarPedidos()"
+        class="bg-white p-2 rounded-lg text-slate-500 hover:text-pink-500 shadow-sm transition-all hover:shadow-md"
+      >
+        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div
+      class="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
+    >
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead
+            class="bg-slate-50 border-b border-slate-200 text-slate-400 uppercase font-bold text-xs"
+          >
+            <tr>
+              <th class="p-4 whitespace-nowrap">Data Festa</th>
+              <th class="p-4 whitespace-nowrap">Cliente</th>
+              <th class="p-4 whitespace-nowrap">Estrutura</th>
+              <th class="p-4 text-center whitespace-nowrap">Status</th>
+              <th class="p-4 text-center whitespace-nowrap">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-pedidos" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+      <div id="loading" class="p-10 text-center text-slate-400">
+        <i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2"></i>
+        Carregando pedidos...
+      </div>
+    </div>
+
+    <div
+      id="modal-detalhes"
+      class="fixed inset-0 bg-black/80 hidden z-50 backdrop-blur-sm flex items-center justify-center p-0 md:p-6"
+    >
+      <div
+        class="bg-white w-full h-full md:h-[90vh] md:rounded-2xl md:max-w-5xl shadow-2xl flex flex-col md:flex-row relative overflow-hidden"
+      >
+        <button
+          onclick="fecharModal()"
+          class="absolute top-4 right-4 z-50 bg-white/90 p-2 rounded-full shadow-md text-slate-500 hover:text-red-500 border border-slate-100"
+        >
+          <i data-lucide="x" class="w-6 h-6"></i>
         </button>
-    </div>
 
-    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-600">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-400 uppercase font-bold text-xs">
-                    <tr>
-                        <th class="p-4 whitespace-nowrap">Data Festa</th>
-                        <th class="p-4 whitespace-nowrap">Cliente</th>
-                        <th class="p-4 whitespace-nowrap">Estrutura</th>
-                        <th class="p-4 text-center whitespace-nowrap">Status</th>
-                        <th class="p-4 text-center whitespace-nowrap">Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-pedidos" class="divide-y divide-slate-100"></tbody>
-            </table>
-        </div>
-        <div id="loading" class="p-10 text-center text-slate-400">
-            <i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2"></i>
-            Carregando pedidos...
-        </div>
-    </div>
+        <div
+          class="w-full md:w-3/5 bg-white flex flex-col h-full order-2 md:order-1 overflow-hidden"
+        >
+          <div
+            class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 pb-32 md:pb-8"
+          >
+            <h3
+              class="text-xl font-bold text-pink-600 mb-6 flex items-center gap-2 border-b border-pink-100 pb-4 mt-8 md:mt-0"
+            >
+              <i data-lucide="file-text"></i> Ficha do Evento
+            </h3>
 
-    <div id="modal-detalhes" class="fixed inset-0 bg-black/80 hidden z-50 backdrop-blur-sm flex items-center justify-center p-0 md:p-6">
-        
-        <div class="bg-white w-full h-full md:h-[90vh] md:rounded-2xl md:max-w-5xl shadow-2xl flex flex-col md:flex-row relative overflow-hidden">
-            
-            <button onclick="fecharModal()" class="absolute top-4 right-4 z-50 bg-white/90 p-2 rounded-full shadow-md text-slate-500 hover:text-red-500 border border-slate-100">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-
-            <div class="w-full md:w-3/5 bg-white flex flex-col h-full order-2 md:order-1 overflow-hidden">
-                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 pb-32 md:pb-8">
-                    <h3 class="text-xl font-bold text-pink-600 mb-6 flex items-center gap-2 border-b border-pink-100 pb-4 mt-8 md:mt-0">
-                        <i data-lucide="file-text"></i> Ficha do Evento
-                    </h3>
-
-                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cliente</p>
-                                <p class="font-bold text-slate-800 text-lg" id="det-nome"></p>
-                                <a id="det-whatsapp-link" href="#" target="_blank" class="flex items-center gap-1 text-xs text-green-600 font-bold hover:underline mt-1">
-                                    <i data-lucide="message-circle" class="w-3 h-3"></i> <span id="det-whatsapp"></span>
-                                </a>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data & Hora</p>
-                                <div class="flex items-center gap-2">
-                                    <i data-lucide="calendar" class="w-4 h-4 text-pink-500"></i>
-                                    <span class="font-bold text-slate-800" id="det-data"></span>
-                                </div>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <i data-lucide="clock" class="w-4 h-4 text-pink-500"></i>
-                                    <span class="text-sm text-slate-500" id="det-horario"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t border-slate-200">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> Endereço</p>
-                            <p class="text-sm text-slate-600 font-medium mt-1 leading-relaxed" id="det-endereco"></p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                            <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-3">Estrutura</p>
-                            <ul class="space-y-2 text-sm text-slate-700">
-                                <li><strong>Modelo:</strong> <span id="det-modelo"></span></li>
-                                <li><strong>Qtd:</strong> <span id="det-qtd-barracas" class="font-bold text-indigo-700"></span></li>
-                                <li><strong>Pessoas:</strong> <span id="det-criancas"></span></li>
-                                <li><strong>Idade:</strong> <span id="det-faixa"></span></li>
-                            </ul>
-                        </div>
-                        <div class="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
-                            <p class="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-3">Decoração</p>
-                            <p class="text-xs text-slate-500">Tema:</p>
-                            <p class="font-bold text-slate-800 mb-2" id="det-tema"></p>
-                            <p class="text-xs text-slate-500">Cores:</p>
-                            <p class="font-medium text-slate-700 leading-tight" id="det-cores"></p>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Itens do Pacote</p>
-                        <div class="flex flex-wrap gap-2 mb-3" id="det-itens-tags"></div>
-                        
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4">Alimentação</p>
-                        <div class="flex flex-wrap gap-2" id="det-comida-tags"></div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                            <p class="text-[10px] font-bold text-yellow-600 uppercase mb-1 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Observações</p>
-                            <p class="text-xs text-slate-700 italic" id="det-obs"></p>
-                        </div>
-                        <div id="box-alergias" class="bg-red-50 p-3 rounded-lg border border-red-200 hidden">
-                            <p class="text-[10px] font-bold text-red-600 uppercase mb-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Alergias</p>
-                            <p class="text-xs text-red-800 font-bold" id="det-alergias"></p>
-                        </div>
-                    </div>
+            <div
+              class="bg-slate-50 p-5 rounded-xl border border-slate-100 mb-6"
+            >
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p
+                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+                  >
+                    Cliente
+                  </p>
+                  <p class="font-bold text-slate-800 text-lg" id="det-nome"></p>
+                  <a
+                    id="det-whatsapp-link"
+                    href="#"
+                    target="_blank"
+                    class="flex items-center gap-1 text-xs text-green-600 font-bold hover:underline mt-1"
+                  >
+                    <i data-lucide="message-circle" class="w-3 h-3"></i>
+                    <span id="det-whatsapp"></span>
+                  </a>
                 </div>
+                <div>
+                  <p
+                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+                  >
+                    Data & Hora
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-pink-500"></i>
+                    <span class="font-bold text-slate-800" id="det-data"></span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-1">
+                    <i data-lucide="clock" class="w-4 h-4 text-pink-500"></i>
+                    <span
+                      class="text-sm text-slate-500"
+                      id="det-horario"
+                    ></span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 pt-4 border-t border-slate-200">
+                <p
+                  class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"
+                >
+                  <i data-lucide="map-pin" class="w-3 h-3"></i> Endereço
+                </p>
+                <p
+                  class="text-sm text-slate-600 font-medium mt-1 leading-relaxed"
+                  id="det-endereco"
+                ></p>
+              </div>
             </div>
 
-            <div class="w-full md:w-2/5 bg-slate-50 border-l border-slate-200 flex flex-col h-full order-1 md:order-2 overflow-hidden">
-                
-                <div class="p-6 border-b border-slate-200 bg-slate-100/50 pt-16 md:pt-6">
-                    <h4 class="font-bold text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4"></i> Orçamento</h4>
-                </div>
-                
-                <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
-                    <div class="space-y-2 mb-6" id="container-taxas"></div>
-
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Ajuste Manual / Frete</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="desc-extra" placeholder="Ex: Frete" class="flex-1 p-2 text-xs border rounded bg-slate-50 focus:bg-white transition-colors">
-                            <div class="flex items-center w-24">
-                                <span class="p-2 bg-slate-100 border-y border-l border-slate-200 text-slate-500 text-xs font-bold rounded-l">R$</span>
-                                <input type="number" id="valor-extra" value="0.00" step="0.01" oninput="calcularTotal()" class="w-full p-2 border border-slate-200 rounded-r text-sm font-bold text-slate-700 text-right focus:outline-none">
-                            </div>
-                        </div>
-                    </div>
-                    <div id="resumo-valores" class="space-y-1 text-xs text-slate-500 font-mono border-t border-slate-200 pt-4"></div>
-                </div>
-
-                <div class="p-6 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
-                    <div class="flex justify-between items-end mb-4">
-                        <span class="font-bold text-slate-600 text-sm">TOTAL FINAL</span>
-                        <span id="valor-total-display" class="font-bold text-3xl text-green-600 tracking-tight">R$ 0,00</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <button onclick="copiarOrcamento()" class="bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-200 text-sm">
-                            <i data-lucide="copy" class="w-4 h-4"></i> Copiar Resumo
-                        </button>
-                        <button onclick="enviarParaAgenda()" class="bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-200 text-sm">
-                            <i data-lucide="check-circle-2" class="w-4 h-4"></i> Aprovar
-                        </button>
-                    </div>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div
+                class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100"
+              >
+                <p
+                  class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-3"
+                >
+                  Estrutura
+                </p>
+                <ul class="space-y-2 text-sm text-slate-700">
+                  <li>
+                    <strong>Modelo:</strong> <span id="det-modelo"></span>
+                  </li>
+                  <li>
+                    <strong>Qtd:</strong>
+                    <span
+                      id="det-qtd-barracas"
+                      class="font-bold text-indigo-700"
+                    ></span>
+                  </li>
+                  <li>
+                    <strong>Pessoas:</strong> <span id="det-criancas"></span>
+                  </li>
+                  <li><strong>Idade:</strong> <span id="det-faixa"></span></li>
+                </ul>
+              </div>
+              <div class="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
+                <p
+                  class="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-3"
+                >
+                  Decoração
+                </p>
+                <p class="text-xs text-slate-500">Tema:</p>
+                <p class="font-bold text-slate-800 mb-2" id="det-tema"></p>
+                <p class="text-xs text-slate-500">Cores:</p>
+                <p
+                  class="font-medium text-slate-700 leading-tight"
+                  id="det-cores"
+                ></p>
+              </div>
             </div>
+
+            <div class="mb-6">
+              <p
+                class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+              >
+                Itens do Pacote
+              </p>
+              <div class="flex flex-wrap gap-2 mb-3" id="det-itens-tags"></div>
+
+              <p
+                class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4"
+              >
+                Alimentação
+              </p>
+              <div class="flex flex-wrap gap-2" id="det-comida-tags"></div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                <p
+                  class="text-[10px] font-bold text-yellow-600 uppercase mb-1 flex items-center gap-1"
+                >
+                  <i data-lucide="alert-circle" class="w-3 h-3"></i> Observações
+                </p>
+                <p class="text-xs text-slate-700 italic" id="det-obs"></p>
+              </div>
+              <div
+                id="box-alergias"
+                class="bg-red-50 p-3 rounded-lg border border-red-200 hidden"
+              >
+                <p
+                  class="text-[10px] font-bold text-red-600 uppercase mb-1 flex items-center gap-1"
+                >
+                  <i data-lucide="alert-triangle" class="w-3 h-3"></i> Alergias
+                </p>
+                <p class="text-xs text-red-800 font-bold" id="det-alergias"></p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div
+          class="w-full md:w-2/5 bg-slate-50 border-l border-slate-200 flex flex-col h-full order-1 md:order-2 overflow-hidden"
+        >
+          <div
+            class="p-6 border-b border-slate-200 bg-slate-100/50 pt-16 md:pt-6"
+          >
+            <h4
+              class="font-bold text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2"
+            >
+              <i data-lucide="calculator" class="w-4 h-4"></i> Orçamento
+            </h4>
+          </div>
+
+          <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+            <div class="space-y-2 mb-6" id="container-taxas"></div>
+
+            <div
+              class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6"
+            >
+              <label
+                class="block text-[10px] font-bold text-slate-400 uppercase mb-2"
+                >Ajuste Manual / Frete</label
+              >
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  id="desc-extra"
+                  placeholder="Ex: Frete"
+                  class="flex-1 p-2 text-xs border rounded bg-slate-50 focus:bg-white transition-colors"
+                />
+                <div class="flex items-center w-24">
+                  <span
+                    class="p-2 bg-slate-100 border-y border-l border-slate-200 text-slate-500 text-xs font-bold rounded-l"
+                    >R$</span
+                  >
+                  <input
+                    type="number"
+                    id="valor-extra"
+                    value="0.00"
+                    step="0.01"
+                    oninput="calcularTotal()"
+                    class="w-full p-2 border border-slate-200 rounded-r text-sm font-bold text-slate-700 text-right focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              id="resumo-valores"
+              class="space-y-1 text-xs text-slate-500 font-mono border-t border-slate-200 pt-4"
+            ></div>
+          </div>
+
+          <div
+            class="p-6 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20"
+          >
+            <div class="flex justify-between items-end mb-4">
+              <span class="font-bold text-slate-600 text-sm">TOTAL FINAL</span>
+              <span
+                id="valor-total-display"
+                class="font-bold text-3xl text-green-600 tracking-tight"
+                >R$ 0,00</span
+              >
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                onclick="copiarOrcamento()"
+                class="bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-200 text-sm"
+              >
+                <i data-lucide="copy" class="w-4 h-4"></i> Copiar Resumo
+              </button>
+              <button
+                onclick="enviarParaAgenda()"
+                class="bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-200 text-sm"
+              >
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i> Aprovar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-        const API_URL = '/api';
-        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
-        if(!ADMIN_TOKEN) window.location.href = 'painel.html';
+      const API_URL = "/api";
+      const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
+      if (!ADMIN_TOKEN) window.location.href = "painel.html";
 
-        let pedidos = [];
-        let precos = [];
-        let pedidoAtual = null;
+      let pedidos = [];
+      let precos = [];
+      let pedidoAtual = null;
 
-        async function init() {
-            lucide.createIcons();
-            await Promise.all([carregarPrecos(), carregarPedidos()]);
+      async function init() {
+        lucide.createIcons();
+        await Promise.all([carregarPrecos(), carregarPedidos()]);
+      }
+
+      async function carregarPrecos() {
+        try {
+          const res = await fetch(`${API_URL}/admin/precos`, {
+            headers: { "x-admin-password": ADMIN_TOKEN },
+          });
+          precos = await res.json();
+        } catch (e) {
+          console.error(e);
         }
+      }
 
-        async function carregarPrecos() {
-            try {
-                const res = await fetch(`${API_URL}/admin/precos`, { headers: { 'x-admin-password': ADMIN_TOKEN } });
-                precos = await res.json();
-            } catch(e) { console.error(e); }
-        }
+      async function carregarPedidos() {
+        const loading = document.getElementById("loading");
+        const tbody = document.getElementById("lista-pedidos");
 
-        async function carregarPedidos() {
-            const loading = document.getElementById('loading');
-            const tbody = document.getElementById('lista-pedidos');
-            
-            try {
-                loading.classList.remove('hidden');
-                tbody.innerHTML = '';
-                
-                const res = await fetch(`${API_URL}/admin/pedidos`, { headers: { 'x-admin-password': ADMIN_TOKEN } });
-                pedidos = await res.json();
-                
-                const pendentes = pedidos.filter(p => p.status_agenda === 'pendente' || !p.status_agenda);
+        try {
+          loading.classList.remove("hidden");
+          tbody.innerHTML = "";
 
-                loading.classList.add('hidden');
-                if(pendentes.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Nenhum pedido pendente!</td></tr>';
-                    return;
-                }
+          const res = await fetch(`${API_URL}/admin/pedidos`, {
+            headers: { "x-admin-password": ADMIN_TOKEN },
+          });
+          pedidos = await res.json();
 
-                pendentes.forEach(p => {
-                    let dataFesta = p.data_festa;
-                    if(dataFesta && dataFesta.includes('T')) dataFesta = dataFesta.split('T')[0];
-                    const d = new Date(dataFesta).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+          const pendentes = pedidos.filter(
+            (p) => p.status_agenda === "pendente" || !p.status_agenda,
+          );
 
-                    tbody.innerHTML += `
+          loading.classList.add("hidden");
+          if (pendentes.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="5" class="p-8 text-center text-slate-400">Nenhum pedido pendente!</td></tr>';
+            return;
+          }
+
+          pendentes.forEach((p) => {
+            let dataFesta = p.data_festa;
+            if (dataFesta && dataFesta.includes("T"))
+              dataFesta = dataFesta.split("T")[0];
+            const d = new Date(dataFesta).toLocaleDateString("pt-BR", {
+              timeZone: "UTC",
+            });
+
+            tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 transition-colors border-b group">
                             <td class="p-4 whitespace-nowrap">
                                 <div class="font-bold text-slate-700 text-lg">${d}</div>
                                 <div class="text-xs text-slate-500 font-medium bg-slate-100 inline-block px-2 py-1 rounded mt-1">
-                                    <i data-lucide="clock" class="w-3 h-3 inline mr-1"></i>${p.horario || '--:--'}
+                                    <i data-lucide="clock" class="w-3 h-3 inline mr-1"></i>${p.horario || "--:--"}
                                 </div>
                             </td>
                             <td class="p-4 whitespace-nowrap">
@@ -242,88 +387,143 @@
                             </td>
                             <td class="p-4">
                                 <div class="text-sm text-slate-600 font-medium">${p.qtd_barracas}x ${p.modelo_barraca}</div>
-                                <div class="text-xs text-slate-400 mt-1 truncate max-w-[150px]">${p.tema || 'Sem tema'}</div>
+                                <div class="text-xs text-slate-400 mt-1 truncate max-w-[150px]">${p.tema || "Sem tema"}</div>
                             </td>
                             <td class="p-4 text-center whitespace-nowrap">
                                 <span class="bg-yellow-100 text-yellow-700 text-[10px] uppercase font-bold px-2 py-1 rounded-full border border-yellow-200">Pendente</span>
                             </td>
                             <td class="p-4 text-center whitespace-nowrap">
-                                <button onclick="abrirModal(${p.id})" class="bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-xl hover:bg-indigo-600 hover:text-white hover:border-indigo-600 font-bold text-sm transition-all shadow-sm">
-                                    Ver Detalhes
-                                </button>
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="abrirModal(${p.id})" class="bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-xl hover:bg-indigo-600 hover:text-white hover:border-indigo-600 font-bold text-sm transition-all shadow-sm">
+                                        Ver Detalhes
+                                    </button>
+                                    <button onclick="excluirPedido(${p.id})" class="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Excluir Pedido">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
-                });
-                lucide.createIcons();
-            } catch(e) {
-                loading.innerText = "Erro ao carregar dados.";
-            }
+          });
+          lucide.createIcons();
+        } catch (e) {
+          loading.innerText = "Erro ao carregar dados.";
+        }
+      }
+
+      async function excluirPedido(id) {
+        if (
+          !confirm(
+            "Tem certeza que deseja excluir permanentemente este pedido? Esta ação não pode ser desfeita.",
+          )
+        )
+          return;
+
+        try {
+          const res = await fetch(`${API_URL}/admin/pedidos/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-password": ADMIN_TOKEN },
+          });
+
+          if (res.ok) {
+            alert("✅ Pedido excluído com sucesso!");
+            carregarPedidos();
+          } else {
+            alert("Erro ao excluir o pedido.");
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Erro de conexão ao tentar excluir.");
+        }
+      }
+
+      function safeParse(json) {
+        if (!json) return [];
+        try {
+          return typeof json === "object" ? json : JSON.parse(json);
+        } catch {
+          return [];
+        }
+      }
+
+      function abrirModal(id) {
+        pedidoAtual = pedidos.find((p) => p.id === id);
+        if (!pedidoAtual) return;
+
+        document.getElementById("det-nome").innerText = pedidoAtual.nome;
+        document.getElementById("det-whatsapp").innerText =
+          pedidoAtual.whatsapp;
+        document.getElementById("det-whatsapp-link").href =
+          `https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}`;
+
+        let dataFesta = pedidoAtual.data_festa;
+        if (dataFesta && dataFesta.includes("T"))
+          dataFesta = dataFesta.split("T")[0];
+        const d = new Date(dataFesta).toLocaleDateString("pt-BR", {
+          timeZone: "UTC",
+        });
+        document.getElementById("det-data").innerText = d;
+        document.getElementById("det-horario").innerText =
+          pedidoAtual.horario || "Não informado";
+        document.getElementById("det-endereco").innerText =
+          pedidoAtual.endereco;
+
+        document.getElementById("det-modelo").innerText =
+          pedidoAtual.modelo_barraca;
+        document.getElementById("det-qtd-barracas").innerText =
+          pedidoAtual.qtd_barracas;
+        document.getElementById("det-criancas").innerText =
+          pedidoAtual.qtd_criancas;
+        document.getElementById("det-faixa").innerText =
+          pedidoAtual.faixa_etaria;
+
+        document.getElementById("det-tema").innerText =
+          pedidoAtual.tema || "A definir";
+        document.getElementById("det-cores").innerText =
+          pedidoAtual.cores || "A definir";
+        document.getElementById("det-obs").innerText =
+          pedidoAtual.itens_adicionais || "Nenhuma.";
+
+        const boxAlergias = document.getElementById("box-alergias");
+        if (
+          pedidoAtual.alergias &&
+          pedidoAtual.alergias.length > 2 &&
+          pedidoAtual.alergias.toLowerCase() !== "não"
+        ) {
+          document.getElementById("det-alergias").innerText =
+            pedidoAtual.alergias;
+          boxAlergias.classList.remove("hidden");
+        } else {
+          boxAlergias.classList.add("hidden");
         }
 
-        function safeParse(json) {
-            if(!json) return [];
-            try { 
-                return (typeof json === 'object') ? json : JSON.parse(json); 
-            } catch { return []; }
-        }
+        const divItens = document.getElementById("det-itens-tags");
+        const divComida = document.getElementById("det-comida-tags");
+        divItens.innerHTML = "";
+        divComida.innerHTML = "";
 
-        function abrirModal(id) {
-            pedidoAtual = pedidos.find(p => p.id === id);
-            if(!pedidoAtual) return;
+        const itens = safeParse(pedidoAtual.itens_padrao);
+        if (itens.length === 0)
+          divItens.innerHTML =
+            '<span class="text-xs text-slate-400 italic">Nenhum item extra.</span>';
+        itens.forEach((i) => {
+          divItens.innerHTML += `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded border border-indigo-100">${i}</span>`;
+        });
 
-            document.getElementById('det-nome').innerText = pedidoAtual.nome;
-            document.getElementById('det-whatsapp').innerText = pedidoAtual.whatsapp;
-            document.getElementById('det-whatsapp-link').href = `https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g,'')}`;
-            
-            let dataFesta = pedidoAtual.data_festa;
-            if(dataFesta && dataFesta.includes('T')) dataFesta = dataFesta.split('T')[0];
-            const d = new Date(dataFesta).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-            document.getElementById('det-data').innerText = d;
-            document.getElementById('det-horario').innerText = pedidoAtual.horario || 'Não informado';
-            document.getElementById('det-endereco').innerText = pedidoAtual.endereco;
+        const comida = safeParse(pedidoAtual.alimentacao);
+        if (comida.length === 0)
+          divComida.innerHTML =
+            '<span class="text-xs text-slate-400 italic">Sem alimentação inclusa.</span>';
+        comida.forEach((c) => {
+          divComida.innerHTML += `<span class="bg-pink-50 text-pink-700 text-[10px] font-bold px-2 py-1 rounded border border-pink-100 flex items-center gap-1"><i data-lucide="utensils" class="w-3 h-3"></i> ${c}</span>`;
+        });
 
-            document.getElementById('det-modelo').innerText = pedidoAtual.modelo_barraca;
-            document.getElementById('det-qtd-barracas').innerText = pedidoAtual.qtd_barracas;
-            document.getElementById('det-criancas').innerText = pedidoAtual.qtd_criancas;
-            document.getElementById('det-faixa').innerText = pedidoAtual.faixa_etaria;
-
-            document.getElementById('det-tema').innerText = pedidoAtual.tema || 'A definir';
-            document.getElementById('det-cores').innerText = pedidoAtual.cores || 'A definir';
-            document.getElementById('det-obs').innerText = pedidoAtual.itens_adicionais || 'Nenhuma.';
-            
-            const boxAlergias = document.getElementById('box-alergias');
-            if(pedidoAtual.alergias && pedidoAtual.alergias.length > 2 && pedidoAtual.alergias.toLowerCase() !== 'não') {
-                document.getElementById('det-alergias').innerText = pedidoAtual.alergias;
-                boxAlergias.classList.remove('hidden');
-            } else {
-                boxAlergias.classList.add('hidden');
-            }
-
-            // Itens
-            const divItens = document.getElementById('det-itens-tags');
-            const divComida = document.getElementById('det-comida-tags');
-            divItens.innerHTML = '';
-            divComida.innerHTML = '';
-
-            const itens = safeParse(pedidoAtual.itens_padrao);
-            if(itens.length === 0) divItens.innerHTML = '<span class="text-xs text-slate-400 italic">Nenhum item extra.</span>';
-            itens.forEach(i => {
-                divItens.innerHTML += `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded border border-indigo-100">${i}</span>`;
-            });
-
-            const comida = safeParse(pedidoAtual.alimentacao);
-            if(comida.length === 0) divComida.innerHTML = '<span class="text-xs text-slate-400 italic">Sem alimentação inclusa.</span>';
-            comida.forEach(c => {
-                divComida.innerHTML += `<span class="bg-pink-50 text-pink-700 text-[10px] font-bold px-2 py-1 rounded border border-pink-100 flex items-center gap-1"><i data-lucide="utensils" class="w-3 h-3"></i> ${c}</span>`;
-            });
-
-            // Taxas
-            const divTaxas = document.getElementById('container-taxas');
-            divTaxas.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Taxas do Sistema</p>';
-            const taxasSistema = precos.filter(p => p.categoria === 'sistema');
-            taxasSistema.forEach(t => {
-                divTaxas.innerHTML += `
+        const divTaxas = document.getElementById("container-taxas");
+        divTaxas.innerHTML =
+          '<p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Taxas do Sistema</p>';
+        const taxasSistema = precos.filter((p) => p.categoria === "sistema");
+        taxasSistema.forEach((t) => {
+          divTaxas.innerHTML += `
                     <label class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 cursor-pointer border border-transparent hover:border-slate-200 transition-all">
                         <div class="flex items-center gap-2">
                             <input type="checkbox" class="chk-taxa w-4 h-4 text-pink-600 rounded focus:ring-pink-500 border-gray-300" 
@@ -333,147 +533,173 @@
                         <span class="text-xs font-bold text-slate-500">+R$ ${t.valor}</span>
                     </label>
                 `;
-            });
+        });
 
-            document.getElementById('valor-extra').value = pedidoAtual.valor_itens_extras || 0;
-            document.getElementById('desc-extra').value = pedidoAtual.descricao_itens_extras || '';
+        document.getElementById("valor-extra").value =
+          pedidoAtual.valor_itens_extras || 0;
+        document.getElementById("desc-extra").value =
+          pedidoAtual.descricao_itens_extras || "";
 
-            calcularTotal();
-            document.getElementById('modal-detalhes').classList.remove('hidden');
-            lucide.createIcons();
+        calcularTotal();
+        document.getElementById("modal-detalhes").classList.remove("hidden");
+        lucide.createIcons();
+      }
+
+      function calcularTotal() {
+        if (!pedidoAtual) return;
+        let total = 0;
+        let htmlResumo = "";
+
+        const precoBarracaObj = precos.find(
+          (p) => p.descricao === pedidoAtual.modelo_barraca,
+        );
+        const precoBarraca = parseFloat(
+          precoBarracaObj ? precoBarracaObj.valor : 0,
+        );
+        const subBarraca = precoBarraca * pedidoAtual.qtd_barracas;
+        total += subBarraca;
+        htmlResumo += `<div class="flex justify-between"><span>${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</span> <span>R$ ${subBarraca.toFixed(2)}</span></div>`;
+
+        [
+          ...safeParse(pedidoAtual.itens_padrao),
+          ...safeParse(pedidoAtual.alimentacao),
+        ].forEach((nome) => {
+          const itemDb = precos.find((p) => p.descricao === nome);
+          if (itemDb) {
+            let subItem = parseFloat(itemDb.valor);
+            let label = nome;
+            if (itemDb.categoria === "alimentacao") {
+              subItem = parseFloat(itemDb.valor) * pedidoAtual.qtd_criancas;
+              label = `${pedidoAtual.qtd_criancas}x ${nome}`;
+            }
+            total += subItem;
+            htmlResumo += `<div class="flex justify-between text-slate-600"><span>${label}</span> <span>R$ ${subItem.toFixed(2)}</span></div>`;
+          }
+        });
+
+        document.querySelectorAll(".chk-taxa:checked").forEach((chk) => {
+          total += parseFloat(chk.value);
+          htmlResumo += `<div class="flex justify-between text-indigo-600 font-medium"><span>Taxa: ${chk.dataset.nome}</span> <span>R$ ${parseFloat(chk.value).toFixed(2)}</span></div>`;
+        });
+
+        const extra =
+          parseFloat(document.getElementById("valor-extra").value) || 0;
+        total += extra;
+        if (extra !== 0) {
+          const cor = extra < 0 ? "text-red-500" : "text-green-600";
+          htmlResumo += `<div class="flex justify-between ${cor} font-bold"><span>Ajuste Manual</span> <span>R$ ${extra.toFixed(2)}</span></div>`;
         }
 
-        function calcularTotal() {
-            if(!pedidoAtual) return;
-            let total = 0;
-            let htmlResumo = '';
+        document.getElementById("resumo-valores").innerHTML = htmlResumo;
+        document.getElementById("valor-total-display").innerText =
+          `R$ ${total.toFixed(2)}`;
+        pedidoAtual.totalCalculado = total.toFixed(2);
+      }
 
-            const precoBarracaObj = precos.find(p => p.descricao === pedidoAtual.modelo_barraca);
-            const precoBarraca = parseFloat(precoBarracaObj ? precoBarracaObj.valor : 0);
-            const subBarraca = precoBarraca * pedidoAtual.qtd_barracas;
-            total += subBarraca;
-            htmlResumo += `<div class="flex justify-between"><span>${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}</span> <span>R$ ${subBarraca.toFixed(2)}</span></div>`;
+      async function copiarOrcamento() {
+        let dataFesta = pedidoAtual.data_festa;
+        if (dataFesta && dataFesta.includes("T"))
+          dataFesta = dataFesta.split("T")[0];
+        const d = new Date(dataFesta).toLocaleDateString("pt-BR", {
+          timeZone: "UTC",
+        });
+        const itens = safeParse(pedidoAtual.itens_padrao);
+        const comida = safeParse(pedidoAtual.alimentacao);
 
-            [...safeParse(pedidoAtual.itens_padrao), ...safeParse(pedidoAtual.alimentacao)].forEach(nome => {
-                const itemDb = precos.find(p => p.descricao === nome);
-                if(itemDb) {
-                    let subItem = parseFloat(itemDb.valor);
-                    let label = nome;
-                    if(itemDb.categoria === 'alimentacao') {
-                        subItem = parseFloat(itemDb.valor) * pedidoAtual.qtd_criancas;
-                        label = `${pedidoAtual.qtd_criancas}x ${nome}`;
-                    }
-                    total += subItem;
-                    htmlResumo += `<div class="flex justify-between text-slate-600"><span>${label}</span> <span>R$ ${subItem.toFixed(2)}</span></div>`;
-                }
-            });
-
-            document.querySelectorAll('.chk-taxa:checked').forEach(chk => {
-                total += parseFloat(chk.value);
-                htmlResumo += `<div class="flex justify-between text-indigo-600 font-medium"><span>Taxa: ${chk.dataset.nome}</span> <span>R$ ${parseFloat(chk.value).toFixed(2)}</span></div>`;
-            });
-
-            const extra = parseFloat(document.getElementById('valor-extra').value) || 0;
-            total += extra;
-            if(extra !== 0) {
-                const cor = extra < 0 ? 'text-red-500' : 'text-green-600';
-                htmlResumo += `<div class="flex justify-between ${cor} font-bold"><span>Ajuste Manual</span> <span>R$ ${extra.toFixed(2)}</span></div>`;
-            }
-
-            document.getElementById('resumo-valores').innerHTML = htmlResumo;
-            document.getElementById('valor-total-display').innerText = `R$ ${total.toFixed(2)}`;
-            pedidoAtual.totalCalculado = total.toFixed(2);
+        let txt = `*Orçamento Cabana de Brincar* ⛺✨\n`;
+        txt += `Olá *${pedidoAtual.nome}*! Tudo bem? 💖\n\n`;
+        txt += `Recebemos seu pedido! Segue o resumo:\n\n`;
+        txt += `🗓 *Data:* ${d} às ${pedidoAtual.horario || "??"}\n`;
+        txt += `📍 *Local:* ${pedidoAtual.endereco}\n\n`;
+        txt += `🎪 *Estrutura:*\n`;
+        txt += `▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n`;
+        txt += `▪️ ${pedidoAtual.qtd_criancas} Pessoas (${pedidoAtual.faixa_etaria})\n`;
+        txt += `▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n`;
+        txt += `📦 *Itens:*\n`;
+        if (itens.length > 0) itens.forEach((i) => (txt += `  • ${i}\n`));
+        else txt += `  • (Itens básicos da estrutura)\n`;
+        if (comida.length > 0) {
+          txt += `\n🍽️ *Alimentação:*\n`;
+          comida.forEach(
+            (c) => (txt += `  • ${c} (${pedidoAtual.qtd_criancas}x)\n`),
+          );
         }
-
-        async function copiarOrcamento() {
-            let dataFesta = pedidoAtual.data_festa;
-            if(dataFesta && dataFesta.includes('T')) dataFesta = dataFesta.split('T')[0];
-            const d = new Date(dataFesta).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-
-            const itens = safeParse(pedidoAtual.itens_padrao);
-            const comida = safeParse(pedidoAtual.alimentacao);
-
-            let txt = `*Orçamento Cabana de Brincar* ⛺✨\n`;
-            txt += `Olá *${pedidoAtual.nome}*! Tudo bem? 💖\n\n`;
-            txt += `Recebemos seu pedido! Segue o resumo:\n\n`;
-            txt += `🗓 *Data:* ${d} às ${pedidoAtual.horario || '??'}\n`;
-            txt += `📍 *Local:* ${pedidoAtual.endereco}\n\n`;
-
-            txt += `🎪 *Estrutura:*\n`;
-            txt += `▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n`;
-            txt += `▪️ ${pedidoAtual.qtd_criancas} Pessoas (${pedidoAtual.faixa_etaria})\n`;
-            txt += `▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n`;
-
-            txt += `📦 *Itens:*\n`;
-            if(itens.length > 0) itens.forEach(i => txt += `  • ${i}\n`);
-            else txt += `  • (Itens básicos da estrutura)\n`;
-
-            if(comida.length > 0) {
-                txt += `\n🍽️ *Alimentação:*\n`;
-                comida.forEach(c => txt += `  • ${c} (${pedidoAtual.qtd_criancas}x)\n`);
-            }
-
-            const taxas = document.querySelectorAll('.chk-taxa:checked');
-            const descExtra = document.getElementById('desc-extra').value;
-
-            if(taxas.length > 0 || descExtra) {
-                txt += `\n📄 *Adicionais e Taxas:*\n`;
-                taxas.forEach(chk => txt += `  • ${chk.getAttribute('data-nome')}\n`);
-                if(descExtra) txt += `  • ${descExtra}\n`;
-            }
-
-            if(pedidoAtual.itens_adicionais) {
-                txt += `\n📝 *Obs:* ${pedidoAtual.itens_adicionais}\n`;
-            }
-            
-            if(pedidoAtual.alergias) {
-                txt += `\n⚠️ *Alergias:* ${pedidoAtual.alergias}\n`;
-            }
-            
-            txt += `\n------------------------------------\n`;
-            txt += `💰 *Valor Total Final: R$ ${pedidoAtual.totalCalculado}*\n`;
-            txt += `------------------------------------\n\n`;
-            txt += `Podemos confirmar o agendamento? ✨`;
-
-            await navigator.clipboard.writeText(txt);
-            alert("Resumo copiado com sucesso!");
+        const taxas = document.querySelectorAll(".chk-taxa:checked");
+        const descExtra = document.getElementById("desc-extra").value;
+        if (taxas.length > 0 || descExtra) {
+          txt += `\n📄 *Adicionais e Taxas:*\n`;
+          taxas.forEach(
+            (chk) => (txt += `  • ${chk.getAttribute("data-nome")}\n`),
+          );
+          if (descExtra) txt += `  • ${descExtra}\n`;
         }
+        if (pedidoAtual.itens_adicionais)
+          txt += `\n📝 *Obs:* ${pedidoAtual.itens_adicionais}\n`;
+        if (pedidoAtual.alergias)
+          txt += `\n⚠️ *Alergias:* ${pedidoAtual.alergias}\n`;
+        const valorTotal = pedidoAtual.totalCalculado;
+        const valorReserva = (valorTotal * 0.4).toFixed(2);
+        const valorRestante = (valorTotal * 0.6).toFixed(2);
 
-        async function enviarParaAgenda() {
-            if(!confirm(`Confirmar e Agendar festa de ${pedidoAtual.nome}?`)) return;
+        txt += `\n*────────────────────*\n`;
+        txt += `💰 *VALOR TOTAL: R$ ${valorTotal}*`;
+        txt += `\n*────────────────────*\n\n`;
 
-            const extraVal = document.getElementById('valor-extra').value;
-            const extraDesc = document.getElementById('desc-extra').value;
+        txt += `Para garantirmos a sua data e toda a qualidade que sua festa merece, solicitamos o pagamento da reserva. Como limitamos o número de eventos por dia, esse valor assegura sua exclusividade em nossa agenda! ✨\n\n`;
 
-            try {
-                await fetch(`${API_URL}/admin/pedidos/${pedidoAtual.id}/financeiro`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
-                    body: JSON.stringify({
-                        valor_final: pedidoAtual.totalCalculado,
-                        valor_itens_extras: extraVal,
-                        descricao_itens_extras: extraDesc
-                    })
-                });
+        txt += `✅ *Podemos confirmar o agendamento?*\n\n`;
 
-                await fetch(`${API_URL}/admin/agenda/aprovar/${pedidoAtual.id}`, {
-                    method: 'PUT',
-                    headers: { 'x-admin-password': ADMIN_TOKEN }
-                });
+        txt += `• *Reserva (40%):* R$ ${valorReserva}\n`;
+        txt += `link de pagamento: mercadolivre...`;
+        txt += `• *Restante:* R$ ${valorRestante} (pagos na entrega)\n\n`;
+        
+        txt += `• *Ou valor integral com 5% de desconto:* R$ ${parseFloat(valorTotal * 0.95).toFixed(2)}\n\n`;
+        txt += `• *link de pagamento:* mercadolivre... 5% de desconto\n\n`;
 
-                alert("✅ Pedido Aprovado e Agendado!");
-                fecharModal();
-                init();
-            } catch(e) {
-                alert("Erro ao processar.");
-            }
+
+
+        txt += `_Obs: O valor da reserva é utilizado para bloquear a data e organizar a logística, por isso, não é reembolsável em caso de cancelamento._\n\n`;
+        txt += `Estamos ansiosos para fazer parte deste momento especial! 🎉`;
+        await navigator.clipboard.writeText(txt);
+        alert("Resumo copiado com sucesso!");
+      }
+
+      async function enviarParaAgenda() {
+        if (!confirm(`Confirmar e Agendar festa de ${pedidoAtual.nome}?`))
+          return;
+        const extraVal = document.getElementById("valor-extra").value;
+        const extraDesc = document.getElementById("desc-extra").value;
+
+        try {
+          await fetch(`${API_URL}/admin/pedidos/${pedidoAtual.id}/financeiro`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-password": ADMIN_TOKEN,
+            },
+            body: JSON.stringify({
+              valor_final: pedidoAtual.totalCalculado,
+              valor_itens_extras: extraVal,
+              descricao_itens_extras: extraDesc,
+            }),
+          });
+          await fetch(`${API_URL}/admin/agenda/aprovar/${pedidoAtual.id}`, {
+            method: "PUT",
+            headers: { "x-admin-password": ADMIN_TOKEN },
+          });
+          alert("✅ Pedido Aprovado e Agendado!");
+          fecharModal();
+          init();
+        } catch (e) {
+          alert("Erro ao processar.");
         }
+      }
 
-        function fecharModal() {
-            document.getElementById('modal-detalhes').classList.add('hidden');
-        }
+      function fecharModal() {
+        document.getElementById("modal-detalhes").classList.add("hidden");
+      }
 
-        init();
+      init();
     </script>
-</body>
+  </body>
 </html>

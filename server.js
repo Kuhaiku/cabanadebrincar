@@ -446,5 +446,12 @@ app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: "Erro ao excluir avaliação" });
   }
 });
+// DELETE Admin: Excluir um pedido (orçamento)
+app.delete("/api/admin/pedidos/:id", checkAuth, (req, res) => {
+  db.query("DELETE FROM orcamentos WHERE id = ?", [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: "Erro ao excluir pedido", details: err });
+    res.json({ success: true });
+  });
+});
 
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

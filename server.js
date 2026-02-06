@@ -57,29 +57,19 @@ function checkAuth(req, res, next) {
 
 // --- AUXILIAR MERCADO PAGO ---
 // --- AUXILIAR MERCADO PAGO ---
-async function criarLinkMP(titulo, valor) {
+async function criarLinkMP(titulo, valor, pedidoId) { // Adicione o pedidoId aqui
   try {
     const preference = new Preference(mpClient);
     const result = await preference.create({
       body: {
-        items: [{ 
-          title: titulo, 
-          unit_price: Number(valor), 
-          quantity: 1, 
-          currency_id: 'BRL' 
-        }],
-        payment_methods: {
-          excluded_payment_types: [], // Mantém todos os métodos incluindo PIX
-          installments: 12
-        },
-        // Define as URLs de retorno para o cliente
+        items: [{ title: titulo, unit_price: Number(valor), quantity: 1, currency_id: 'BRL' }],
+        external_reference: String(pedidoId), // Crucial para o Webhook identificar o pedido
         back_urls: { 
-          success: `https://${process.env.DOMAIN || 'localhost'}/sucesso.html`,
-          failure: `https://${process.env.DOMAIN || 'localhost'}/erro.html`,
-          pending: `https://${process.env.DOMAIN || 'localhost'}/pendente.html`
+          success: `https://www-cabanadebrincar.velmc0.easypanel.host/sucesso.html`,
+          // ... outras urls
         },
-        // Ativa o redirecionamento automático em caso de sucesso
         auto_return: "approved",
+        notification_url: "https://www-cabanadebrincar.velmc0.easypanel.host/api/webhook" // URL do Webhook
       }
     });
     return result.init_point;
@@ -480,6 +470,42 @@ app.delete("/api/admin/pedidos/:id", checkAuth, (req, res) => {
       return res.status(500).json({ error: "Erro ao excluir", details: err });
     res.json({ success: true });
   });
+});
+// Rota de Webhook para o Mercado Pago
+app.post("/api/webhook", async (req, res) => {
+    const { query } = req;
+    
+    // O Mercado Pago envia o ID do recurso e o tipo (geralmente 'payment')
+    if (query.type === "payment" || query.topic === "payment") {
+        const paymentId = query.id || query['data.id'];
+
+        try {
+            // Busca os detalhes do pagamento na API do Mercado Pago
+            const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`
+                }
+            });
+            const paymentData = await response.json();
+
+            // Se o pagamento foi aprovado
+            if (paymentData.status === 'approved') {
+                const externalReference = paymentData.external_reference; // O ID do pedido que você enviou na Preference
+                
+                // Atualiza o status no seu banco de dados
+                const sql = "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?";
+                db.query(sql, [externalReference], (err, result) => {
+                    if (err) console.error("Erro ao atualizar banco via Webhook:", err);
+                    else console.log(`Pedido ${externalReference} marcado como PAGO via Webhook.`);
+                });
+            }
+        } catch (error) {
+            console.error("Erro ao processar Webhook:", error);
+        }
+    }
+
+    // Retornar 200 ou 201 é obrigatório para o Mercado Pago parar de reenviar a notificação
+    res.sendStatus(200);
 });
 
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

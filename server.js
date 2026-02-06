@@ -15,27 +15,25 @@ const PORT = process.env.PORT || 3000;
 
 // --- CONFIGURAÇÕES ---
 
-// 1. Mercado Pago
+// Mercado Pago
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
-// 2. Cloudinary
+// Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// 3. Multer (Upload temporário)
 const upload = multer({ dest: "uploads/" });
 
-// 4. Middlewares
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// 5. Banco de Dados
+// Banco de Dados
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -48,14 +46,13 @@ const db = mysql.createPool({
   enableKeepAlive: true,
 });
 
-// Mantém a conexão ativa (Ping)
+// Ping para manter conexão ativa
 setInterval(() => {
   db.query("SELECT 1", (err) => {
     if (err) console.error("Ping Error:", err.code);
   });
 }, 30000);
 
-// Middleware de Autenticação Admin
 function checkAuth(req, res, next) {
   const password = req.headers["x-admin-password"];
   if (password !== process.env.ADMIN_PASS)
@@ -65,13 +62,16 @@ function checkAuth(req, res, next) {
 
 // --- FUNÇÕES AUXILIARES ---
 
-// Cria link de pagamento no Mercado Pago
 async function criarLinkMP(titulo, valor, pedidoId) {
   try {
     const preference = new Preference(mpClient);
 
-    // Define URLs baseadas no domínio configurado ou localhost
-    const domain = process.env.DOMAIN || `http://localhost:${PORT}`;
+    // Configura o domínio corretamente (remove barras finais se houver)
+    let domain = process.env.DOMAIN || `localhost:${PORT}`;
+    domain = domain.replace(/\/$/, "");
+    if (!domain.startsWith("http")) {
+      domain = `https://${domain}`;
+    }
 
     const result = await preference.create({
       body: {
@@ -83,19 +83,13 @@ async function criarLinkMP(titulo, valor, pedidoId) {
             currency_id: "BRL",
           },
         ],
-        // VINCULA O PAGAMENTO AO PEDIDO NO BANCO
-        external_reference: String(pedidoId),
-        payment_methods: {
-          excluded_payment_types: [],
-          installments: 12,
-        },
+        external_reference: String(pedidoId), // ID para o Webhook identificar o pedido
         back_urls: {
           success: `${domain}/sucesso.html`,
           failure: `${domain}/index.html`,
         },
         auto_return: "approved",
-        // AVISA O SERVIDOR QUANDO O PAGAMENTO FOR FEITO
-        notification_url: `${domain}/api/webhook`,
+        notification_url: `${domain}/api/webhook`, // URL do Webhook
       },
     });
     return result.init_point;
@@ -105,68 +99,83 @@ async function criarLinkMP(titulo, valor, pedidoId) {
   }
 }
 
-// --- ROTAS DE WEBHOOK (MERCADO PAGO) ---
+// --- WEBHOOK (A LÓGICA DE TESTE QUE VOCÊ PEDIU) ---
 
-// --- WEBHOOK DE TESTE (CONSOLE LOG) ---
 app.post("/api/webhook", async (req, res) => {
-  // 1. Resposta IMEDIATA para o Mercado Pago não ficar tentando de novo
+  // 1. Resposta IMEDIATA para o Mercado Pago (obrigatório para não dar erro)
   res.status(200).send("OK");
 
   const notification = req.body || {};
   const query = req.query || {};
 
-  // Pega o ID e o Tipo
-  const topic = notification.topic || notification.type || query.topic || query.type;
-  const id = notification.data?.id || notification.id || query.id || query['data.id'];
+  // Pega o ID e o Tipo (tenta pegar do body ou da query)
+  const topic =
+    notification.topic || notification.type || query.topic || query.type;
+  const id =
+    notification.data?.id || notification.id || query.id || query["data.id"];
 
-  // Só processa se for pagamento
+  // Só processa se for um pagamento
   if (topic === "payment" && id) {
     try {
-      // 2. Pergunta ao Mercado Pago os detalhes desse ID
-      const response = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
-        headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` }
-      });
-      
+      // 2. Consulta a API do Mercado Pago para pegar os dados reais
+      const response = await fetch(
+        `https://api.mercadopago.com/v1/payments/${id}`,
+        {
+          headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+        },
+      );
+
       if (response.ok) {
         const paymentData = await response.json();
-        
+
         // Se estiver Aprovado
-        if (paymentData.status === 'approved') {
+        if (paymentData.status === "approved") {
           const pedidoId = paymentData.external_reference;
-          
+
           // Data do Pagamento (vem do Mercado Pago)
           const dataPagamento = new Date(paymentData.date_approved);
-          
-          // Formata data e hora
-          const dia = dataPagamento.getDate().toString().padStart(2, '0');
-          const mes = (dataPagamento.getMonth() + 1).toString().padStart(2, '0');
+
+          // Formatação da Data e Hora para o Console
+          // Ajusta para horário local (simples) ou usa UTC
+          const dia = dataPagamento.getDate().toString().padStart(2, "0");
+          const mes = (dataPagamento.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
           const ano = dataPagamento.getFullYear();
-          const hora = dataPagamento.getHours().toString().padStart(2, '0');
-          const min = dataPagamento.getMinutes().toString().padStart(2, '0');
-          const seg = dataPagamento.getSeconds().toString().padStart(2, '0');
+          const hora = dataPagamento.getHours().toString().padStart(2, "0");
+          const min = dataPagamento.getMinutes().toString().padStart(2, "0");
+          const seg = dataPagamento.getSeconds().toString().padStart(2, "0");
 
-          // 3. Busca o Nome e WhatsApp no seu Banco de Dados
-          db.query("SELECT nome, whatsapp FROM orcamentos WHERE id = ?", [pedidoId], (err, results) => {
-             if(!err && results.length > 0) {
-                 const cliente = results[0];
+          // 3. Busca o Nome e WhatsApp no seu Banco de Dados usando o ID do Pedido
+          db.query(
+            "SELECT nome, whatsapp FROM orcamentos WHERE id = ?",
+            [pedidoId],
+            (err, results) => {
+              if (!err && results.length > 0) {
+                const cliente = results[0];
 
-                 // --- AQUI ESTÁ O QUE VOCÊ PEDIU NO CONSOLE ---
-                 console.log("\n");
-                 console.log("🟢 === PAGAMENTO CONFIRMADO! ===");
-                 console.log(`👤 Nome: ${cliente.nome}`);
-                 console.log(`📱 Número: ${cliente.whatsapp}`);
-                 console.log(`📅 Data: ${dia}/${mes}/${ano}`);
-                 console.log(`⏰ Horário: ${hora}:${min}:${seg}`);
-                 console.log("================================\n");
-                 
-                 // Atualiza status no banco para não perder o controle
-                 db.query("UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?", [pedidoId]);
-             }
-          });
+                // --- IMPRESSÃO NO CONSOLE ---
+                console.log("\n");
+                console.log("🟢 === PAGAMENTO CONFIRMADO! ===");
+                console.log(`👤 Nome: ${cliente.nome}`);
+                console.log(`📱 Número: ${cliente.whatsapp}`);
+                console.log(`📅 Data: ${dia}/${mes}/${ano}`);
+                console.log(`⏰ Horário: ${hora}:${min}:${seg}`);
+                console.log(`💰 Valor: R$ ${paymentData.transaction_amount}`);
+                console.log("================================\n");
+
+                // Atualiza status no banco
+                db.query(
+                  "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?",
+                  [pedidoId],
+                );
+              }
+            },
+          );
         }
       }
-    } catch (e) { 
-        console.error("Erro no Webhook:", e.message); 
+    } catch (e) {
+      console.error("Erro no Webhook:", e.message);
     }
   }
 });
@@ -185,6 +194,7 @@ app.get("/api/itens-disponiveis", (req, res) => {
 
 app.post("/api/orcamento", (req, res) => {
   const data = req.body;
+  // Garante que o status_pagamento entre como 'pendente'
   const sql = `INSERT INTO orcamentos (nome, whatsapp, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`;
   const values = [
     data.nome,
@@ -222,22 +232,25 @@ app.get("/api/depoimentos/publicos", (req, res) => {
 });
 
 app.get("/api/feedback/:token", (req, res) => {
+  const token = req.params.token;
   db.query(
     "SELECT id, nome FROM orcamentos WHERE token_avaliacao = ?",
-    [req.params.token],
+    [token],
     (err, results) => {
       if (err) return res.status(500).json({ error: "Erro interno" });
       if (results.length === 0)
-        return res.status(404).json({ error: "Token inválido" });
+        return res.status(404).json({ error: "Token inválido ou expirado" });
       res.json(results[0]);
     },
   );
 });
 
 app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
+  const token = req.params.token;
+  const { nota, texto } = req.body;
   db.query(
     "SELECT id, nome FROM orcamentos WHERE token_avaliacao = ?",
-    [req.params.token],
+    [token],
     async (err, result) => {
       if (err || result.length === 0)
         return res.status(404).json({ error: "Token inválido" });
@@ -248,12 +261,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
           .promise()
           .query(
             "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado) VALUES (?, ?, ?, ?, 0)",
-            [
-              orcamentoId,
-              nomeCliente,
-              req.body.texto.substring(0, 350),
-              req.body.nota,
-            ],
+            [orcamentoId, nomeCliente, texto.substring(0, 350), nota],
           );
         const depoimentoId = insertDep[0].insertId;
         if (req.files && req.files.length > 0) {
@@ -292,70 +300,13 @@ app.get("/api/galeria_fotos", (req, res) => {
 
 // --- ROTAS ADMIN ---
 
-app.get("/api/admin/pedidos", checkAuth, (req, res) => {
+app.get("/api/admin/agenda", checkAuth, (req, res) => {
   db.query(
-    "SELECT * FROM orcamentos ORDER BY data_pedido DESC",
+    "SELECT * FROM orcamentos WHERE status_agenda = 'agendado' ORDER BY data_festa ASC",
     (err, results) => {
       if (err) return res.status(500).json(err);
       res.json(results);
     },
-  );
-});
-
-// GERA LINKS MP (COM WEBHOOK CONFIGURADO)
-app.post("/api/admin/gerar-links-mp/:id", checkAuth, (req, res) => {
-  db.query(
-    "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
-    [req.params.id],
-    async (err, results) => {
-      if (err || results.length === 0)
-        return res.status(404).json({ error: "Não encontrado" });
-
-      const vTotal = parseFloat(results[0].valor_final || 0);
-      if (vTotal <= 0)
-        return res
-          .status(400)
-          .json({ error: "Defina o valor final antes de gerar links" });
-
-      // Passamos o req.params.id como 3º argumento para identificar o pedido no Webhook
-      const linkReserva = await criarLinkMP(
-        `Reserva (40%) - ${results[0].nome}`,
-        (vTotal * 0.4).toFixed(2),
-        req.params.id,
-      );
-      const linkIntegral = await criarLinkMP(
-        `Total (5% desc) - ${results[0].nome}`,
-        (vTotal * 0.95).toFixed(2),
-        req.params.id,
-      );
-
-      res.json({
-        reserva: (vTotal * 0.4).toFixed(2),
-        linkReserva,
-        integral: (vTotal * 0.95).toFixed(2),
-        linkIntegral,
-        restante: (vTotal * 0.6).toFixed(2),
-      });
-    },
-  );
-});
-
-app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
-  const { valor_final, valor_itens_extras, descricao_itens_extras } = req.body;
-  db.query(
-    "UPDATE orcamentos SET valor_final = ?, valor_itens_extras = ?, descricao_itens_extras = ? WHERE id = ?",
-    [valor_final, valor_itens_extras, descricao_itens_extras, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ success: true });
-    },
-  );
-});
-
-app.get("/api/admin/agenda", checkAuth, (req, res) => {
-  db.query(
-    "SELECT * FROM orcamentos WHERE status_agenda = 'agendado' ORDER BY data_festa ASC",
-    (err, r) => res.json(r),
   );
 });
 
@@ -385,55 +336,21 @@ app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
   });
 });
 
-app.delete("/api/admin/pedidos/:id", checkAuth, (req, res) => {
-  db.query("DELETE FROM orcamentos WHERE id = ?", [req.params.id], (err) =>
-    res.json({ success: true }),
+app.get("/api/admin/pedidos", checkAuth, (req, res) => {
+  db.query(
+    "SELECT * FROM orcamentos ORDER BY data_pedido DESC",
+    (err, results) => {
+      if (err) return res.status(500).json(err);
+      res.json(results);
+    },
   );
 });
 
-// --- ROTAS PREÇOS / FINANCEIRO / AVALIAÇÕES ---
-
-app.get("/api/admin/precos", checkAuth, (req, res) => {
+app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
+  const { valor_final, valor_itens_extras, descricao_itens_extras } = req.body;
   db.query(
-    "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
-    (err, r) => res.json(r),
-  );
-});
-
-app.post("/api/admin/precos", checkAuth, (req, res) => {
-  const { descricao, valor, categoria } = req.body;
-  db.query(
-    "INSERT INTO tabela_precos (item_chave, descricao, valor, categoria) VALUES (?, ?, ?, ?)",
-    ["custom_" + Date.now(), descricao, valor, categoria],
-    () => res.json({ success: true }),
-  );
-});
-
-app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
-  const { valor, categoria, descricao, disponivel } = req.body;
-  let campos = [],
-    valores = [];
-  if (valor !== undefined) {
-    campos.push("valor = ?");
-    valores.push(valor);
-  }
-  if (categoria !== undefined) {
-    campos.push("categoria = ?");
-    valores.push(categoria);
-  }
-  if (descricao !== undefined) {
-    campos.push("descricao = ?");
-    valores.push(descricao);
-  }
-  if (disponivel !== undefined) {
-    campos.push("disponivel = ?");
-    valores.push(disponivel);
-  }
-  if (campos.length === 0) return res.json({ success: true });
-  valores.push(req.params.id);
-  db.query(
-    `UPDATE tabela_precos SET ${campos.join(", ")} WHERE id = ?`,
-    valores,
+    "UPDATE orcamentos SET valor_final = ?, valor_itens_extras = ?, descricao_itens_extras = ? WHERE id = ?",
+    [valor_final, valor_itens_extras, descricao_itens_extras, req.params.id],
     (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
@@ -441,11 +358,50 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
   );
 });
 
-app.delete("/api/admin/precos/:id", checkAuth, (req, res) => {
-  db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>
-    res.json({ success: true }),
+// NOVA ROTA: Geração de links Mercado Pago
+app.post("/api/admin/gerar-links-mp/:id", checkAuth, (req, res) => {
+  db.query(
+    "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
+    [req.params.id],
+    async (err, results) => {
+      if (err || results.length === 0)
+        return res.status(404).json({ error: "Pedido não encontrado" });
+      const vTotal = parseFloat(results[0].valor_final || 0);
+      if (vTotal <= 0)
+        return res
+          .status(400)
+          .json({ error: "Defina o valor final antes de gerar links" });
+
+      const linkReserva = await criarLinkMP(
+        `Reserva (40%) - ${results[0].nome}`,
+        (vTotal * 0.4).toFixed(2),
+        req.params.id, // Importante: Passa o ID do pedido
+      );
+      const linkIntegral = await criarLinkMP(
+        `Total (5% desc) - ${results[0].nome}`,
+        (vTotal * 0.95).toFixed(2),
+        req.params.id, // Importante: Passa o ID do pedido
+      );
+
+      res.json({
+        reserva: (vTotal * 0.4).toFixed(2),
+        linkReserva,
+        integral: (vTotal * 0.95).toFixed(2),
+        linkIntegral,
+        restante: (vTotal * 0.6).toFixed(2),
+      });
+    },
   );
 });
+
+app.delete("/api/admin/pedidos/:id", checkAuth, (req, res) => {
+  db.query("DELETE FROM orcamentos WHERE id = ?", [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: "Erro ao excluir" });
+    res.json({ success: true });
+  });
+});
+
+// --- FINANCEIRO ---
 
 app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
   const { descricao, valor } = req.body;
@@ -504,6 +460,68 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
     res.status(500).json(e);
   }
 });
+
+// --- PREÇOS ---
+
+app.get("/api/admin/precos", checkAuth, (req, res) => {
+  db.query(
+    "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
+    (err, r) => res.json(r),
+  );
+});
+
+app.post("/api/admin/precos", checkAuth, (req, res) => {
+  db.query(
+    "INSERT INTO tabela_precos (item_chave, descricao, valor, categoria) VALUES (?, ?, ?, ?)",
+    [
+      "custom_" + Date.now(),
+      req.body.descricao,
+      req.body.valor,
+      req.body.categoria,
+    ],
+    (e) => res.json({ success: true }),
+  );
+});
+
+app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
+  const { valor, categoria, descricao, disponivel } = req.body;
+  let campos = [],
+    valores = [];
+  if (valor !== undefined) {
+    campos.push("valor = ?");
+    valores.push(valor);
+  }
+  if (categoria !== undefined) {
+    campos.push("categoria = ?");
+    valores.push(categoria);
+  }
+  if (descricao !== undefined) {
+    campos.push("descricao = ?");
+    valores.push(descricao);
+  }
+  if (disponivel !== undefined) {
+    campos.push("disponivel = ?");
+    valores.push(disponivel);
+  }
+  if (campos.length === 0) return res.json({ success: true });
+  valores.push(req.params.id);
+  db.query(
+    `UPDATE tabela_precos SET ${campos.join(", ")} WHERE id = ?`,
+    valores,
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ success: true });
+    },
+  );
+});
+
+app.delete("/api/admin/precos/:id", checkAuth, (req, res) => {
+  db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>
+    res.json({ success: true }),
+  );
+});
+
+// --- AVALIAÇÕES & TOKEN ---
 
 app.post("/api/admin/gerar-token/:id", checkAuth, (req, res) => {
   const token = uuidv4();

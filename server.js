@@ -65,10 +65,21 @@ app.post("/api/orcamento", (req, res) => {
   const data = req.body;
   const sql = `INSERT INTO orcamentos (nome, whatsapp, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   const values = [
-    data.nome, data.whatsapp, data.endereco, data.qtd_criancas, data.faixa_etaria,
-    data.modelo_barraca, data.qtd_barracas, data.cores, data.tema,
-    JSON.stringify(data.itens_padrao), data.itens_adicionais, data.data_festa,
-    data.horario, JSON.stringify(data.alimentacao), data.alergias,
+    data.nome,
+    data.whatsapp,
+    data.endereco,
+    data.qtd_criancas,
+    data.faixa_etaria,
+    data.modelo_barraca,
+    data.qtd_barracas,
+    data.cores,
+    data.tema,
+    JSON.stringify(data.itens_padrao),
+    data.itens_adicionais,
+    data.data_festa,
+    data.horario,
+    JSON.stringify(data.alimentacao),
+    data.alergias,
   ];
   db.query(sql, values, (err) => {
     if (err) return res.status(500).json({ error: err });
@@ -89,12 +100,17 @@ app.get("/api/depoimentos/publicos", (req, res) => {
 });
 
 app.get("/api/feedback/:token", (req, res) => {
-    const token = req.params.token;
-    db.query("SELECT id, nome FROM orcamentos WHERE token_avaliacao = ?", [token], (err, results) => {
-        if (err) return res.status(500).json({ error: "Erro interno" });
-        if (results.length === 0) return res.status(404).json({ error: "Token inválido ou expirado" });
-        res.json(results[0]);
-    });
+  const token = req.params.token;
+  db.query(
+    "SELECT id, nome FROM orcamentos WHERE token_avaliacao = ?",
+    [token],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: "Erro interno" });
+      if (results.length === 0)
+        return res.status(404).json({ error: "Token inválido ou expirado" });
+      res.json(results[0]);
+    },
+  );
 });
 
 app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
@@ -109,7 +125,9 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
       const orcamentoId = result[0].id;
       const nomeCliente = result[0].nome;
       try {
-        const insertDep = await db.promise().query(
+        const insertDep = await db
+          .promise()
+          .query(
             "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado) VALUES (?, ?, ?, ?, 0)",
             [orcamentoId, nomeCliente, texto.substring(0, 350), nota],
           );
@@ -119,7 +137,9 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
             const uploadRes = await cloudinary.uploader.upload(file.path, {
               folder: "cabana_de_brincar/fotos_depoimento",
             });
-            await db.promise().query(
+            await db
+              .promise()
+              .query(
                 "INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)",
                 [depoimentoId, uploadRes.secure_url],
               );
@@ -149,17 +169,24 @@ app.get("/api/galeria_fotos", (req, res) => {
 // --- ROTAS ADMIN ---
 
 app.get("/api/admin/agenda", checkAuth, (req, res) => {
-  db.query("SELECT * FROM orcamentos WHERE status_agenda = 'agendado' ORDER BY data_festa ASC", (err, results) => {
+  db.query(
+    "SELECT * FROM orcamentos WHERE status_agenda = 'agendado' ORDER BY data_festa ASC",
+    (err, results) => {
       if (err) return res.status(500).json(err);
       res.json(results);
-    });
+    },
+  );
 });
 
 app.put("/api/admin/agenda/aprovar/:id", checkAuth, (req, res) => {
-  db.query("UPDATE orcamentos SET status_agenda = 'agendado', status = 'aprovado' WHERE id = ?", [req.params.id], (err) => {
+  db.query(
+    "UPDATE orcamentos SET status_agenda = 'agendado', status = 'aprovado' WHERE id = ?",
+    [req.params.id],
+    (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
-    });
+    },
+  );
 });
 
 app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
@@ -167,7 +194,8 @@ app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
   let sql = "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?";
   let params = [req.params.id];
   if (valor_final !== undefined && valor_final !== null) {
-    sql = "UPDATE orcamentos SET status_agenda = 'concluido', valor_final = ? WHERE id = ?";
+    sql =
+      "UPDATE orcamentos SET status_agenda = 'concluido', valor_final = ? WHERE id = ?";
     params = [valor_final, req.params.id];
   }
   db.query(sql, params, (err) => {
@@ -177,10 +205,13 @@ app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
 });
 
 app.get("/api/admin/pedidos", checkAuth, (req, res) => {
-  db.query("SELECT * FROM orcamentos ORDER BY data_pedido DESC", (err, results) => {
+  db.query(
+    "SELECT * FROM orcamentos ORDER BY data_pedido DESC",
+    (err, results) => {
       if (err) return res.status(500).json(err);
       res.json(results);
-    });
+    },
+  );
 });
 
 app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
@@ -199,10 +230,14 @@ app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
 
 app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
   const { descricao, valor } = req.body;
-  db.query("INSERT INTO custos_festa (orcamento_id, descricao, valor) VALUES (?, ?, ?)", [req.params.id, descricao, valor], (err) => {
+  db.query(
+    "INSERT INTO custos_festa (orcamento_id, descricao, valor) VALUES (?, ?, ?)",
+    [req.params.id, descricao, valor],
+    (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
-    });
+    },
+  );
 });
 
 app.delete("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
@@ -215,9 +250,11 @@ app.delete("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
 app.post("/api/admin/financeiro/geral", checkAuth, (req, res) => {
   const { titulo, tipo, valor, data } = req.body;
   const dataRegistro = data || new Date();
-  const sql = "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, ?, ?, ?)";
+  const sql =
+    "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, ?, ?, ?)";
   db.query(sql, [titulo, tipo, valor, dataRegistro], (err, result) => {
-    if (err) return res.status(500).json({ error: "Erro", details: err.message });
+    if (err)
+      return res.status(500).json({ error: "Erro", details: err.message });
     res.json({ success: true, id: result.insertId });
   });
 });
@@ -231,17 +268,31 @@ app.delete("/api/admin/financeiro/geral/:id", checkAuth, (req, res) => {
 
 app.put("/api/admin/financeiro/atualizar-valor/:id", checkAuth, (req, res) => {
   const { valor_final } = req.body;
-  db.query("UPDATE orcamentos SET valor_final = ? WHERE id = ?", [valor_final, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ success: true });
-  });
+  db.query(
+    "UPDATE orcamentos SET valor_final = ? WHERE id = ?",
+    [valor_final, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ success: true });
+    },
+  );
 });
 
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
   try {
-    const [gerais] = await db.promise().query("SELECT * FROM custos_gerais ORDER BY data_registro DESC");
-    const [custos_festas] = await db.promise().query(`SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id`);
-    const [faturamento] = await db.promise().query("SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'");
+    const [gerais] = await db
+      .promise()
+      .query("SELECT * FROM custos_gerais ORDER BY data_registro DESC");
+    const [custos_festas] = await db
+      .promise()
+      .query(
+        `SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id`,
+      );
+    const [faturamento] = await db
+      .promise()
+      .query(
+        "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'",
+      );
     res.json({ gerais, festas: custos_festas, faturamento });
   } catch (e) {
     res.status(500).json(e);
@@ -251,24 +302,45 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
 // --- PREÇOS ---
 
 app.get("/api/admin/precos", checkAuth, (req, res) => {
-  db.query("SELECT * FROM tabela_precos ORDER BY categoria, descricao", (err, r) => res.json(r));
+  db.query(
+    "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
+    (err, r) => res.json(r),
+  );
 });
 
 app.post("/api/admin/precos", checkAuth, (req, res) => {
   db.query(
     "INSERT INTO tabela_precos (item_chave, descricao, valor, categoria) VALUES (?, ?, ?, ?)",
-    ["custom_" + Date.now(), req.body.descricao, req.body.valor, req.body.categoria],
+    [
+      "custom_" + Date.now(),
+      req.body.descricao,
+      req.body.valor,
+      req.body.categoria,
+    ],
     (e) => res.json({ success: true }),
   );
 });
 
 app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
   const { valor, categoria, descricao, disponivel } = req.body;
-  let campos = [], valores = [];
-  if (valor !== undefined) { campos.push("valor = ?"); valores.push(valor); }
-  if (categoria !== undefined) { campos.push("categoria = ?"); valores.push(categoria); }
-  if (descricao !== undefined) { campos.push("descricao = ?"); valores.push(descricao); }
-  if (disponivel !== undefined) { campos.push("disponivel = ?"); valores.push(disponivel); }
+  let campos = [],
+    valores = [];
+  if (valor !== undefined) {
+    campos.push("valor = ?");
+    valores.push(valor);
+  }
+  if (categoria !== undefined) {
+    campos.push("categoria = ?");
+    valores.push(categoria);
+  }
+  if (descricao !== undefined) {
+    campos.push("descricao = ?");
+    valores.push(descricao);
+  }
+  if (disponivel !== undefined) {
+    campos.push("disponivel = ?");
+    valores.push(disponivel);
+  }
   if (campos.length === 0) return res.json({ success: true });
   valores.push(req.params.id);
   const sql = `UPDATE tabela_precos SET ${campos.join(", ")} WHERE id = ?`;
@@ -279,17 +351,26 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
 });
 
 app.delete("/api/admin/precos/:id", checkAuth, (req, res) => {
-  db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) => res.json({ success: true }));
+  db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>
+    res.json({ success: true }),
+  );
 });
 
 // --- AVALIAÇÕES & TOKEN ---
 
 app.post("/api/admin/gerar-token/:id", checkAuth, (req, res) => {
   const token = uuidv4();
-  db.query("UPDATE orcamentos SET token_avaliacao = ? WHERE id = ?", [token, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ token, link: `${req.protocol}://${req.get("host")}/feedback.html?t=${token}` });
-  });
+  db.query(
+    "UPDATE orcamentos SET token_avaliacao = ? WHERE id = ?",
+    [token, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({
+        token,
+        link: `${req.protocol}://${req.get("host")}/feedback.html?t=${token}`,
+      });
+    },
+  );
 });
 
 // GET Admin: Busca depoimentos E SUAS FOTOS (Group Concat)
@@ -305,9 +386,9 @@ app.get("/api/admin/avaliacoes", checkAuth, (req, res) => {
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     // Converte a string de fotos separada por vírgula em array
-    const formatado = results.map(r => ({
-        ...r,
-        fotos: r.fotos ? r.fotos.split(',') : []
+    const formatado = results.map((r) => ({
+      ...r,
+      fotos: r.fotos ? r.fotos.split(",") : [],
     }));
     res.json(formatado);
   });
@@ -315,46 +396,55 @@ app.get("/api/admin/avaliacoes", checkAuth, (req, res) => {
 
 app.put("/api/admin/avaliacoes/:id", checkAuth, (req, res) => {
   const { texto, aprovado } = req.body;
-  db.query("UPDATE depoimentos SET texto = ?, aprovado = ? WHERE id = ?", [texto, aprovado, req.params.id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ success: true });
-  });
+  db.query(
+    "UPDATE depoimentos SET texto = ?, aprovado = ? WHERE id = ?",
+    [texto, aprovado, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ success: true });
+    },
+  );
 });
 
 // DELETE Admin: Apaga fotos do Cloudinary e depois do Banco
 app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
-    const id = req.params.id;
+  const id = req.params.id;
 
-    try {
-        // 1. Busca URLs das fotos deste depoimento
-        const [photos] = await db.promise().query("SELECT url_foto FROM fotos_depoimento WHERE depoimento_id = ?", [id]);
+  try {
+    // 1. Busca URLs das fotos deste depoimento
+    const [photos] = await db
+      .promise()
+      .query("SELECT url_foto FROM fotos_depoimento WHERE depoimento_id = ?", [
+        id,
+      ]);
 
-        // 2. Apaga do Cloudinary
-        if (photos.length > 0) {
-            const deletePromises = photos.map(p => {
-                const url = p.url_foto;
-                // Extrai o public_id da URL do Cloudinary (ex: folder/arquivo)
-                // Regex busca tudo após /upload/(vXXXX/ opcional) e antes da extensão
-                const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
-                if(matches && matches[1]) {
-                    const publicId = matches[1];
-                    return cloudinary.uploader.destroy(publicId);
-                }
-                return Promise.resolve();
-            });
-            await Promise.all(deletePromises);
+    // 2. Apaga do Cloudinary
+    if (photos.length > 0) {
+      const deletePromises = photos.map((p) => {
+        const url = p.url_foto;
+        // Extrai o public_id da URL do Cloudinary (ex: folder/arquivo)
+        // Regex busca tudo após /upload/(vXXXX/ opcional) e antes da extensão
+        const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+        if (matches && matches[1]) {
+          const publicId = matches[1];
+          return cloudinary.uploader.destroy(publicId);
         }
-
-        // 3. Apaga do Banco (Fotos e Depoimento)
-        await db.promise().query("DELETE FROM fotos_depoimento WHERE depoimento_id = ?", [id]);
-        await db.promise().query("DELETE FROM depoimentos WHERE id = ?", [id]);
-
-        res.json({ success: true });
-
-    } catch (err) {
-        console.error("Erro ao excluir:", err);
-        res.status(500).json({ error: "Erro ao excluir avaliação" });
+        return Promise.resolve();
+      });
+      await Promise.all(deletePromises);
     }
+
+    // 3. Apaga do Banco (Fotos e Depoimento)
+    await db
+      .promise()
+      .query("DELETE FROM fotos_depoimento WHERE depoimento_id = ?", [id]);
+    await db.promise().query("DELETE FROM depoimentos WHERE id = ?", [id]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Erro ao excluir:", err);
+    res.status(500).json({ error: "Erro ao excluir avaliação" });
+  }
 });
 
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

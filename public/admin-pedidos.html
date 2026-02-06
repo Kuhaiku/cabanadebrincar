@@ -108,7 +108,7 @@
                             <ul class="space-y-2 text-sm text-slate-700">
                                 <li><strong>Modelo:</strong> <span id="det-modelo"></span></li>
                                 <li><strong>Qtd:</strong> <span id="det-qtd-barracas" class="font-bold text-indigo-700"></span></li>
-                                <li><strong>Crianças:</strong> <span id="det-criancas"></span></li>
+                                <li><strong>Pessoas:</strong> <span id="det-criancas"></span></li>
                                 <li><strong>Idade:</strong> <span id="det-faixa"></span></li>
                             </ul>
                         </div>
@@ -401,7 +401,7 @@
 
             txt += `🎪 *Estrutura:*\n`;
             txt += `▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n`;
-            txt += `▪️ ${pedidoAtual.qtd_criancas} Crianças (${pedidoAtual.faixa_etaria})\n`;
+            txt += `▪️ ${pedidoAtual.qtd_criancas} Pessoas (${pedidoAtual.faixa_etaria})\n`;
             txt += `▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n`;
 
             txt += `📦 *Itens:*\n`;
@@ -410,7 +410,7 @@
 
             if(comida.length > 0) {
                 txt += `\n🍽️ *Alimentação:*\n`;
-                comida.forEach(c => txt += `  • ${c}\n`);
+                comida.forEach(c => txt += `  • ${c} (${pedidoAtual.qtd_criancas}x)\n`);
             }
 
             const taxas = document.querySelectorAll('.chk-taxa:checked');

@@ -403,6 +403,11 @@
                                     </button>
                                 </div>
                             </td>
+                            <td>
+                                <span class="${p.status_pagamento === "pago" ? "text-green-600 font-bold" : "text-slate-400"}">
+                                    ${p.status_pagamento === "pago" ? "✅ Pago" : "⏳ Pendente"}
+                                </span>
+                            </td>
                         </tr>
                     `;
           });

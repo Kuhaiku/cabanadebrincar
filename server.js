@@ -8,9 +8,15 @@ const path = require("path");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { randomUUID: uuidv4 } = require("crypto");
+const { MercadoPagoConfig, Preference } = require("mercadopago");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configuração Mercado Pago
+const mpClient = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN,
+});
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -49,6 +55,39 @@ function checkAuth(req, res, next) {
   next();
 }
 
+// --- AUXILIAR MERCADO PAGO ---
+// --- AUXILIAR MERCADO PAGO ---
+async function criarLinkMP(titulo, valor) {
+  try {
+    const preference = new Preference(mpClient);
+    const result = await preference.create({
+      body: {
+        items: [{ 
+          title: titulo, 
+          unit_price: Number(valor), 
+          quantity: 1, 
+          currency_id: 'BRL' 
+        }],
+        payment_methods: {
+          excluded_payment_types: [], // Mantém todos os métodos incluindo PIX
+          installments: 12
+        },
+        // Define as URLs de retorno para o cliente
+        back_urls: { 
+          success: `https://${process.env.DOMAIN || 'localhost'}/sucesso.html`,
+          failure: `https://${process.env.DOMAIN || 'localhost'}/erro.html`,
+          pending: `https://${process.env.DOMAIN || 'localhost'}/pendente.html`
+        },
+        // Ativa o redirecionamento automático em caso de sucesso
+        auto_return: "approved",
+      }
+    });
+    return result.init_point;
+  } catch (err) {
+    console.error("Erro MP:", err);
+    return null;
+  }
+}
 // --- ROTAS PÚBLICAS ---
 
 app.get("/api/itens-disponiveis", (req, res) => {
@@ -226,6 +265,40 @@ app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
   );
 });
 
+// NOVA ROTA: Geração de links Mercado Pago
+app.post("/api/admin/gerar-links-mp/:id", checkAuth, (req, res) => {
+  db.query(
+    "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
+    [req.params.id],
+    async (err, results) => {
+      if (err || results.length === 0)
+        return res.status(404).json({ error: "Pedido não encontrado" });
+      const vTotal = parseFloat(results[0].valor_final || 0);
+      if (vTotal <= 0)
+        return res
+          .status(400)
+          .json({ error: "Defina o valor final antes de gerar links" });
+
+      const linkReserva = await criarLinkMP(
+        `Reserva (40%) - ${results[0].nome}`,
+        (vTotal * 0.4).toFixed(2),
+      );
+      const linkIntegral = await criarLinkMP(
+        `Total (5% desc) - ${results[0].nome}`,
+        (vTotal * 0.95).toFixed(2),
+      );
+
+      res.json({
+        reserva: (vTotal * 0.4).toFixed(2),
+        linkReserva,
+        integral: (vTotal * 0.95).toFixed(2),
+        linkIntegral,
+        restante: (vTotal * 0.6).toFixed(2),
+      });
+    },
+  );
+});
+
 // --- FINANCEIRO ---
 
 app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
@@ -249,10 +322,9 @@ app.delete("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
 
 app.post("/api/admin/financeiro/geral", checkAuth, (req, res) => {
   const { titulo, tipo, valor, data } = req.body;
-  const dataRegistro = data || new Date();
   const sql =
     "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, ?, ?, ?)";
-  db.query(sql, [titulo, tipo, valor, dataRegistro], (err, result) => {
+  db.query(sql, [titulo, tipo, valor, data || new Date()], (err, result) => {
     if (err)
       return res.status(500).json({ error: "Erro", details: err.message });
     res.json({ success: true, id: result.insertId });
@@ -266,18 +338,6 @@ app.delete("/api/admin/financeiro/geral/:id", checkAuth, (req, res) => {
   });
 });
 
-app.put("/api/admin/financeiro/atualizar-valor/:id", checkAuth, (req, res) => {
-  const { valor_final } = req.body;
-  db.query(
-    "UPDATE orcamentos SET valor_final = ? WHERE id = ?",
-    [valor_final, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ success: true });
-    },
-  );
-});
-
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
   try {
     const [gerais] = await db
@@ -286,7 +346,7 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
     const [custos_festas] = await db
       .promise()
       .query(
-        `SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id`,
+        "SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id",
       );
     const [faturamento] = await db
       .promise()
@@ -343,11 +403,14 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
   }
   if (campos.length === 0) return res.json({ success: true });
   valores.push(req.params.id);
-  const sql = `UPDATE tabela_precos SET ${campos.join(", ")} WHERE id = ?`;
-  db.query(sql, valores, (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ success: true });
-  });
+  db.query(
+    `UPDATE tabela_precos SET ${campos.join(", ")} WHERE id = ?`,
+    valores,
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ success: true });
+    },
+  );
 });
 
 app.delete("/api/admin/precos/:id", checkAuth, (req, res) => {
@@ -373,83 +436,48 @@ app.post("/api/admin/gerar-token/:id", checkAuth, (req, res) => {
   );
 });
 
-// GET Admin: Busca depoimentos E SUAS FOTOS (Group Concat)
 app.get("/api/admin/avaliacoes", checkAuth, (req, res) => {
-  const sql = `
-    SELECT d.*, o.data_festa, GROUP_CONCAT(f.url_foto) as fotos 
-    FROM depoimentos d 
-    LEFT JOIN orcamentos o ON d.orcamento_id = o.id 
-    LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id 
-    GROUP BY d.id 
-    ORDER BY d.data_criacao DESC
-  `;
+  const sql = `SELECT d.*, o.data_festa, GROUP_CONCAT(f.url_foto) as fotos FROM depoimentos d LEFT JOIN orcamentos o ON d.orcamento_id = o.id LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id GROUP BY d.id ORDER BY d.data_criacao DESC`;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
-    // Converte a string de fotos separada por vírgula em array
-    const formatado = results.map((r) => ({
-      ...r,
-      fotos: r.fotos ? r.fotos.split(",") : [],
-    }));
-    res.json(formatado);
+    res.json(
+      results.map((r) => ({ ...r, fotos: r.fotos ? r.fotos.split(",") : [] })),
+    );
   });
 });
 
-app.put("/api/admin/avaliacoes/:id", checkAuth, (req, res) => {
-  const { texto, aprovado } = req.body;
-  db.query(
-    "UPDATE depoimentos SET texto = ?, aprovado = ? WHERE id = ?",
-    [texto, aprovado, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ success: true });
-    },
-  );
-});
-
-// DELETE Admin: Apaga fotos do Cloudinary e depois do Banco
 app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
   const id = req.params.id;
-
   try {
-    // 1. Busca URLs das fotos deste depoimento
     const [photos] = await db
       .promise()
       .query("SELECT url_foto FROM fotos_depoimento WHERE depoimento_id = ?", [
         id,
       ]);
-
-    // 2. Apaga do Cloudinary
     if (photos.length > 0) {
-      const deletePromises = photos.map((p) => {
-        const url = p.url_foto;
-        // Extrai o public_id da URL do Cloudinary (ex: folder/arquivo)
-        // Regex busca tudo após /upload/(vXXXX/ opcional) e antes da extensão
-        const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
-        if (matches && matches[1]) {
-          const publicId = matches[1];
-          return cloudinary.uploader.destroy(publicId);
-        }
-        return Promise.resolve();
-      });
-      await Promise.all(deletePromises);
+      await Promise.all(
+        photos.map((p) => {
+          const matches = p.url_foto.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+          return matches
+            ? cloudinary.uploader.destroy(matches[1])
+            : Promise.resolve();
+        }),
+      );
     }
-
-    // 3. Apaga do Banco (Fotos e Depoimento)
     await db
       .promise()
       .query("DELETE FROM fotos_depoimento WHERE depoimento_id = ?", [id]);
     await db.promise().query("DELETE FROM depoimentos WHERE id = ?", [id]);
-
     res.json({ success: true });
   } catch (err) {
-    console.error("Erro ao excluir:", err);
-    res.status(500).json({ error: "Erro ao excluir avaliação" });
+    res.status(500).json({ error: "Erro ao excluir" });
   }
 });
-// DELETE Admin: Excluir um pedido (orçamento)
+
 app.delete("/api/admin/pedidos/:id", checkAuth, (req, res) => {
   db.query("DELETE FROM orcamentos WHERE id = ?", [req.params.id], (err) => {
-    if (err) return res.status(500).json({ error: "Erro ao excluir pedido", details: err });
+    if (err)
+      return res.status(500).json({ error: "Erro ao excluir", details: err });
     res.json({ success: true });
   });
 });

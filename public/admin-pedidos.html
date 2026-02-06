@@ -299,6 +299,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <button
+                id="btn-copiar"
                 onclick="copiarOrcamento()"
                 class="bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-200 text-sm"
               >
@@ -597,71 +598,105 @@
       }
 
       async function copiarOrcamento() {
-        let dataFesta = pedidoAtual.data_festa;
-        if (dataFesta && dataFesta.includes("T"))
-          dataFesta = dataFesta.split("T")[0];
-        const d = new Date(dataFesta).toLocaleDateString("pt-BR", {
-          timeZone: "UTC",
-        });
-        const itens = safeParse(pedidoAtual.itens_padrao);
-        const comida = safeParse(pedidoAtual.alimentacao);
+        if (!pedidoAtual) return;
 
-        let txt = `*Orçamento Cabana de Brincar* ⛺✨\n`;
-        txt += `Olá *${pedidoAtual.nome}*! Tudo bem? 💖\n\n`;
-        txt += `Recebemos seu pedido! Segue o resumo:\n\n`;
-        txt += `🗓 *Data:* ${d} às ${pedidoAtual.horario || "??"}\n`;
-        txt += `📍 *Local:* ${pedidoAtual.endereco}\n\n`;
-        txt += `🎪 *Estrutura:*\n`;
-        txt += `▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n`;
-        txt += `▪️ ${pedidoAtual.qtd_criancas} Pessoas (${pedidoAtual.faixa_etaria})\n`;
-        txt += `▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n`;
-        txt += `📦 *Itens:*\n`;
-        if (itens.length > 0) itens.forEach((i) => (txt += `  • ${i}\n`));
-        else txt += `  • (Itens básicos da estrutura)\n`;
-        if (comida.length > 0) {
-          txt += `\n🍽️ *Alimentação:*\n`;
-          comida.forEach(
-            (c) => (txt += `  • ${c} (${pedidoAtual.qtd_criancas}x)\n`),
+        const btn = document.getElementById("btn-copiar");
+        const originalText = btn.innerHTML;
+        btn.innerHTML =
+          '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Gerando Links...';
+        lucide.createIcons();
+
+        try {
+          // Atualizar o valor_final no banco antes de gerar os links
+          const extraVal = document.getElementById("valor-extra").value;
+          const extraDesc = document.getElementById("desc-extra").value;
+
+          await fetch(`${API_URL}/admin/pedidos/${pedidoAtual.id}/financeiro`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-password": ADMIN_TOKEN,
+            },
+            body: JSON.stringify({
+              valor_final: pedidoAtual.totalCalculado,
+              valor_itens_extras: extraVal,
+              descricao_itens_extras: extraDesc,
+            }),
+          });
+
+          // Solicita os links do Mercado Pago ao servidor
+          const res = await fetch(
+            `${API_URL}/admin/gerar-links-mp/${pedidoAtual.id}`,
+            {
+              method: "POST",
+              headers: { "x-admin-password": ADMIN_TOKEN },
+            },
           );
+          const d = await res.json();
+
+          if (d.error) throw new Error(d.error);
+
+          let dataFesta = pedidoAtual.data_festa;
+          if (dataFesta && dataFesta.includes("T"))
+            dataFesta = dataFesta.split("T")[0];
+          const dFmt = new Date(dataFesta).toLocaleDateString("pt-BR", {
+            timeZone: "UTC",
+          });
+
+          const itens = safeParse(pedidoAtual.itens_padrao);
+          const comida = safeParse(pedidoAtual.alimentacao);
+
+          let txt = `*Orçamento Cabana de Brincar* ⛺✨\n`;
+          txt += `Olá *${pedidoAtual.nome}*! Tudo bem? 💖\n\n`;
+          txt += `Recebemos seu pedido! Segue o resumo:\n\n`;
+          txt += `🗓 *Data:* ${dFmt} às ${pedidoAtual.horario || "??"}\n`;
+          txt += `📍 *Local:* ${pedidoAtual.endereco}\n\n`;
+          txt += `🎪 *Estrutura:*\n`;
+          txt += `▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n`;
+          txt += `▪️ ${pedidoAtual.qtd_criancas} Pessoas (${pedidoAtual.faixa_etaria})\n`;
+          txt += `▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n`;
+
+          txt += `📦 *Itens:*\n`;
+          if (itens.length > 0) itens.forEach((i) => (txt += `  • ${i}\n`));
+          else txt += `  • (Itens básicos da estrutura)\n`;
+
+          if (comida.length > 0) {
+            txt += `\n🍽️ *Alimentação:*\n`;
+            comida.forEach(
+              (c) => (txt += `  • ${c} (${pedidoAtual.qtd_criancas}x)\n`),
+            );
+          }
+
+          if (pedidoAtual.itens_adicionais)
+            txt += `\n📝 *Obs:* ${pedidoAtual.itens_adicionais}\n`;
+          if (pedidoAtual.alergias)
+            txt += `\n⚠️ *Alergias:* ${pedidoAtual.alergias}\n`;
+
+          txt += `\n*────────────────────*\n`;
+          txt += `💰 *VALOR TOTAL: R$ ${pedidoAtual.totalCalculado}*`;
+          txt += `\n*────────────────────*\n\n`;
+
+          txt += `Para garantirmos a sua data e toda a qualidade que sua festa merece, solicitamos o pagamento da reserva. Como limitamos o número de eventos por dia, esse valor assegura sua exclusividade em nossa agenda! ✨\n\n`;
+
+          txt += `✅ *Podemos confirmar o agendamento?*\n\n`;
+          txt += `• *Reserva (40%):* R$ ${d.reserva}\n`;
+          txt += `🔗 Link de pagamento: ${d.linkReserva}\n\n`;
+          txt += `• *Restante:* R$ ${d.restante} (pagos na entrega)\n\n`;
+          txt += `• *Ou valor integral com 5% de desconto:* R$ ${d.integral}\n`;
+          txt += `🔗 Link de pagamento: ${d.linkIntegral}\n\n`;
+
+          txt += `_Obs: O valor da reserva é utilizado para bloquear a data e organizar a logística, por isso, não é reembolsável em caso de cancelamento._\n\n`;
+          txt += `Estamos ansiosos para fazer parte deste momento especial! 🎉`;
+
+          await navigator.clipboard.writeText(txt);
+          alert("✅ Resumo com links reais copiado com sucesso!");
+        } catch (e) {
+          console.error(e);
+          alert("Erro ao gerar links: " + e.message);
+        } finally {
+          btn.innerHTML = originalText;
+          lucide.createIcons();
         }
-        const taxas = document.querySelectorAll(".chk-taxa:checked");
-        const descExtra = document.getElementById("desc-extra").value;
-        if (taxas.length > 0 || descExtra) {
-          txt += `\n📄 *Adicionais e Taxas:*\n`;
-          taxas.forEach(
-            (chk) => (txt += `  • ${chk.getAttribute("data-nome")}\n`),
-          );
-          if (descExtra) txt += `  • ${descExtra}\n`;
-        }
-        if (pedidoAtual.itens_adicionais)
-          txt += `\n📝 *Obs:* ${pedidoAtual.itens_adicionais}\n`;
-        if (pedidoAtual.alergias)
-          txt += `\n⚠️ *Alergias:* ${pedidoAtual.alergias}\n`;
-        const valorTotal = pedidoAtual.totalCalculado;
-        const valorReserva = (valorTotal * 0.4).toFixed(2);
-        const valorRestante = (valorTotal * 0.6).toFixed(2);
-
-        txt += `\n*────────────────────*\n`;
-        txt += `💰 *VALOR TOTAL: R$ ${valorTotal}*`;
-        txt += `\n*────────────────────*\n\n`;
-
-        txt += `Para garantirmos a sua data e toda a qualidade que sua festa merece, solicitamos o pagamento da reserva. Como limitamos o número de eventos por dia, esse valor assegura sua exclusividade em nossa agenda! ✨\n\n`;
-
-        txt += `✅ *Podemos confirmar o agendamento?*\n\n`;
-
-        txt += `• *Reserva (40%):* R$ ${valorReserva}\n`;
-        txt += `link de pagamento: mercadolivre...`;
-        txt += `• *Restante:* R$ ${valorRestante} (pagos na entrega)\n\n`;
-        
-        txt += `• *Ou valor integral com 5% de desconto:* R$ ${parseFloat(valorTotal * 0.95).toFixed(2)}\n\n`;
-        txt += `• *link de pagamento:* mercadolivre... 5% de desconto\n\n`;
-
-
-
-        txt += `_Obs: O valor da reserva é utilizado para bloquear a data e organizar a logística, por isso, não é reembolsável em caso de cancelamento._\n\n`;
-        txt += `Estamos ansiosos para fazer parte deste momento especial! 🎉`;
-        await navigator.clipboard.writeText(txt);
-        alert("Resumo copiado com sucesso!");
       }
 
       async function enviarParaAgenda() {

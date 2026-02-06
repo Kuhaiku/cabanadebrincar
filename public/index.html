@@ -4,39 +4,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cabana de Brincar | A Melhor Festa do Pijama</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Nunito', 'sans-serif'],
-              display: ['Fredoka', 'sans-serif'],
+              sans: ["Nunito", "sans-serif"],
+              display: ["Fredoka", "sans-serif"],
             },
             colors: {
               brand: {
-                pink: '#FF6B95',
-                dark: '#2D2A4A',
-                soft: '#FFF5F8',
-                accent: '#FFD9E3',
-                purple: '#8B5CF6'
-              }
-            }
-          }
-        }
-      }
+                pink: "#FF6B95",
+                dark: "#2D2A4A",
+                soft: "#FFF5F8",
+                accent: "#FFD9E3",
+                purple: "#8B5CF6",
+              },
+            },
+          },
+        },
+      };
     </script>
     <style>
       .hero-pattern {
-        background-color: #FFF5F8;
-        background-image: radial-gradient(#FFD9E3 2px, transparent 2px);
+        background-color: #fff5f8;
+        background-image: radial-gradient(#ffd9e3 2px, transparent 2px);
         background-size: 30px 30px;
       }
       .blob {
@@ -46,479 +49,696 @@
         opacity: 0.5;
         animation: float 6s ease-in-out infinite;
       }
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      
-      @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-        100% { transform: translateY(0px); }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
 
-      /* Transição suave para o carrossel do Hero */
-      .fade-img {
-          transition: opacity 1s ease-in-out;
+      @keyframes float {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
       }
     </style>
   </head>
-  <body class="font-sans text-slate-600 bg-white antialiased">
-
-    <div id="modal-depoimento" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-brand-dark/80 backdrop-blur-sm transition-opacity" onclick="fecharModal()"></div>
-        <div class="fixed inset-0 z-10 overflow-y-auto">
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="absolute top-4 right-4 z-20">
-                            <button type="button" onclick="fecharModal()" class="rounded-full bg-slate-100 p-2 text-slate-400 hover:text-brand-pink hover:bg-pink-50 transition-colors">
-                                <i data-lucide="x" class="w-6 h-6"></i>
-                            </button>
-                        </div>
-                        <div id="modal-content" class="mt-2"></div>
-                    </div>
-                </div>
+  <body class="font-sans text-slate-600 bg-white antialiased overflow-x-hidden">
+    <div
+      id="modal-depoimento"
+      class="fixed inset-0 z-[100] hidden"
+      aria-labelledby="modal-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="fixed inset-0 bg-brand-dark/80 backdrop-blur-sm transition-opacity"
+        onclick="fecharModal()"
+      ></div>
+      <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div
+          class="flex min-h-full items-center justify-center p-4 text-center sm:p-0"
+        >
+          <div
+            class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl"
+          >
+            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+              <div class="absolute top-4 right-4 z-20">
+                <button
+                  type="button"
+                  onclick="fecharModal()"
+                  class="rounded-full bg-slate-100 p-2 text-slate-400 hover:text-brand-pink hover:bg-pink-50 transition-colors"
+                >
+                  <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+              </div>
+              <div id="modal-content" class="mt-2"></div>
             </div>
+          </div>
         </div>
+      </div>
     </div>
 
-    <div id="lightbox" class="fixed inset-0 z-[110] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="fecharLightbox()">
-        <button class="absolute top-6 right-6 text-white hover:text-brand-pink transition-colors z-50">
-            <i data-lucide="x" class="w-10 h-10"></i>
-        </button>
-        <img id="lightbox-img" src="" class="max-h-[90vh] max-w-full rounded-lg shadow-2xl transition-transform duration-300 scale-95" onclick="event.stopPropagation()">
+    <div
+      id="lightbox"
+      class="fixed inset-0 z-[110] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
+      onclick="fecharLightbox()"
+    >
+      <button
+        class="absolute top-6 right-6 text-white hover:text-brand-pink transition-colors z-50"
+      >
+        <i data-lucide="x" class="w-10 h-10"></i>
+      </button>
+      <img
+        id="lightbox-img"
+        src=""
+        class="max-h-[90vh] max-w-full rounded-lg shadow-2xl transition-transform duration-300 scale-95"
+        onclick="event.stopPropagation()"
+      />
     </div>
 
-    <header class="fixed w-full bg-white/90 backdrop-blur-md border-b border-slate-100 z-50">
-      <div class="container mx-auto px-6 py-4 flex items-center justify-between">
-         <div class="text-2xl font-display font-bold text-brand-pink tracking-wide">
-            Cabana<span class="text-brand-dark">.Brincar</span>
-         </div>
-         <nav class="hidden md:flex gap-8 font-bold text-sm text-slate-500">
-            <a href="#como-funciona" class="hover:text-brand-pink transition-colors">Como Funciona</a>
-            <a href="#galeria" class="hover:text-brand-pink transition-colors">Fotos</a>
-            <a href="#depoimentos" class="hover:text-brand-pink transition-colors">Depoimentos</a>
-         </nav>
-         <a href="orcamento.html" class="bg-brand-pink text-white px-4 py-2 md:px-6 rounded-full font-bold shadow-lg shadow-pink-200 hover:bg-pink-500 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex items-center gap-2">
-            <i data-lucide="wand-2" class="w-4 h-4"></i> Montar Festa
-         </a>
+    <header
+      class="fixed w-full bg-white/90 backdrop-blur-md border-b border-slate-100 z-50"
+    >
+      <div
+        class="container mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between"
+      >
+        <div
+          class="text-xl md:text-2xl font-display font-bold text-brand-pink tracking-wide"
+        >
+          Cabana<span class="text-brand-dark">.Brincar</span>
+        </div>
+
+        <nav class="hidden md:flex gap-8 font-bold text-sm text-slate-500">
+          <a
+            href="#como-funciona"
+            class="hover:text-brand-pink transition-colors"
+            >Como Funciona</a
+          >
+          <a href="#galeria" class="hover:text-brand-pink transition-colors"
+            >Fotos</a
+          >
+          <a href="#depoimentos" class="hover:text-brand-pink transition-colors"
+            >Depoimentos</a
+          >
+        </nav>
+
+        <a
+          href="orcamento.html"
+          class="bg-brand-pink text-white px-3 py-2 md:px-6 rounded-full font-bold shadow-lg shadow-pink-200 hover:bg-pink-500 transition-all hover:-translate-y-0.5 text-xs md:text-sm flex items-center gap-1.5 md:gap-2"
+        >
+          <i data-lucide="wand-2" class="w-3 h-3 md:w-4 md:h-4"></i> Montar
+          Festa
+        </a>
       </div>
     </header>
 
-    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern">
-      <div class="blob bg-purple-200 w-64 h-64 rounded-full top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
-      <div class="blob bg-pink-200 w-96 h-96 rounded-full bottom-0 right-0 translate-x-1/3 translate-y-1/3 animation-delay-2000"></div>
+    <section
+      class="relative pt-28 pb-16 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern"
+    >
+      <div
+        class="blob bg-purple-200 w-64 h-64 rounded-full top-0 left-0 -translate-x-1/2 -translate-y-1/2"
+      ></div>
+      <div
+        class="blob bg-pink-200 w-96 h-96 rounded-full bottom-0 right-0 translate-x-1/3 translate-y-1/3 animation-delay-2000"
+      ></div>
 
       <div class="container mx-auto px-6 relative z-10">
-        <div class="flex flex-col lg:flex-row items-center gap-12">
-            <div class="lg:w-1/2 text-center lg:text-left">
-                <div class="inline-block px-4 py-1.5 rounded-full bg-white border border-brand-pink/20 text-brand-pink text-xs font-bold uppercase tracking-wider mb-6 shadow-sm">
-                    ✨ A magia acontece aqui
-                </div>
-                <h1 class="font-display text-4xl lg:text-6xl font-bold text-brand-dark leading-tight mb-6">
-                    Transforme a sala de casa em um <span class="text-brand-pink">Mundo Mágico!</span>
-                </h1>
-                <p class="text-slate-500 text-lg mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                    Levamos a festa do pijama completa até você. Cabanas temáticas, colchões fofinhos, iluminação aconchegante e muito mais. Sem trabalho, só diversão!
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                    <a href="orcamento.html" class="flex items-center justify-center gap-2 bg-brand-dark text-white px-8 py-4 rounded-2xl font-display font-bold text-lg shadow-xl hover:bg-slate-800 transition-all hover:scale-105 group">
-                        <i data-lucide="wand-2" class="w-5 h-5 text-brand-pink group-hover:rotate-12 transition-transform"></i>
-                        Simular Orçamento
-                    </a>
-                    <a href="#como-funciona" class="flex items-center justify-center gap-2 bg-white text-brand-dark px-8 py-4 rounded-2xl font-bold border border-slate-200 shadow-sm hover:border-brand-pink/50 transition-all">
-                        Ver como funciona
-                    </a>
-                </div>
-                <div class="mt-8 flex items-center justify-center lg:justify-start gap-4 text-sm font-bold text-slate-400">
-                    <span class="flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i> Montagem Grátis</span>
-                    <span class="flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i> Higienizado</span>
-                </div>
+        <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+          <div class="lg:w-1/2 text-center lg:text-left">
+            <div
+              class="inline-block px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white border border-brand-pink/20 text-brand-pink text-[10px] md:text-xs font-bold uppercase tracking-wider mb-4 md:mb-6 shadow-sm"
+            >
+              ✨ A magia acontece aqui
             </div>
-            
-            <div class="lg:w-1/2 relative group">
-                <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500 h-[400px] md:h-[500px] bg-slate-200">
-                    <div id="hero-images-container" class="w-full h-full relative">
-                        <div class="absolute inset-0 flex items-center justify-center text-slate-400">
-                            <i data-lucide="loader-2" class="animate-spin w-8 h-8"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="absolute -inset-4 bg-brand-pink/20 rounded-[3rem] -z-10 -rotate-3 group-hover:rotate-2 transition-transform duration-500"></div>
+
+            <h1
+              class="font-display text-3xl md:text-4xl lg:text-6xl font-bold text-brand-dark leading-tight mb-4 md:mb-6"
+            >
+              Transforme a sala em um
+              <span class="text-brand-pink">Mundo Mágico!</span>
+            </h1>
+
+            <p
+              class="text-slate-500 text-base md:text-lg mb-6 md:mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0"
+            >
+              Levamos a festa do pijama completa até você. Cabanas temáticas,
+              colchões fofinhos e iluminação aconchegante.
+            </p>
+
+            <div
+              class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start"
+            >
+              <a
+                href="orcamento.html"
+                class="flex items-center justify-center gap-2 bg-brand-dark text-white px-6 py-3 md:px-8 md:py-4 rounded-2xl font-display font-bold text-base md:text-lg shadow-xl hover:bg-slate-800 transition-all hover:scale-105 group w-full sm:w-auto"
+              >
+                <i
+                  data-lucide="wand-2"
+                  class="w-4 h-4 md:w-5 md:h-5 text-brand-pink group-hover:rotate-12 transition-transform"
+                ></i>
+                Simular Orçamento
+              </a>
+              <a
+                href="#como-funciona"
+                class="flex items-center justify-center gap-2 bg-white text-brand-dark px-6 py-3 md:px-8 md:py-4 rounded-2xl font-bold text-base md:text-lg border border-slate-200 shadow-sm hover:border-brand-pink/50 transition-all w-full sm:w-auto"
+              >
+                Ver como funciona
+              </a>
             </div>
+
+            <div
+              class="mt-6 md:mt-8 flex items-center justify-center lg:justify-start gap-3 md:gap-4 text-xs md:text-sm font-bold text-slate-400"
+            >
+              <span class="flex items-center gap-1"
+                ><i
+                  data-lucide="check-circle"
+                  class="w-3 h-3 md:w-4 md:h-4 text-green-500"
+                ></i>
+                Montagem Grátis</span
+              >
+              <span class="flex items-center gap-1"
+                ><i
+                  data-lucide="check-circle"
+                  class="w-3 h-3 md:w-4 md:h-4 text-green-500"
+                ></i>
+                Higienizado</span
+              >
+            </div>
+          </div>
+
+          <div class="lg:w-1/2 relative group w-full mt-4 md:mt-0">
+            <div
+              class="relative z-10 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white rotate-1 md:rotate-2 hover:rotate-0 transition-transform duration-500 h-[300px] md:h-[500px] bg-slate-200"
+            >
+              <div id="hero-images-container" class="w-full h-full relative">
+                <div
+                  class="absolute inset-0 flex items-center justify-center text-slate-400"
+                >
+                  <i data-lucide="loader-2" class="animate-spin w-8 h-8"></i>
+                </div>
+              </div>
+            </div>
+            <div
+              class="absolute -inset-4 bg-brand-pink/20 rounded-[3rem] -z-10 -rotate-2 md:-rotate-3 group-hover:rotate-2 transition-transform duration-500 hidden md:block"
+            ></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="como-funciona" class="py-20 bg-white">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
-                <h2 class="font-display text-3xl font-bold text-brand-dark mb-4">Como alugar sua festa?</h2>
-                <p class="text-slate-400">É super simples, rápido e você faz tudo online.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-                <div class="hidden md:block absolute top-12 left-20 right-20 h-1 bg-brand-soft -z-0"></div>
-
-                <div class="relative z-10 bg-white p-6 text-center group">
-                    <div class="w-24 h-24 mx-auto bg-brand-soft rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pink-100">
-                        <i data-lucide="mouse-pointer-click" class="w-10 h-10 text-brand-pink"></i>
-                    </div>
-                    <h3 class="font-display font-bold text-xl text-brand-dark mb-3">1. Você Monta</h3>
-                    <p class="text-slate-500 text-sm leading-relaxed">
-                        Use nosso <a href="orcamento.html" class="text-brand-pink font-bold underline">simulador online</a>. Escolha o tema, quantidade de cabanas e itens extras.
-                    </p>
-                </div>
-
-                <div class="relative z-10 bg-white p-6 text-center group">
-                    <div class="w-24 h-24 mx-auto bg-brand-soft rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pink-100">
-                        <i data-lucide="calendar-check" class="w-10 h-10 text-brand-purple"></i>
-                    </div>
-                    <h3 class="font-display font-bold text-xl text-brand-dark mb-3">2. Nós Agendamos</h3>
-                    <p class="text-slate-500 text-sm leading-relaxed">
-                        Recebemos seu pedido no WhatsApp, confirmamos a data e os detalhes da entrega. Tudo personalizado.
-                    </p>
-                </div>
-
-                <div class="relative z-10 bg-white p-6 text-center group">
-                    <div class="w-24 h-24 mx-auto bg-brand-soft rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pink-100">
-                        <i data-lucide="party-popper" class="w-10 h-10 text-yellow-500"></i>
-                    </div>
-                    <h3 class="font-display font-bold text-xl text-brand-dark mb-3">3. A Festa Acontece!</h3>
-                    <p class="text-slate-500 text-sm leading-relaxed">
-                        Nossa equipe vai até você, monta toda a estrutura mágica e depois desmonta. Você só curte!
-                    </p>
-                </div>
-            </div>
+    <section id="como-funciona" class="py-16 md:py-20 bg-white">
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+          <h2
+            class="font-display text-2xl md:text-3xl font-bold text-brand-dark mb-4"
+          >
+            Como alugar sua festa?
+          </h2>
+          <p class="text-slate-400 text-sm md:text-base">
+            É super simples, rápido e você faz tudo online.
+          </p>
         </div>
-    </section>
 
-    <section id="galeria" class="py-20 bg-slate-50">
-        <div class="container mx-auto px-6">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
-                <div>
-                    <h2 class="font-display text-3xl font-bold text-brand-dark mb-2">Nossas Festas</h2>
-                    <p class="text-slate-400">Um pouco do encanto que já levamos por aí.</p>
-                </div>
-                <a href="orcamento.html" class="text-brand-pink font-bold hover:text-brand-dark transition-colors flex items-center gap-1">
-                    Vamos de Cabana? <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </a>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          <div
+            class="hidden md:block absolute top-12 left-20 right-20 h-1 bg-brand-soft -z-0"
+          ></div>
+
+          <div class="relative z-10 bg-white p-6 text-center group">
+            <div
+              class="w-20 h-20 md:w-24 md:h-24 mx-auto bg-brand-soft rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pink-100"
+            >
+              <i
+                data-lucide="mouse-pointer-click"
+                class="w-8 h-8 md:w-10 md:h-10 text-brand-pink"
+              ></i>
             </div>
-
-            <div class="relative group">
-                <button onclick="scrollGaleria(-1)" class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
-                    <i data-lucide="chevron-left" class="w-6 h-6"></i>
-                </button>
-
-                <div id="galeria-lista" class="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide py-4 px-4 -mx-4 md:mx-0">
-                   <p class="text-center w-full text-slate-400">Carregando fotos...</p>
-                </div>
-
-                <button onclick="scrollGaleria(1)" class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
-                    <i data-lucide="chevron-right" class="w-6 h-6"></i>
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-20 relative overflow-hidden">
-        <div class="absolute inset-0 bg-brand-dark -z-10"></div>
-        <div class="absolute top-0 right-0 w-96 h-96 bg-brand-pink/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        
-        <div class="container mx-auto px-6 text-center">
-            <h2 class="font-display text-3xl md:text-5xl font-bold text-white mb-6">
-                Pronto para criar memórias inesquecíveis?
-            </h2>
-            <p class="text-slate-300 text-lg mb-10 max-w-2xl mx-auto">
-                Não deixe para última hora. As datas acabam rápido! Simule seu orçamento agora mesmo sem compromisso.
+            <h3
+              class="font-display font-bold text-lg md:text-xl text-brand-dark mb-3"
+            >
+              1. Você Monta
+            </h3>
+            <p class="text-slate-500 text-sm leading-relaxed">
+              Use nosso
+              <a
+                href="orcamento.html"
+                class="text-brand-pink font-bold underline"
+                >simulador online</a
+              >. Escolha o tema, quantidade de cabanas e itens extras.
             </p>
-            <a href="orcamento.html" class="inline-flex items-center gap-3 bg-brand-pink text-white px-10 py-5 rounded-full font-bold text-xl shadow-lg shadow-pink-500/30 hover:bg-white hover:text-brand-pink transition-all transform hover:scale-105">
-                <i data-lucide="sparkles"></i>
-                Quero meu Orçamento
-            </a>
+          </div>
+
+          <div class="relative z-10 bg-white p-6 text-center group">
+            <div
+              class="w-20 h-20 md:w-24 md:h-24 mx-auto bg-brand-soft rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pink-100"
+            >
+              <i
+                data-lucide="calendar-check"
+                class="w-8 h-8 md:w-10 md:h-10 text-brand-purple"
+              ></i>
+            </div>
+            <h3
+              class="font-display font-bold text-lg md:text-xl text-brand-dark mb-3"
+            >
+              2. Nós Agendamos
+            </h3>
+            <p class="text-slate-500 text-sm leading-relaxed">
+              Recebemos seu pedido no WhatsApp, confirmamos a data e os detalhes
+              da entrega. Tudo personalizado.
+            </p>
+          </div>
+
+          <div class="relative z-10 bg-white p-6 text-center group">
+            <div
+              class="w-20 h-20 md:w-24 md:h-24 mx-auto bg-brand-soft rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pink-100"
+            >
+              <i
+                data-lucide="party-popper"
+                class="w-8 h-8 md:w-10 md:h-10 text-yellow-500"
+              ></i>
+            </div>
+            <h3
+              class="font-display font-bold text-lg md:text-xl text-brand-dark mb-3"
+            >
+              3. A Festa Acontece!
+            </h3>
+            <p class="text-slate-500 text-sm leading-relaxed">
+              Nossa equipe vai até você, monta toda a estrutura mágica e depois
+              desmonta. Você só curte!
+            </p>
+          </div>
         </div>
+      </div>
     </section>
 
-    <section id="depoimentos" class="py-20 bg-white relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-32 h-32 bg-yellow-100 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-        
-        <div class="container mx-auto px-6 relative z-10">
-            <div class="text-center mb-12">
-                <h2 class="font-display text-3xl font-bold text-brand-dark mb-4">O que dizem sobre nós?</h2>
-                <p class="text-slate-400">Clique nos cartões para ver os detalhes.</p>
-            </div>
-
-            <div class="relative group max-w-7xl mx-auto">
-                <button onclick="scrollDepoimentos(-1)" class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
-                    <i data-lucide="chevron-left" class="w-6 h-6"></i>
-                </button>
-
-                <div id="carousel-depoimentos" class="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide py-4 px-4 -mx-4 md:mx-0">
-                    <p class="text-center w-full text-slate-300">Carregando magia...</p>
-                </div>
-
-                <button onclick="scrollDepoimentos(1)" class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100">
-                    <i data-lucide="chevron-right" class="w-6 h-6"></i>
-                </button>
-            </div>
+    <section id="galeria" class="py-16 md:py-20 bg-slate-50">
+      <div class="container mx-auto px-6">
+        <div
+          class="flex flex-col md:flex-row justify-between items-end mb-8 md:mb-12 gap-4"
+        >
+          <div>
+            <h2
+              class="font-display text-2xl md:text-3xl font-bold text-brand-dark mb-2"
+            >
+              Nossas Festas
+            </h2>
+            <p class="text-slate-400 text-sm md:text-base">
+              Um pouco do encanto que já levamos por aí.
+            </p>
+          </div>
+          <a
+            href="orcamento.html"
+            class="text-brand-pink font-bold hover:text-brand-dark transition-colors flex items-center gap-1 text-sm md:text-base"
+          >
+            Vamos de Cabana? <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
         </div>
+
+        <div class="relative group">
+          <button
+            onclick="scrollGaleria(-1)"
+            class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+          >
+            <i data-lucide="chevron-left" class="w-6 h-6"></i>
+          </button>
+
+          <div
+            id="galeria-lista"
+            class="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide py-4 px-4 -mx-4 md:mx-0"
+          >
+            <p class="text-center w-full text-slate-400">Carregando fotos...</p>
+          </div>
+
+          <button
+            onclick="scrollGaleria(1)"
+            class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+          >
+            <i data-lucide="chevron-right" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
     </section>
 
-    <footer class="bg-white pt-16 pb-8 border-t border-slate-100">
-        <div class="container mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-                <div class="col-span-1 md:col-span-2">
-                    <div class="text-2xl font-display font-bold text-brand-pink tracking-wide mb-4">
-                        Cabana<span class="text-brand-dark">.Brincar</span>
-                    </div>
-                    <p class="text-slate-400 text-sm leading-relaxed max-w-sm">
-                        Especialistas em festas do pijama e piqueniques indoor. Transformamos sua casa em um cenário de sonhos com segurança e muito carinho.
-                    </p>
-                </div>
-                <div>
-                    <h4 class="font-bold text-brand-dark mb-4">Navegação</h4>
-                    <ul class="space-y-2 text-sm text-slate-500">
-                        <li><a href="#" class="hover:text-brand-pink">Início</a></li>
-                        <li><a href="orcamento.html" class="hover:text-brand-pink">Montar Festa</a></li>
-                        <li><a href="#galeria" class="hover:text-brand-pink">Galeria</a></li>
-                        <li><a href="painel.html" class="hover:text-brand-pink">Área Restrita</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold text-brand-dark mb-4">Contato</h4>
-                    <ul class="space-y-2 text-sm text-slate-500">
-                        <li class="flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4"></i> (22) 99999-9999</li>
-                        <li class="flex items-center gap-2"><i data-lucide="instagram" class="w-4 h-4"></i> @cabanadebrincar</li>
-                        <li class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> Araruama, RJ</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="border-t border-slate-100 pt-8 text-center">
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">
-                    &copy; 2026 Cabana de Brincar. Feito com amor.
-                </p>
-            </div>
+    <section class="py-16 md:py-20 relative overflow-hidden">
+      <div class="absolute inset-0 bg-brand-dark -z-10"></div>
+      <div
+        class="absolute top-0 right-0 w-96 h-96 bg-brand-pink/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
+      ></div>
+
+      <div class="container mx-auto px-6 text-center">
+        <h2 class="font-display text-2xl md:text-5xl font-bold text-white mb-6">
+          Pronto para criar memórias?
+        </h2>
+        <p
+          class="text-slate-300 text-base md:text-lg mb-8 md:mb-10 max-w-2xl mx-auto"
+        >
+          Não deixe para última hora. As datas acabam rápido! Simule seu
+          orçamento agora mesmo.
+        </p>
+        <a
+          href="orcamento.html"
+          class="inline-flex items-center gap-2 md:gap-3 bg-brand-pink text-white px-8 py-4 md:px-10 md:py-5 rounded-full font-bold text-lg md:text-xl shadow-lg shadow-pink-500/30 hover:bg-white hover:text-brand-pink transition-all transform hover:scale-105 w-full md:w-auto justify-center"
+        >
+          <i data-lucide="sparkles"></i>
+          Quero meu Orçamento
+        </a>
+      </div>
+    </section>
+
+    <section
+      id="depoimentos"
+      class="py-16 md:py-20 bg-white relative overflow-hidden"
+    >
+      <div
+        class="absolute top-0 left-0 w-32 h-32 bg-yellow-100 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
+      ></div>
+
+      <div class="container mx-auto px-6 relative z-10">
+        <div class="text-center mb-8 md:mb-12">
+          <h2
+            class="font-display text-2xl md:text-3xl font-bold text-brand-dark mb-4"
+          >
+            O que dizem sobre nós?
+          </h2>
+          <p class="text-slate-400 text-sm md:text-base">
+            Clique nos cartões para ver os detalhes.
+          </p>
         </div>
+
+        <div class="relative group max-w-7xl mx-auto">
+          <button
+            onclick="scrollDepoimentos(-1)"
+            class="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+          >
+            <i data-lucide="chevron-left" class="w-6 h-6"></i>
+          </button>
+
+          <div
+            id="carousel-depoimentos"
+            class="flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide py-4 px-4 -mx-4 md:mx-0"
+          >
+            <p class="text-center w-full text-slate-300">Carregando magia...</p>
+          </div>
+
+          <button
+            onclick="scrollDepoimentos(1)"
+            class="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white text-brand-dark hover:text-brand-pink shadow-lg border border-slate-100 p-3 rounded-full transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+          >
+            <i data-lucide="chevron-right" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bg-white pt-12 md:pt-16 pb-8 border-t border-slate-100">
+      <div class="container mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-12">
+          <div class="col-span-1 md:col-span-2">
+            <div
+              class="text-2xl font-display font-bold text-brand-pink tracking-wide mb-4"
+            >
+              Cabana<span class="text-brand-dark">.Brincar</span>
+            </div>
+            <p class="text-slate-400 text-sm leading-relaxed max-w-sm">
+              Especialistas em festas do pijama e piqueniques indoor.
+            </p>
+          </div>
+          <div>
+            <h4 class="font-bold text-brand-dark mb-4">Navegação</h4>
+            <ul class="space-y-2 text-sm text-slate-500">
+              <li><a href="#" class="hover:text-brand-pink">Início</a></li>
+              <li>
+                <a href="orcamento.html" class="hover:text-brand-pink"
+                  >Montar Festa</a
+                >
+              </li>
+              <li>
+                <a href="painel.html" class="hover:text-brand-pink"
+                  >Área Restrita</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-bold text-brand-dark mb-4">Contato</h4>
+            <ul class="space-y-2 text-sm text-slate-500">
+              <li class="flex items-center gap-2">
+                <i data-lucide="phone" class="w-4 h-4"></i> (22) 99999-9999
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="instagram" class="w-4 h-4"></i> @cabanadebrincar
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-8 text-center">
+          <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">
+            &copy; 2026 Cabana de Brincar.
+          </p>
+        </div>
+      </div>
     </footer>
 
     <script>
-        const API_URL = '/api';
-        let depoimentosData = [];
-        let fotosGaleria = [];
-        let heroIndex = 0;
+      const API_URL = "/api";
+      let depoimentosData = [];
+      let fotosGaleria = [];
+      let heroIndex = 0;
 
-        // --- INICIALIZAÇÃO GERAL ---
-        async function init() {
-            lucide.createIcons();
-            await Promise.all([
-                carregarFotos(),
-                carregarDepoimentos()
-            ]);
+      async function init() {
+        lucide.createIcons();
+        await Promise.all([carregarFotos(), carregarDepoimentos()]);
+      }
+
+      async function carregarFotos() {
+        try {
+          const res = await fetch(`${API_URL}/galeria_fotos`);
+          fotosGaleria = await res.json();
+
+          if (fotosGaleria.length > 0) {
+            iniciarHeroCarousel();
+            renderizarGaleriaHorizontal();
+          } else {
+            document.getElementById("galeria-lista").innerHTML =
+              '<p class="text-center w-full text-slate-400">Nenhuma foto encontrada.</p>';
+            document.getElementById("hero-images-container").innerHTML =
+              '<div class="flex items-center justify-center h-full bg-slate-100">Sem fotos</div>';
+          }
+        } catch (error) {
+          console.error("Erro fotos:", error);
         }
+      }
 
-        // --- LÓGICA DE FOTOS E CARROSSEL HERO ---
-        async function carregarFotos() {
-            try {
-                const res = await fetch(`${API_URL}/galeria_fotos`);
-                fotosGaleria = await res.json();
+      function iniciarHeroCarousel() {
+        const container = document.getElementById("hero-images-container");
+        container.innerHTML = "";
 
-                if (fotosGaleria.length > 0) {
-                    iniciarHeroCarousel();
-                    renderizarGaleriaHorizontal();
-                } else {
-                    document.getElementById('galeria-lista').innerHTML = '<p class="text-center w-full text-slate-400">Nenhuma foto encontrada.</p>';
-                    document.getElementById('hero-images-container').innerHTML = '<div class="flex items-center justify-center h-full bg-slate-100">Sem fotos</div>';
-                }
-            } catch (error) { console.error("Erro fotos:", error); }
-        }
+        fotosGaleria.forEach((src, idx) => {
+          const img = document.createElement("img");
+          img.src = src;
+          img.className = `absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${idx === 0 ? "opacity-100 z-10" : "opacity-0 z-0"}`;
+          container.appendChild(img);
+        });
 
-        function iniciarHeroCarousel() {
-            const container = document.getElementById('hero-images-container');
-            container.innerHTML = '';
-            
-            // Cria todas as imagens empilhadas
-            fotosGaleria.forEach((src, idx) => {
-                const img = document.createElement('img');
-                img.src = src;
-                img.className = `absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}`;
-                container.appendChild(img);
-            });
+        setInterval(() => {
+          const imgs = container.querySelectorAll("img");
+          if (imgs.length === 0) return;
+          imgs[heroIndex].classList.remove("opacity-100", "z-10");
+          imgs[heroIndex].classList.add("opacity-0", "z-0");
+          heroIndex = (heroIndex + 1) % fotosGaleria.length;
+          imgs[heroIndex].classList.remove("opacity-0", "z-0");
+          imgs[heroIndex].classList.add("opacity-100", "z-10");
+        }, 4000);
+      }
 
-            // Loop de troca
-            setInterval(() => {
-                const imgs = container.querySelectorAll('img');
-                imgs[heroIndex].classList.remove('opacity-100', 'z-10');
-                imgs[heroIndex].classList.add('opacity-0', 'z-0');
+      function renderizarGaleriaHorizontal() {
+        const container = document.getElementById("galeria-lista");
+        container.innerHTML = "";
 
-                heroIndex = (heroIndex + 1) % fotosGaleria.length;
-
-                imgs[heroIndex].classList.remove('opacity-0', 'z-0');
-                imgs[heroIndex].classList.add('opacity-100', 'z-10');
-            }, 4000);
-        }
-
-        function renderizarGaleriaHorizontal() {
-            const container = document.getElementById('galeria-lista');
-            container.innerHTML = '';
-
-            fotosGaleria.forEach(src => {
-                container.innerHTML += `
-                    <div onclick="abrirLightbox('${src}')" class="min-w-[280px] md:min-w-[350px] h-64 rounded-2xl overflow-hidden shadow-md cursor-pointer group relative snap-center border-4 border-white transition-all hover:scale-105 hover:shadow-xl hover:border-brand-pink/20 hover:-rotate-1">
+        fotosGaleria.forEach((src) => {
+          container.innerHTML += `
+                    <div onclick="abrirLightbox('${src}')" class="min-w-[280px] md:min-w-[350px] h-56 md:h-64 rounded-2xl overflow-hidden shadow-md cursor-pointer group relative snap-center border-4 border-white transition-all hover:scale-105 hover:shadow-xl hover:border-brand-pink/20 hover:-rotate-1">
                         <img src="${src}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy">
                         <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                             <i data-lucide="maximize-2" class="text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 drop-shadow-lg scale-0 group-hover:scale-100 duration-300"></i>
                         </div>
                     </div>
                 `;
-            });
-            lucide.createIcons();
-        }
+        });
+        lucide.createIcons();
+      }
 
-        function scrollGaleria(direction) {
-            const container = document.getElementById('galeria-lista');
-            const scrollAmount = 350;
-            container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
-        }
+      function scrollGaleria(direction) {
+        const container = document.getElementById("galeria-lista");
+        const scrollAmount = 300;
+        container.scrollBy({
+          left: direction * scrollAmount,
+          behavior: "smooth",
+        });
+      }
 
-        // --- LÓGICA LIGHTBOX ---
-        function abrirLightbox(src) {
-            const lb = document.getElementById('lightbox');
-            const img = document.getElementById('lightbox-img');
-            img.src = src;
-            lb.classList.remove('hidden');
-            setTimeout(() => { img.classList.replace('scale-95', 'scale-100'); }, 10);
-            document.body.style.overflow = 'hidden';
-        }
+      function abrirLightbox(src) {
+        const lb = document.getElementById("lightbox");
+        const img = document.getElementById("lightbox-img");
+        img.src = src;
+        lb.classList.remove("hidden");
+        setTimeout(() => {
+          img.classList.replace("scale-95", "scale-100");
+        }, 10);
+        document.body.style.overflow = "hidden";
+      }
 
-        function fecharLightbox() {
-            const lb = document.getElementById('lightbox');
-            const img = document.getElementById('lightbox-img');
-            img.classList.replace('scale-100', 'scale-95');
-            setTimeout(() => { lb.classList.add('hidden'); }, 300);
-            document.body.style.overflow = '';
-        }
+      function fecharLightbox() {
+        const lb = document.getElementById("lightbox");
+        const img = document.getElementById("lightbox-img");
+        img.classList.replace("scale-100", "scale-95");
+        setTimeout(() => {
+          lb.classList.add("hidden");
+        }, 300);
+        document.body.style.overflow = "";
+      }
 
-        // --- LÓGICA DEPOIMENTOS ---
-        async function carregarDepoimentos() {
-            try {
-                const res = await fetch(`${API_URL}/depoimentos/publicos`);
-                depoimentosData = await res.json();
-                
-                const container = document.getElementById('carousel-depoimentos');
-                
-                if(depoimentosData.length === 0) {
-                    container.innerHTML = '<p class="text-center w-full text-slate-400">Em breve, nossos primeiros depoimentos! ✨</p>';
-                    return;
-                }
+      async function carregarDepoimentos() {
+        try {
+          const res = await fetch(`${API_URL}/depoimentos/publicos`);
+          depoimentosData = await res.json();
 
-                container.innerHTML = '';
-                
-                depoimentosData.forEach((d, index) => {
-                    const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
-                    
-                    let fotosPreview = '';
-                    if(d.fotos && d.fotos.length > 0) {
-                        fotosPreview = `
-                        <div class="flex gap-2 mt-4 overflow-hidden h-24 w-full rounded-xl">
-                            ${d.fotos.slice(0, 3).map(f => `
+          const container = document.getElementById("carousel-depoimentos");
+
+          if (depoimentosData.length === 0) {
+            container.innerHTML =
+              '<p class="text-center w-full text-slate-400">Em breve, nossos primeiros depoimentos! ✨</p>';
+            return;
+          }
+
+          container.innerHTML = "";
+
+          depoimentosData.forEach((d, index) => {
+            const estrelas = "★".repeat(d.nota) + "☆".repeat(5 - d.nota);
+
+            let fotosPreview = "";
+            if (d.fotos && d.fotos.length > 0) {
+              fotosPreview = `
+                        <div class="flex gap-2 mt-4 overflow-hidden h-20 md:h-24 w-full rounded-xl">
+                            ${d.fotos
+                              .slice(0, 3)
+                              .map(
+                                (f) => `
                                 <img src="${f}" class="flex-1 object-cover h-full border border-slate-100 hover:scale-110 transition-transform duration-500">
-                            `).join('')}
+                            `,
+                              )
+                              .join("")}
                         </div>`;
-                    } else {
-                        fotosPreview = `
-                        <div class="h-24 w-full bg-brand-soft rounded-xl mt-4 flex items-center justify-center border border-slate-100">
-                             <i data-lucide="image" class="w-8 h-8 text-pink-200"></i>
+            } else {
+              fotosPreview = `
+                        <div class="h-20 md:h-24 w-full bg-brand-soft rounded-xl mt-4 flex items-center justify-center border border-slate-100">
+                             <i data-lucide="image" class="w-6 h-6 md:w-8 md:h-8 text-pink-200"></i>
                         </div>`;
-                    }
+            }
 
-                    container.innerHTML += `
+            container.innerHTML += `
                         <div onclick="abrirModalDepoimento(${index})" class="
-                            min-w-[300px] md:min-w-[380px] snap-center 
-                            bg-slate-50 p-6 rounded-2xl border border-slate-100 
+                            min-w-[280px] md:min-w-[380px] snap-center 
+                            bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-100 
                             hover:shadow-xl hover:border-brand-pink/30 hover:-translate-y-1 
                             transition-all cursor-pointer group-card flex flex-col justify-between
                         ">
                             <div>
                                 <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink font-bold text-lg">
+                                        <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink font-bold text-base md:text-lg">
                                             ${d.nome_cliente.charAt(0)}
                                         </div>
-                                        <div class="font-bold text-brand-dark line-clamp-1">${d.nome_cliente}</div>
+                                        <div class="font-bold text-brand-dark line-clamp-1 text-sm md:text-base">${d.nome_cliente}</div>
                                     </div>
-                                    <div class="text-yellow-400 text-sm tracking-widest">${estrelas}</div>
+                                    <div class="text-yellow-400 text-xs md:text-sm tracking-widest">${estrelas}</div>
                                 </div>
-                                <p class="text-slate-500 text-sm italic leading-relaxed line-clamp-3 mb-2">"${d.texto}"</p>
+                                <p class="text-slate-500 text-xs md:text-sm italic leading-relaxed line-clamp-3 mb-2">"${d.texto}"</p>
                                 <span class="text-brand-pink text-xs font-bold underline decoration-brand-pink/30">Ler tudo</span>
                             </div>
                             ${fotosPreview}
                         </div>
                     `;
-                });
-                lucide.createIcons();
-            } catch(e) { console.error("Erro depoimentos", e); }
+          });
+          lucide.createIcons();
+        } catch (e) {
+          console.error("Erro depoimentos", e);
         }
+      }
 
-        function scrollDepoimentos(direction) {
-            const container = document.getElementById('carousel-depoimentos');
-            container.scrollBy({ left: direction * 400, behavior: 'smooth' });
-        }
+      function scrollDepoimentos(direction) {
+        const container = document.getElementById("carousel-depoimentos");
+        container.scrollBy({ left: direction * 300, behavior: "smooth" });
+      }
 
-        function abrirModalDepoimento(index) {
-            const d = depoimentosData[index];
-            if(!d) return;
+      function abrirModalDepoimento(index) {
+        const d = depoimentosData[index];
+        if (!d) return;
 
-            const modal = document.getElementById('modal-depoimento');
-            const content = document.getElementById('modal-content');
-            const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
+        const modal = document.getElementById("modal-depoimento");
+        const content = document.getElementById("modal-content");
+        const estrelas = "★".repeat(d.nota) + "☆".repeat(5 - d.nota);
 
-            let galeriaHtml = '';
-            if(d.fotos && d.fotos.length > 0) {
-                galeriaHtml = `
+        let galeriaHtml = "";
+        if (d.fotos && d.fotos.length > 0) {
+          galeriaHtml = `
                 <div class="mt-6">
-                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Fotos do Cliente</h4>
+                    <h4 class="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Fotos do Cliente</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        ${d.fotos.map(f => `
+                        ${d.fotos
+                          .map(
+                            (f) => `
                             <div class="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
                                 <img src="${f}" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-700 cursor-zoom-in" onclick="abrirLightbox('${f}')">
                             </div>
-                        `).join('')}
+                        `,
+                          )
+                          .join("")}
                     </div>
                 </div>`;
-            }
+        }
 
-            content.innerHTML = `
+        content.innerHTML = `
                 <div class="flex flex-col gap-2 mb-6 border-b border-slate-100 pb-6">
                     <div class="flex items-center justify-between">
                          <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 rounded-full bg-brand-pink text-white flex items-center justify-center font-display font-bold text-2xl shadow-lg shadow-pink-200">
+                            <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-brand-pink text-white flex items-center justify-center font-display font-bold text-xl md:text-2xl shadow-lg shadow-pink-200">
                                 ${d.nome_cliente.charAt(0)}
                             </div>
                             <div>
-                                <h3 class="text-2xl font-display font-bold text-brand-dark">${d.nome_cliente}</h3>
-                                <div class="text-yellow-400 text-lg tracking-widest">${estrelas}</div>
+                                <h3 class="text-xl md:text-2xl font-display font-bold text-brand-dark">${d.nome_cliente}</h3>
+                                <div class="text-yellow-400 text-base md:text-lg tracking-widest">${estrelas}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="bg-brand-soft/50 p-6 rounded-2xl border border-brand-pink/10">
-                    <i data-lucide="quote" class="w-8 h-8 text-brand-pink/20 mb-2"></i>
-                    <p class="text-slate-600 text-lg leading-relaxed whitespace-pre-line italic">"${d.texto}"</p>
+                <div class="bg-brand-soft/50 p-4 md:p-6 rounded-2xl border border-brand-pink/10">
+                    <i data-lucide="quote" class="w-6 h-6 md:w-8 md:h-8 text-brand-pink/20 mb-2"></i>
+                    <p class="text-slate-600 text-base md:text-lg leading-relaxed whitespace-pre-line italic">"${d.texto}"</p>
                 </div>
                 ${galeriaHtml}
             `;
-            
-            modal.classList.remove('hidden');
-            lucide.createIcons();
-            document.body.style.overflow = 'hidden';
-        }
 
-        function fecharModal() {
-            document.getElementById('modal-depoimento').classList.add('hidden');
-            document.body.style.overflow = '';
-        }
+        modal.classList.remove("hidden");
+        lucide.createIcons();
+        document.body.style.overflow = "hidden";
+      }
 
-        init();
+      function fecharModal() {
+        document.getElementById("modal-depoimento").classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+
+      init();
     </script>
   </body>
 </html>

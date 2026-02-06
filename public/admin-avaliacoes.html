@@ -12,8 +12,11 @@
 
     <div class="max-w-5xl mx-auto mb-6 flex justify-between items-center">
         <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors"> Painel <i data-lucide="arrow-left"> </i> </a>
-             Moderação de Depoimentos
+            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors flex items-center gap-1"> 
+                <i data-lucide="arrow-left"></i> Painel 
+            </a>
+            <span class="text-slate-300">|</span>
+            Moderação de Depoimentos
         </h1>
     </div>
 
@@ -26,55 +29,59 @@
         if(!ADMIN_TOKEN) window.location.href = 'painel.html';
 
         async function carregarAvaliacoes() {
-            const res = await fetch('/api/admin/avaliacoes', {
-                headers: { 'x-admin-password': ADMIN_TOKEN }
-            });
-            const data = await res.json();
-            const container = document.getElementById('lista-avaliacoes');
-            
-            if(data.length === 0) {
-                container.innerHTML = '<p class="text-center text-slate-400 py-10">Nenhuma avaliação recebida ainda.</p>';
-                return;
-            }
+            try {
+                const res = await fetch('/api/admin/avaliacoes', {
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                const data = await res.json();
+                const container = document.getElementById('lista-avaliacoes');
+                
+                if(data.length === 0) {
+                    container.innerHTML = '<p class="text-center text-slate-400 py-10">Nenhuma avaliação recebida ainda.</p>';
+                    return;
+                }
 
-            container.innerHTML = '';
-            data.forEach(d => {
-                const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
-                const statusColor = d.aprovado ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
-                const statusText = d.aprovado ? 'Visível no Site' : 'Oculto / Pendente';
+                container.innerHTML = '';
+                data.forEach(d => {
+                    const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
+                    const statusColor = d.aprovado ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                    const statusText = d.aprovado ? 'Visível no Site' : 'Oculto / Pendente';
 
-                container.innerHTML += `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-6 items-start">
-                        <div class="flex-1">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <h3 class="font-bold text-slate-800 text-lg">${d.nome_cliente}</h3>
-                                    <p class="text-xs text-slate-400">Festa realizada em: ${new Date(d.data_festa).toLocaleDateString('pt-BR')}</p>
+                    container.innerHTML += `
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-6 items-start">
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-bold text-slate-800 text-lg">${d.nome_cliente}</h3>
+                                        <p class="text-xs text-slate-400">Festa realizada em: ${new Date(d.data_festa).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <span class="text-yellow-400 text-lg tracking-widest">${estrelas}</span>
                                 </div>
-                                <span class="text-yellow-400 text-lg tracking-widest">${estrelas}</span>
+                                
+                                <textarea id="texto-${d.id}" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-sm focus:outline-pink-500 mb-2" rows="3">${d.texto}</textarea>
+                                
+                                <div class="flex gap-2 items-center">
+                                    <span class="text-xs font-bold px-2 py-1 rounded ${statusColor}">${statusText}</span>
+                                </div>
                             </div>
-                            
-                            <textarea id="texto-${d.id}" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-sm focus:outline-pink-500 mb-2" rows="3">${d.texto}</textarea>
-                            
-                            <div class="flex gap-2 items-center">
-                                <span class="text-xs font-bold px-2 py-1 rounded ${statusColor}">${statusText}</span>
-                            </div>
-                        </div>
 
-                        <div class="flex flex-col gap-2 min-w-[140px]">
-                            <button onclick="salvarAvaliacao(${d.id}, ${!d.aprovado})" class="w-full py-2 px-4 rounded-lg font-bold text-sm transition-colors ${d.aprovado ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
-                                ${d.aprovado ? 'Ocultar' : 'Aprovar'}
-                            </button>
-                            <button onclick="salvarTexto(${d.id}, ${d.aprovado})" class="w-full py-2 px-4 rounded-lg font-bold text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100">
-                                Salvar Edição
-                            </button>
-                            <button onclick="excluir(${d.id})" class="w-full py-2 px-4 rounded-lg font-bold text-sm bg-red-50 text-red-600 hover:bg-red-100">
-                                Excluir
-                            </button>
+                            <div class="flex flex-col gap-2 min-w-[140px]">
+                                <button onclick="salvarAvaliacao(${d.id}, ${!d.aprovado})" class="w-full py-2 px-4 rounded-lg font-bold text-sm transition-colors ${d.aprovado ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
+                                    ${d.aprovado ? 'Ocultar' : 'Aprovar'}
+                                </button>
+                                <button onclick="salvarTexto(${d.id}, ${d.aprovado})" class="w-full py-2 px-4 rounded-lg font-bold text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100">
+                                    Salvar Edição
+                                </button>
+                                <button onclick="excluir(${d.id})" class="w-full py-2 px-4 rounded-lg font-bold text-sm bg-red-50 text-red-600 hover:bg-red-100">
+                                    Excluir
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            } catch (error) {
+                console.error('Erro ao carregar avaliações:', error);
+            }
         }
 
         async function salvarAvaliacao(id, novoStatus) {
@@ -102,7 +109,9 @@
             }
         }
 
+        // Inicialização
         carregarAvaliacoes();
+        lucide.createIcons(); // <--- LINHA ADICIONADA PARA CORRIGIR O ÍCONE
     </script>
 </body>
 </html>

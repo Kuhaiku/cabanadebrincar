@@ -4,7 +4,7 @@ const mysql = require("mysql2");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const fs = require("fs");
-const path = require("path"); // Importante para a galeria
+const path = require("path");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { randomUUID: uuidv4 } = require("crypto");
@@ -12,14 +12,14 @@ const { randomUUID: uuidv4 } = require("crypto");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração do Cloudinary
+// Configuração Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Configuração do Multer (Upload temporário)
+// Configuração Multer
 const upload = multer({ dest: "uploads/" });
 
 app.use(cors());
@@ -38,7 +38,7 @@ const db = mysql.createPool({
   enableKeepAlive: true,
 });
 
-// Ping no banco para não cair a conexão
+// Ping no banco
 setInterval(() => {
   db.query("SELECT 1", (err) => {
     if (err) console.error("Ping Error:", err.code);
@@ -56,7 +56,7 @@ function checkAuth(req, res, next) {
 //              ROTAS PÚBLICAS
 // ==========================================
 
-// 1. Listar Itens Disponíveis (Filtrados)
+// 1. Listar Itens Disponíveis
 app.get("/api/itens-disponiveis", (req, res) => {
   db.query(
     "SELECT descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'alimentacao', 'tendas') AND disponivel = TRUE ORDER BY categoria, descricao",
@@ -94,7 +94,7 @@ app.post("/api/orcamento", (req, res) => {
   });
 });
 
-// 3. Listar Depoimentos Aprovados
+// 3. Depoimentos Públicos
 app.get("/api/depoimentos/publicos", (req, res) => {
   const sql = `
         SELECT d.*, GROUP_CONCAT(f.url_foto) as fotos 
@@ -113,7 +113,7 @@ app.get("/api/depoimentos/publicos", (req, res) => {
   });
 });
 
-// 4. Receber Feedback (Avaliação + Fotos)
+// 4. Receber Feedback
 app.post("/api/feedback/:token", upload.array("fotos", 5), async (req, res) => {
   const token = req.params.token;
   const { nota, texto } = req.body;
@@ -159,26 +159,16 @@ app.post("/api/feedback/:token", upload.array("fotos", 5), async (req, res) => {
   );
 });
 
-// 5. NOVA ROTA: Galeria de Fotos (Lê da pasta public/fotos)
+// 5. Galeria de Fotos
 app.get("/api/galeria_fotos", (req, res) => {
   const directoryPath = path.join(__dirname, "public/fotos");
-
-  // Verifica se a pasta existe, se não, cria ou retorna vazio
-  if (!fs.existsSync(directoryPath)) {
-    return res.json([]);
-  }
+  if (!fs.existsSync(directoryPath)) return res.json([]);
 
   fs.readdir(directoryPath, (err, files) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao ler diretório de fotos");
-    }
-
-    // Filtra apenas imagens e cria o caminho relativo para o frontend
+    if (err) return res.status(500).send("Erro ao ler diretório");
     const fotos = files
       .filter((file) => /\.(jpg|jpeg|png|webp|gif)$/i.test(file))
       .map((file) => `/fotos/${file}`);
-
     res.json(fotos);
   });
 });
@@ -189,7 +179,6 @@ app.get("/api/galeria_fotos", (req, res) => {
 
 // --- AGENDA & PEDIDOS ---
 
-// Listar Agenda (Confirmados)
 app.get("/api/admin/agenda", checkAuth, (req, res) => {
   db.query(
     "SELECT * FROM orcamentos WHERE status_agenda = 'agendado' ORDER BY data_festa ASC",
@@ -200,7 +189,6 @@ app.get("/api/admin/agenda", checkAuth, (req, res) => {
   );
 });
 
-// Aprovar Orçamento (Mover para Agenda)
 app.put("/api/admin/agenda/aprovar/:id", checkAuth, (req, res) => {
   db.query(
     "UPDATE orcamentos SET status_agenda = 'agendado', status = 'aprovado' WHERE id = ?",
@@ -212,7 +200,6 @@ app.put("/api/admin/agenda/aprovar/:id", checkAuth, (req, res) => {
   );
 });
 
-// Concluir Festa (Arquivar e definir valor final)
 app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
   const { valor_final } = req.body;
   let sql = "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?";
@@ -230,7 +217,6 @@ app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
   });
 });
 
-// Listar Todos os Pedidos (Histórico)
 app.get("/api/admin/pedidos", checkAuth, (req, res) => {
   db.query(
     "SELECT * FROM orcamentos ORDER BY data_pedido DESC",
@@ -241,7 +227,6 @@ app.get("/api/admin/pedidos", checkAuth, (req, res) => {
   );
 });
 
-// Atualizar Financeiro do Pedido (Edição manual)
 app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
   const { valor_final, valor_itens_extras, descricao_itens_extras } = req.body;
   db.query(
@@ -254,7 +239,7 @@ app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
   );
 });
 
-// --- FINANCEIRO ---
+// --- FINANCEIRO (CORRIGIDO) ---
 
 // Salvar Custo da Festa
 app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
@@ -269,7 +254,6 @@ app.post("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
   );
 });
 
-// Excluir Custo da Festa
 app.delete("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
   db.query("DELETE FROM custos_festa WHERE id = ?", [req.params.id], (err) => {
     if (err) return res.status(500).json(err);
@@ -277,20 +261,26 @@ app.delete("/api/admin/financeiro/festa/:id", checkAuth, (req, res) => {
   });
 });
 
-// Salvar Custo Geral
+// Salvar Custo Geral (CORREÇÃO AQUI: 'data_registro' em vez de 'data')
 app.post("/api/admin/financeiro/geral", checkAuth, (req, res) => {
-  const { titulo, tipo, valor } = req.body;
-  db.query(
-    "INSERT INTO custos_gerais (titulo, tipo, valor) VALUES (?, ?, ?)",
-    [titulo, tipo, valor],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ success: true });
-    },
-  );
+  const { titulo, tipo, valor, data } = req.body;
+  const dataRegistro = data || new Date();
+
+  // A coluna no banco é 'data_registro', não 'data'
+  const sql =
+    "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, ?, ?, ?)";
+
+  db.query(sql, [titulo, tipo, valor, dataRegistro], (err, result) => {
+    if (err) {
+      console.error("Erro ao salvar despesa geral:", err);
+      return res
+        .status(500)
+        .json({ error: "Erro ao salvar no banco", details: err.message });
+    }
+    res.json({ success: true, id: result.insertId });
+  });
 });
 
-// Excluir Custo Geral
 app.delete("/api/admin/financeiro/geral/:id", checkAuth, (req, res) => {
   db.query("DELETE FROM custos_gerais WHERE id = ?", [req.params.id], (err) => {
     if (err) return res.status(500).json(err);
@@ -298,7 +288,6 @@ app.delete("/api/admin/financeiro/geral/:id", checkAuth, (req, res) => {
   });
 });
 
-// Atualizar Valor Final da Festa (Gorjeta/Extras)
 app.put("/api/admin/financeiro/atualizar-valor/:id", checkAuth, (req, res) => {
   const { valor_final } = req.body;
   db.query(
@@ -311,7 +300,6 @@ app.put("/api/admin/financeiro/atualizar-valor/:id", checkAuth, (req, res) => {
   );
 });
 
-// Relatório Financeiro Completo
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
   try {
     const [gerais] = await db
@@ -338,7 +326,6 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
 
 // --- GERENCIADOR DE PREÇOS ---
 
-// Listar Preços
 app.get("/api/admin/precos", checkAuth, (req, res) => {
   db.query(
     "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
@@ -346,7 +333,6 @@ app.get("/api/admin/precos", checkAuth, (req, res) => {
   );
 });
 
-// Adicionar Novo Preço
 app.post("/api/admin/precos", checkAuth, (req, res) => {
   db.query(
     "INSERT INTO tabela_precos (item_chave, descricao, valor, categoria) VALUES (?, ?, ?, ?)",
@@ -360,10 +346,8 @@ app.post("/api/admin/precos", checkAuth, (req, res) => {
   );
 });
 
-// Editar Preço (Valor, Nome, Categoria, Disponibilidade)
 app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
   const { valor, categoria, descricao, disponivel } = req.body;
-
   let campos = [];
   let valores = [];
 
@@ -395,16 +379,14 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
   });
 });
 
-// Deletar Preço
 app.delete("/api/admin/precos/:id", checkAuth, (req, res) => {
   db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>
     res.json({ success: true }),
   );
 });
 
-// --- AVALIAÇÕES E TOKENS ---
+// --- AVALIAÇÕES ---
 
-// Gerar Token de Avaliação
 app.post("/api/admin/gerar-token/:id", checkAuth, (req, res) => {
   const token = uuidv4();
   db.query(
@@ -420,7 +402,6 @@ app.post("/api/admin/gerar-token/:id", checkAuth, (req, res) => {
   );
 });
 
-// Listar Avaliações (Admin)
 app.get("/api/admin/avaliacoes", checkAuth, (req, res) => {
   const sql = `
         SELECT d.*, o.data_festa 
@@ -433,7 +414,6 @@ app.get("/api/admin/avaliacoes", checkAuth, (req, res) => {
   });
 });
 
-// Moderar Avaliação
 app.put("/api/admin/avaliacoes/:id", checkAuth, (req, res) => {
   const { texto, aprovado } = req.body;
   db.query(
@@ -446,7 +426,6 @@ app.put("/api/admin/avaliacoes/:id", checkAuth, (req, res) => {
   );
 });
 
-// Deletar Avaliação
 app.delete("/api/admin/avaliacoes/:id", checkAuth, (req, res) => {
   db.query("DELETE FROM depoimentos WHERE id = ?", [req.params.id], (err) => {
     if (err) return res.status(500).json(err);

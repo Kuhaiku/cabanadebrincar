@@ -530,5 +530,41 @@ app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
 });
 
 // --- FIM DAS ROTAS DE AVALIAÇÕES ---
+// --- ROTA DE SEEDER (CADASTRO RÁPIDO DE DEPOIMENTOS) ---
+app.post("/api/admin/seed-review", checkAuth, upload.single("foto"), async (req, res) => {
+    try {
+        const { nome, texto, nota } = req.body;
+        
+        // 1. Garante que existe um orçamento FAKE (ID 9999)
+        await db.query(`
+            INSERT IGNORE INTO orcamentos (id, nome, whatsapp, email, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento, status_agenda, status)
+            VALUES (9999, 'Cliente Modelo', '22999999999', 'modelo@teste.com', 'Showroom', 1, 'Livre', 'Modelo', 1, 'Variado', 'Fotos', '[]', '[]', NOW(), '00:00', '[]', '', 'pago', 'concluido', 'concluido')
+        `);
 
+        // 2. Upload da Foto (Cloudinary)
+        let urlFoto = "";
+        if (req.file) {
+            const up = await cloudinary.uploader.upload(req.file.path, { folder: "cabana/depoimentos_fake" });
+            urlFoto = up.secure_url;
+            fs.unlinkSync(req.file.path); // Limpa arquivo local
+        }
+
+        // 3. Cria o Depoimento
+        const [r] = await db.query(
+            "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado, data_criacao) VALUES (?, ?, ?, ?, 1, NOW())",
+            [9999, nome, texto, nota]
+        );
+
+        // 4. Vincula a Foto
+        if (urlFoto) {
+            await db.query("INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)", [r.insertId, urlFoto]);
+        }
+
+        res.json({ success: true, message: "Depoimento criado!" });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

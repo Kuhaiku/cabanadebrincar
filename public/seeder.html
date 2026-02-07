@@ -3,94 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importador CSV de Depoimentos</title>
+    <title>Semeador Visual de Depoimentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-50 min-h-screen p-6 pb-32">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl">
-        <div class="flex items-center gap-3 mb-6 border-b pb-4">
-            <div class="bg-green-100 p-3 rounded-full text-green-600">
-                <i data-lucide="file-spreadsheet" class="w-8 h-8"></i>
-            </div>
+    <div class="max-w-5xl mx-auto space-y-8">
+        
+        <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-800">Importar Depoimentos</h1>
-                <p class="text-slate-500 text-sm">Carregue um arquivo CSV para popular o banco.</p>
+                <h1 class="text-3xl font-bold text-slate-800">🌱 Semeador Visual</h1>
+                <p class="text-slate-500">Cole seu CSV, anexe as fotos e popule o banco.</p>
+            </div>
+            <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-xs font-mono border border-blue-200">
+                Formato CSV: Nome,Texto,Nota (1-5)
             </div>
         </div>
 
-        <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
-            <p class="font-bold mb-2">📢 Formato do Arquivo CSV:</p>
-            <p class="font-mono bg-white p-2 rounded border border-blue-200 mb-2">Nome,Texto,Nota,NomeArquivoFoto</p>
-            <ul class="list-disc pl-5 space-y-1">
-                <li><strong>Nome:</strong> Nome do cliente.</li>
-                <li><strong>Texto:</strong> O depoimento (se tiver vírgulas, use aspas: "Texto, com virgula").</li>
-                <li><strong>Nota:</strong> Número de 1 a 5.</li>
-                <li><strong>NomeArquivoFoto:</strong> Nome do arquivo na pasta <em>public/fotos</em> (ex: <code>foto1.webp</code>) ou URL da internet.</li>
-            </ul>
-        </div>
-
-        <div class="space-y-4">
-            <label class="block w-full cursor-pointer">
-                <input type="file" id="arquivoCsv" accept=".csv" class="block w-full text-sm text-slate-500
-                  file:mr-4 file:py-3 file:px-6
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-slate-800 file:text-white
-                  hover:file:bg-slate-700
-                "/>
-            </label>
-
-            <button onclick="enviarCSV()" id="btnEnviar" class="w-full bg-brand-pink bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
-                <i data-lucide="upload"></i> Processar Importação
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <label class="block text-sm font-bold text-slate-700 mb-2">1. Cole o CSV aqui:</label>
+            <textarea id="csvInput" rows="5" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Exemplo:&#10;Maria Silva,Amei a festa!,5&#10;João Souza,Muito bom.,4"></textarea>
+            <button onclick="gerarCards()" class="mt-4 bg-slate-800 text-white font-bold py-3 px-6 rounded-xl hover:bg-slate-700 transition-colors flex items-center gap-2">
+                <i data-lucide="layers"></i> 2. Gerar Cards de Edição
             </button>
         </div>
 
-        <div id="status" class="mt-6 hidden p-4 rounded-lg text-center font-bold"></div>
+        <div id="lista-cards" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            </div>
+
     </div>
 
     <script>
         lucide.createIcons();
         const ADMIN_TOKEN = "Raposo88125442@@"; 
 
-        async function enviarCSV() {
-            const input = document.getElementById('arquivoCsv');
-            const btn = document.getElementById('btnEnviar');
-            const status = document.getElementById('status');
+        function gerarCards() {
+            const input = document.getElementById('csvInput').value.trim();
+            const container = document.getElementById('lista-cards');
+            container.innerHTML = ""; // Limpa anterior
 
-            if (!input.files[0]) return alert("Selecione um arquivo .csv");
+            if (!input) return alert("Cole algum texto CSV primeiro.");
 
-            btn.innerHTML = "Processando...";
+            const linhas = input.split('\n');
+
+            linhas.forEach((linha, index) => {
+                if (!linha.trim()) return;
+
+                // Parser simples de CSV (considerando vírgula como separador)
+                // Se o texto tiver vírgula, o ideal é usar aspas no CSV, mas aqui vamos simplificar:
+                // Divide apenas nas 2 primeiras vírgulas para garantir Nome e Nota, o resto é Texto.
+                const partes = linha.split(',');
+                if (partes.length < 2) return;
+
+                const nome = partes[0].trim();
+                // A nota é o último elemento se for número, senão assume 5
+                let nota = 5;
+                let texto = "";
+
+                const ultimo = partes[partes.length - 1].trim();
+                if (!isNaN(ultimo) && ultimo.length === 1) {
+                    nota = parseInt(ultimo);
+                    texto = partes.slice(1, -1).join(',').trim().replace(/^"|"$/g, ''); // Remove aspas extras
+                } else {
+                    texto = partes.slice(1).join(',').trim().replace(/^"|"$/g, '');
+                }
+
+                // Cria o HTML do Card
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center font-bold text-slate-500 text-xs">#${index + 1}</div>
+                        <input type="number" id="nota-${index}" value="${nota}" min="1" max="5" class="w-16 text-center border rounded p-1 text-sm font-bold text-yellow-500">
+                    </div>
+
+                    <div class="space-y-3 mb-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nome do Cliente</label>
+                            <input type="text" id="nome-${index}" value="${nome}" class="w-full font-bold text-slate-800 border-b border-slate-200 focus:border-blue-500 outline-none pb-1 bg-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Depoimento</label>
+                            <textarea id="texto-${index}" rows="3" class="w-full text-sm text-slate-600 border rounded p-2 focus:border-blue-500 outline-none resize-none">${texto}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
+                            <i data-lucide="image"></i> Anexar Fotos (Máx 5)
+                        </label>
+                        <input type="file" id="fotos-${index}" multiple accept="image/*" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-pink/10 file:text-brand-pink hover:file:bg-brand-pink/20 cursor-pointer"/>
+                    </div>
+
+                    <button onclick="enviarCard(${index})" id="btn-${index}" class="w-full bg-brand-pink bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="upload-cloud"></i> Salvar no Banco
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        async function enviarCard(idx) {
+            const btn = document.getElementById(`btn-${idx}`);
+            const nome = document.getElementById(`nome-${idx}`).value;
+            const texto = document.getElementById(`texto-${idx}`).value;
+            const nota = document.getElementById(`nota-${idx}`).value;
+            const inputFotos = document.getElementById(`fotos-${idx}`);
+
+            if (inputFotos.files.length === 0) {
+                if(!confirm("⚠️ Enviar sem fotos?")) return;
+            }
+
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Enviando...`;
             btn.disabled = true;
+            lucide.createIcons();
 
             const formData = new FormData();
-            formData.append("arquivoCsv", input.files[0]);
+            formData.append("nome", nome);
+            formData.append("texto", texto);
+            formData.append("nota", nota);
+            
+            // Adiciona múltiplas fotos
+            for (let i = 0; i < inputFotos.files.length; i++) {
+                formData.append("fotos", inputFotos.files[i]);
+            }
 
             try {
-                const res = await fetch('/api/admin/seed-csv', {
+                const res = await fetch('/api/admin/seed-review', {
                     method: 'POST',
                     headers: { 'x-admin-password': ADMIN_TOKEN },
                     body: formData
                 });
-                const data = await res.json();
 
-                status.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+                const data = await res.json();
                 
                 if (data.success) {
-                    status.classList.add('bg-green-100', 'text-green-700');
-                    status.innerHTML = `✅ ${data.message}`;
-                    input.value = ""; // Limpa input
+                    btn.className = "w-full bg-slate-100 text-slate-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed";
+                    btn.innerHTML = `<i data-lucide="check"></i> Salvo!`;
+                    // Opcional: Remover o card da tela para limpar a visão
+                    // btn.closest('.bg-white').style.opacity = '0.5';
                 } else {
                     throw new Error(data.error);
                 }
-            } catch (err) {
-                status.classList.add('bg-red-100', 'text-red-700');
-                status.innerHTML = `❌ Erro: ${err.message}`;
-            } finally {
-                btn.innerHTML = `<i data-lucide="upload"></i> Processar Importação`;
+            } catch (error) {
+                console.error(error);
+                alert("Erro: " + error.message);
+                btn.innerHTML = "Tentar Novamente";
                 btn.disabled = false;
-                lucide.createIcons();
             }
         }
     </script>

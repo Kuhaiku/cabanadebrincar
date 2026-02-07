@@ -530,55 +530,44 @@ app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
 });
 
 // --- FIM DAS ROTAS DE AVALIAÇÕES ---
-app.post("/api/admin/seed-csv", checkAuth, upload.single("arquivoCsv"), async (req, res) => {
+// --- ROTA DE SEEDER (ATUALIZADA PARA MÚLTIPLAS FOTOS) ---
+app.post("/api/admin/seed-review", checkAuth, upload.array("fotos", 5), async (req, res) => {
     try {
-        if (!req.file) throw new Error("Nenhum arquivo enviado.");
+        const { nome, texto, nota } = req.body;
+        
+        // 1. Garante Orçamento Fake
+        await db.query(`
+            INSERT IGNORE INTO orcamentos (id, nome, whatsapp, email, status) 
+            VALUES (9999, 'Cliente Seeder', '000', 'seeder@teste.com', 'concluido')
+        `);
 
-        // 1. Lê o conteúdo do arquivo CSV
-        const csvContent = fs.readFileSync(req.file.path, 'utf-8');
-        fs.unlinkSync(req.file.path); // Limpa o arquivo temporário
+        // 2. Cria o Depoimento
+        const [r] = await db.query(
+            "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado, data_criacao) VALUES (?, ?, ?, ?, 1, NOW())",
+            [9999, nome, texto, nota || 5]
+        );
+        const depId = r.insertId;
 
-        // 2. Parser Simples de CSV (Lida com aspas)
-        const linhas = csvContent.split('\n').filter(l => l.trim().length > 0);
-        const headers = linhas[0].split(',').map(h => h.trim().toLowerCase()); // Ignora header
+        // 3. Upload das Fotos (Múltiplas)
+        if (req.files && req.files.length > 0) {
+            // Processa cada foto em paralelo para ser rápido
+            const uploads = req.files.map(file => {
+                return cloudinary.uploader.upload(file.path, { folder: "cabana/depoimentos_fake" })
+                    .then(up => {
+                        fs.unlinkSync(file.path); // Limpa temp
+                        return up.secure_url;
+                    });
+            });
 
-        // 3. Garante Orçamento Fake
-        await db.query(`INSERT IGNORE INTO orcamentos (id, nome, whatsapp, email, status) VALUES (9999, 'Cliente CSV', '000', 'csv@teste.com', 'concluido')`);
+            const urls = await Promise.all(uploads);
 
-        let count = 0;
-
-        // 4. Processa linha por linha (começando da 1 para pular header)
-        for (let i = 1; i < linhas.length; i++) {
-            // Regex mágica para separar por vírgula mas ignorar vírgula dentro de aspas
-            const colunas = linhas[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-            
-            // Limpa as aspas dos valores
-            const cleanCols = colunas.map(c => c.replace(/^"|"$/g, '').trim());
-
-            // Mapeia colunas (Assumindo ordem: Nome, Texto, Nota, NomeArquivoFoto)
-            const nome = cleanCols[0];
-            const texto = cleanCols[1];
-            const nota = parseInt(cleanCols[2]) || 5;
-            const nomeFoto = cleanCols[3];
-
-            if (nome && texto) {
-                // Insere Depoimento
-                const [r] = await db.query(
-                    "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado, data_criacao) VALUES (?, ?, ?, ?, 1, NOW())",
-                    [9999, nome, texto, nota]
-                );
-
-                // Insere Foto (Se existir o nome do arquivo)
-                if (nomeFoto) {
-                    // Assume que a foto já está na pasta public/fotos ou é uma URL completa
-                    let urlFinal = nomeFoto.startsWith('http') ? nomeFoto : `/fotos/${nomeFoto}`;
-                    await db.query("INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)", [r.insertId, urlFinal]);
-                }
-                count++;
+            // Salva URLs no banco
+            for (const url of urls) {
+                await db.query("INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)", [depId, url]);
             }
         }
 
-        res.json({ success: true, message: `${count} depoimentos importados com sucesso!` });
+        res.json({ success: true, message: "Depoimento criado com sucesso!" });
 
     } catch (e) {
         console.error(e);

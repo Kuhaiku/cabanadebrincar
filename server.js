@@ -552,7 +552,7 @@ app.post("/api/admin/seed-review", checkAuth, upload.array("fotos", 5), async (r
         if (req.files && req.files.length > 0) {
             // Processa cada foto em paralelo para ser rápido
             const uploads = req.files.map(file => {
-                return cloudinary.uploader.upload(file.path, { folder: "cabana/depoimentos_fake" })
+                return cloudinary.uploader.upload(file.path, { folder: "cabana/depoimentos_" })
                     .then(up => {
                         fs.unlinkSync(file.path); // Limpa temp
                         return up.secure_url;

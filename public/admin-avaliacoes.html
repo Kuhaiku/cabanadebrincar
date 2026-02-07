@@ -17,16 +17,15 @@
 
     <nav class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50 shadow-sm flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <div class="bg-brand-pink/10 p-2 rounded-lg">
-                <i data-lucide="message-square" class="text-pink-500 w-6 h-6"></i>
-            </div>
+            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors">
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
             <h1 class="font-bold text-slate-800 text-lg hidden md:block">Gestão de Avaliações</h1>
         </div>
         <div class="flex items-center gap-4">
             <span class="text-xs font-semibold bg-slate-100 px-3 py-1 rounded-full text-slate-600">
                 Total: <span id="contador">0</span>
             </span>
-            <a href="painel.html" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Voltar ao Painel</a>
             <button onclick="logout()" class="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Sair">
                 <i data-lucide="log-out" class="w-5 h-5"></i>
             </button>
@@ -48,18 +47,17 @@
         lucide.createIcons();
         const API_URL = '/api/admin';
         
-        // --- 1. AUTENTICAÇÃO (CORRIGIDA) ---
-        // Busca o token salvo pelo Painel Principal
-        const ADMIN_TOKEN = localStorage.getItem('adminToken');
-
-        // Se não tiver token, manda de volta pro painel em vez de pedir senha
+        // --- 1. AUTENTICAÇÃO PADRONIZADA (IGUAL AGENDA) ---
+        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token'); // Agora usa a mesma chave da agenda
+        
+        // Se não tiver token, chuta pro painel imediatamente
         if (!ADMIN_TOKEN) {
             window.location.href = 'painel.html'; 
         }
 
         function logout() {
             if(confirm("Sair do modo Admin?")) {
-                localStorage.removeItem('adminToken');
+                localStorage.removeItem('cabana_admin_token');
                 window.location.href = 'index.html';
             }
         }
@@ -67,7 +65,7 @@
         // --- 2. CARREGAMENTO ---
         async function carregarAvaliacoes() {
             try {
-                // Se não tem token, nem tenta carregar (o redirect acima já tratou)
+                // Se não tem token, o redirect acima já agiu, então nem executa o fetch
                 if (!ADMIN_TOKEN) return;
 
                 const res = await fetch(`${API_URL}/avaliacoes`, {
@@ -75,8 +73,8 @@
                 });
 
                 if (res.status === 401) {
-                    alert("Sessão expirada. Faça login novamente no painel.");
-                    localStorage.removeItem('adminToken');
+                    alert("Sessão expirada.");
+                    localStorage.removeItem('cabana_admin_token');
                     window.location.href = 'painel.html';
                     return;
                 }

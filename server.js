@@ -1,7 +1,3 @@
-const { File } = require('node:buffer');
-global.File = File;
-
-
 require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2");
@@ -48,6 +44,7 @@ const db = mysql.createPool({
   enableKeepAlive: true,
 });
 
+// Mantém o banco vivo
 setInterval(() => {
   db.query("SELECT 1", (err) => {
     if (err) console.error("Ping Error:", err.code);
@@ -63,6 +60,18 @@ function checkAuth(req, res, next) {
 
 // --- 2. INICIALIZAÇÃO DO ROBÔ WHATSAPP (CORRIGIDO) ---
 
+// >>> LIMPEZA DE SESSÃO ANTIGA (Evita erro SingletonLock) <<<
+const sessionDir = path.resolve(__dirname, 'tokens');
+if (fs.existsSync(sessionDir)) {
+    console.log("🧹 Limpando sessão antiga do WhatsApp para evitar conflitos...");
+    try {
+        fs.rmSync(sessionDir, { recursive: true, force: true });
+    } catch (e) {
+        console.log("⚠️ Aviso: Não foi possível limpar a pasta tokens (pode estar em uso).");
+    }
+}
+// ------------------------------------------------------------
+
 let whatsappClient = null;
 
 venom
@@ -76,13 +85,13 @@ venom
       console.log("Status Sessão WhatsApp:", statusSession);
     },
     {
-      headless: "new", // Obrigatório para servidor
+      headless: "new",
       useChrome: false,
       logQR: false,
-      disableWelcome: true, // Desativa msg de boas vindas (evita trava)
-      disableSpins: true, // Desativa animações no terminal (evita trava)
-      updatesLog: false, // Não verifica atualizações (acelera o boot)
-      autoClose: false, // Não fecha se der erro simples
+      disableWelcome: true,
+      disableSpins: true,
+      updatesLog: false,
+      autoClose: false,
       browserArgs: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -138,19 +147,15 @@ async function criarLinkMP(titulo, valor, pedidoId) {
   }
 }
 
-// Função de Envio com mais Paciência (20 tentativas = 60 segundos)
 async function enviarWhatsappViaRobo(nome, telefone, valor, tentativa = 1) {
   if (!whatsappClient) {
     if (tentativa > 20) {
-      // Aumentei para 20 tentativas
       console.log("❌ Robô demorou demais (>1min) para conectar. Desisti.");
       return;
     }
-
     console.log(
       `⏳ Robô carregando... Tentativa ${tentativa}/20 em 3 segundos.`,
     );
-
     setTimeout(() => {
       enviarWhatsappViaRobo(nome, telefone, valor, tentativa + 1);
     }, 3000);
@@ -199,7 +204,6 @@ app.post("/api/webhook", async (req, res) => {
           const pedidoId = paymentData.external_reference;
           const valorPago = paymentData.transaction_amount;
 
-          // Formatação para Log
           const dataPagamento = new Date(paymentData.date_approved);
           const dia = dataPagamento.getDate().toString().padStart(2, "0");
           const mes = (dataPagamento.getMonth() + 1)
@@ -227,7 +231,6 @@ app.post("/api/webhook", async (req, res) => {
                   [pedidoId],
                 );
 
-                // Tenta enviar a mensagem
                 enviarWhatsappViaRobo(
                   cliente.nome,
                   cliente.whatsapp,
@@ -244,7 +247,7 @@ app.post("/api/webhook", async (req, res) => {
   }
 });
 
-// --- 5. OUTRAS ROTAS ---
+// --- 5. ROTAS DE API ---
 
 app.get("/api/itens-disponiveis", (req, res) => {
   db.query(
@@ -253,9 +256,12 @@ app.get("/api/itens-disponiveis", (req, res) => {
   );
 });
 
+// >>> ROTA CORRIGIDA (EVITA ERRO 500) <<<
 app.post("/api/orcamento", (req, res) => {
   const data = req.body;
   const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`;
+  
+  // Array de valores com proteções (JSON.stringify e valores padrão)
   const values = [
     data.nome,
     data.whatsapp,
@@ -267,15 +273,20 @@ app.post("/api/orcamento", (req, res) => {
     data.qtd_barracas,
     data.cores,
     data.tema,
-    JSON.stringify(data.itens_padrao),
-    data.itens_adicionais,
+    JSON.stringify(data.itens_padrao || []),     // Proteção 1
+    JSON.stringify(data.itens_adicionais || []), // Proteção 2 (Correção Principal)
     data.data_festa,
     data.horario,
-    JSON.stringify(data.alimentacao),
-    data.alergias,
+    JSON.stringify(data.alimentacao || []),      // Proteção 3
+    data.alergias || "",
   ];
+
   db.query(sql, values, (err) => {
-    if (err) return res.status(500).json({ error: err });
+    if (err) {
+        // Log detalhado para você ver o erro real no terminal
+        console.error("🔴 ERRO AO SALVAR ORÇAMENTO (SQL):", err);
+        return res.status(500).json({ error: "Erro interno ao salvar no banco. Verifique os logs." });
+    }
     res.status(201).json({ success: true });
   });
 });
@@ -340,6 +351,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
         }
         res.json({ success: true });
       } catch (e) {
+        console.error("Erro feedback:", e);
         res.status(500).json({ error: "Erro" });
       }
     },
@@ -356,11 +368,12 @@ app.get("/api/galeria_fotos", (req, res) => {
   );
 });
 
-// ROTAS ADMIN
+// --- ROTAS ADMIN ---
+
 app.get("/api/admin/agenda", checkAuth, (req, res) => {
   db.query(
     "SELECT * FROM orcamentos WHERE status_agenda = 'agendado' ORDER BY data_festa ASC",
-    (err, r) => res.json(r),
+    (err, r) => res.json(r || []),
   );
 });
 app.put("/api/admin/agenda/aprovar/:id", checkAuth, (req, res) => {
@@ -379,7 +392,7 @@ app.put("/api/admin/agenda/concluir/:id", checkAuth, (req, res) => {
 });
 app.get("/api/admin/pedidos", checkAuth, (req, res) => {
   db.query("SELECT * FROM orcamentos ORDER BY data_pedido DESC", (err, r) =>
-    res.json(r),
+    res.json(r || []),
   );
 });
 app.put("/api/admin/pedidos/:id/financeiro", checkAuth, (req, res) => {
@@ -453,25 +466,19 @@ app.delete("/api/admin/financeiro/geral/:id", checkAuth, (req, res) =>
   ),
 );
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
-  const [g] = await db
-    .promise()
-    .query("SELECT * FROM custos_gerais ORDER BY data_registro DESC");
-  const [f] = await db
-    .promise()
-    .query(
-      "SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id",
-    );
-  const [fat] = await db
-    .promise()
-    .query(
-      "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'",
-    );
-  res.json({ gerais: g, festas: f, faturamento: fat });
+  try {
+    const [g] = await db.promise().query("SELECT * FROM custos_gerais ORDER BY data_registro DESC");
+    const [f] = await db.promise().query("SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id");
+    const [fat] = await db.promise().query("SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'");
+    res.json({ gerais: g, festas: f, faturamento: fat });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 app.get("/api/admin/precos", checkAuth, (req, res) =>
   db.query(
     "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
-    (e, r) => res.json(r),
+    (e, r) => res.json(r || []),
   ),
 );
 app.post("/api/admin/precos", checkAuth, (req, res) =>
@@ -487,7 +494,7 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
     "UPDATE tabela_precos SET valor = ? WHERE id = ?",
     [valor, req.params.id],
     (e) => res.json({ success: !e }),
-  );
+  ),
 });
 app.delete("/api/admin/precos/:id", checkAuth, (req, res) =>
   db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>

@@ -7,23 +7,23 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
-const { randomUUID: uuidv4 } = require("crypto");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
 const nodemailer = require("nodemailer");
+const { randomUUID: uuidv4 } = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- 1. CONFIGURAÇÕES & OTIMIZAÇÃO ---
 
-// Cache de imagens estáticas (1 dia) para resolver lentidão
+// Cache de imagens estáticas (1 dia) para resolver lentidão no carregamento
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(express.static("public", { maxAge: oneDay }));
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// Nodemailer
+// Nodemailer (Envio de E-mails)
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
@@ -34,7 +34,7 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
-// Cloudinary
+// Cloudinary (Upload de Fotos)
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -44,6 +44,7 @@ cloudinary.config({
 const upload = multer({ dest: "uploads/" });
 
 // --- 2. BANCO DE DADOS (POOL PROMISE) ---
+// A solução definitiva para os erros de conexão e "Internal Server Error"
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -58,7 +59,7 @@ const pool = mysql.createPool({
 
 const db = pool.promise();
 
-// Mantém o banco vivo
+// Mantém o banco vivo (Ping a cada 30s)
 setInterval(async () => {
   try {
     await db.query("SELECT 1");
@@ -67,6 +68,7 @@ setInterval(async () => {
   }
 }, 30000);
 
+// Middleware de Autenticação Admin
 function checkAuth(req, res, next) {
   const password = req.headers["x-admin-password"];
   if (password !== process.env.ADMIN_PASS)
@@ -124,20 +126,22 @@ async function enviarEmailConfirmacao(
   let corpoHtml = `
     <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
       <h2 style="color: #6C63FF;">Olá, ${nome}! 🎉</h2>
-      <p>Recebemos o pagamento de <strong>R$ ${Number(valorPago).toFixed(2)}</strong>.</p>
+      <p>Recebemos a confirmação do seu pagamento de <strong>R$ ${Number(valorPago).toFixed(2)}</strong>.</p>
   `;
 
   if (isQuitado) {
-    corpoHtml += `<p style="color: green; font-weight: bold;">✅ Sua reserva está 100% quitada!</p>`;
+    corpoHtml += `<p style="color: green; font-weight: bold;">✅ Sua reserva está 100% quitada!</p>
+                  <p>Agora é só aguardar o dia da festa!</p>`;
   } else {
     corpoHtml += `
       <p style="color: orange; font-weight: bold;">✅ Reserva Garantida (Sinal)!</p>
       <p>Restante a Pagar: <strong>R$ ${Number(saldoDevedor).toFixed(2)}</strong></p>
+      <p>Para pagar o restante, use o botão abaixo quando desejar:</p>
       <a href="${linkRestante}" style="background: #ff6b6b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Pagar Restante</a>
     `;
   }
 
-  corpoHtml += `<br><br><small>Cabana de Brincar</small></div>`;
+  corpoHtml += `<br><br><hr><small>Cabana de Brincar - Tornando sonhos reais.</small></div>`;
 
   try {
     await transporter.sendMail({
@@ -152,10 +156,10 @@ async function enviarEmailConfirmacao(
   }
 }
 
-// --- 4. WEBHOOK ---
+// --- 4. WEBHOOK (MERCADO PAGO) ---
 
 app.post("/api/webhook", async (req, res) => {
-  res.status(200).send("OK"); // Responde rápido
+  res.status(200).send("OK");
   const id = req.body?.data?.id || req.body?.id || req.query.id;
 
   if ((req.body?.type === "payment" || req.query.topic === "payment") && id) {
@@ -184,7 +188,7 @@ app.post("/api/webhook", async (req, res) => {
               [pedidoId],
             );
 
-            // Lógica de saldo
+            // Calcula links para e-mail
             const valorTotal = parseFloat(pedido.valor_final || 0);
             const saldo = valorTotal - valorPago;
             let link = "#";
@@ -213,8 +217,9 @@ app.post("/api/webhook", async (req, res) => {
   }
 });
 
-// --- 5. ROTAS DA API ---
+// --- 5. ROTAS PÚBLICAS (APP) ---
 
+// Salvar Orçamento
 app.post("/api/orcamento", async (req, res) => {
   const data = req.body;
 
@@ -227,12 +232,12 @@ app.post("/api/orcamento", async (req, res) => {
   const values = [
     data.nome,
     data.whatsapp,
-    data.email || null, // Permite null
+    data.email || null,
     data.endereco,
-    qtdCriancas, // Inteiro seguro
+    qtdCriancas,
     data.faixa_etaria,
     data.modelo_barraca,
-    qtdBarracas, // Inteiro seguro
+    qtdBarracas,
     data.cores,
     data.tema,
     JSON.stringify(data.itens_padrao || []),
@@ -247,11 +252,12 @@ app.post("/api/orcamento", async (req, res) => {
     await db.query(sql, values);
     res.status(201).json({ success: true });
   } catch (err) {
-    console.error("🔴 ERRO SQL:", err.message);
+    console.error("ERRO SQL:", err.message);
     res.status(500).json({ error: "Erro ao salvar no banco." });
   }
 });
 
+// Listar Itens Disponíveis
 app.get("/api/itens-disponiveis", async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -263,10 +269,11 @@ app.get("/api/itens-disponiveis", async (req, res) => {
   }
 });
 
+// Listar Depoimentos Aprovados (Com Fotos)
 app.get("/api/depoimentos/publicos", async (req, res) => {
   try {
     const [rows] = await db.query(
-      "SELECT d.*, GROUP_CONCAT(f.url_foto) as fotos FROM depoimentos d LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id WHERE d.aprovado = TRUE GROUP BY d.id ORDER BY d.data_criacao DESC LIMIT 10",
+      "SELECT d.*, GROUP_CONCAT(f.url_foto) as fotos FROM depoimentos d LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id WHERE d.aprovado = TRUE GROUP BY d.id ORDER BY d.data_criacao DESC LIMIT 15",
     );
     res.json(
       rows.map((i) => ({ ...i, fotos: i.fotos ? i.fotos.split(",") : [] })),
@@ -276,6 +283,7 @@ app.get("/api/depoimentos/publicos", async (req, res) => {
   }
 });
 
+// Galeria de Fotos (Local)
 app.get("/api/galeria_fotos", (req, res) => {
   const dir = path.join(__dirname, "public/fotos");
   if (!fs.existsSync(dir)) return res.json([]);
@@ -287,7 +295,7 @@ app.get("/api/galeria_fotos", (req, res) => {
   });
 });
 
-// --- ROTAS ADMIN (TODAS COM ASYNC/AWAIT CORRIGIDOS) ---
+// --- 6. ROTAS DO ADMIN (PAINEL) ---
 
 app.get("/api/admin/agenda", checkAuth, async (req, res) => {
   try {
@@ -311,6 +319,7 @@ app.get("/api/admin/pedidos", checkAuth, async (req, res) => {
   }
 });
 
+// Financeiro
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
   try {
     const [gerais] = await db.query(
@@ -323,18 +332,6 @@ app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
       "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'",
     );
     res.json({ gerais, festas, faturamento });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get("/api/admin/precos", checkAuth, async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
-    );
-    res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -377,6 +374,7 @@ app.delete("/api/admin/financeiro/geral/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
 app.delete("/api/admin/financeiro/festa/:id", checkAuth, async (req, res) => {
   try {
     await db.query("DELETE FROM custos_festa WHERE id = ?", [req.params.id]);
@@ -385,6 +383,8 @@ app.delete("/api/admin/financeiro/festa/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
+// Ações de Pedidos
 app.put("/api/admin/agenda/aprovar/:id", checkAuth, async (req, res) => {
   try {
     await db.query(
@@ -396,6 +396,7 @@ app.put("/api/admin/agenda/aprovar/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
 app.put("/api/admin/agenda/concluir/:id", checkAuth, async (req, res) => {
   try {
     await db.query(
@@ -407,6 +408,7 @@ app.put("/api/admin/agenda/concluir/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
 app.put("/api/admin/pedidos/:id/financeiro", checkAuth, async (req, res) => {
   try {
     await db.query(
@@ -423,6 +425,7 @@ app.put("/api/admin/pedidos/:id/financeiro", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
 app.delete("/api/admin/pedidos/:id", checkAuth, async (req, res) => {
   try {
     await db.query("DELETE FROM orcamentos WHERE id = ?", [req.params.id]);
@@ -431,6 +434,19 @@ app.delete("/api/admin/pedidos/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
+// Preços
+app.get("/api/admin/precos", checkAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM tabela_precos ORDER BY categoria, descricao",
+    );
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post("/api/admin/precos", checkAuth, async (req, res) => {
   try {
     await db.query(
@@ -447,6 +463,7 @@ app.post("/api/admin/precos", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
 app.put("/api/admin/precos/:id", checkAuth, async (req, res) => {
   try {
     await db.query("UPDATE tabela_precos SET valor = ? WHERE id = ?", [
@@ -458,6 +475,7 @@ app.put("/api/admin/precos/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
 app.delete("/api/admin/precos/:id", checkAuth, async (req, res) => {
   try {
     await db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id]);
@@ -467,42 +485,51 @@ app.delete("/api/admin/precos/:id", checkAuth, async (req, res) => {
   }
 });
 
-// >>> CORREÇÃO DO CÁLCULO DO RESTANTE <<<
+// Gerar Links Mercado Pago (Com correção do Restante)
 app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
-    try {
-        const [r] = await db.query("SELECT valor_final, nome FROM orcamentos WHERE id = ?", [req.params.id]);
-        if (r.length === 0) return res.status(404).json({ error: "Erro" });
-        
-        const vTotal = parseFloat(r[0].valor_final || 0);
-        
-        // 1. Link da Reserva (40%)
-        const linkReserva = await criarLinkMP(`Reserva - ${r[0].nome}`, (vTotal * 0.4).toFixed(2), req.params.id);
-        
-        // 2. Link do Restante (60%) - NOVO!
-        const linkRestante = await criarLinkMP(`Restante - ${r[0].nome}`, (vTotal * 0.6).toFixed(2), req.params.id);
-        
-        // 3. Link Integral com Desconto (95%)
-        const linkIntegral = await criarLinkMP(`Total - ${r[0].nome}`, (vTotal * 0.95).toFixed(2), req.params.id);
-        
-        res.json({ 
-            reserva: (vTotal * 0.4).toFixed(2), 
-            linkReserva, 
-            
-            restante: (vTotal * 0.6).toFixed(2),
-            linkRestante, // Enviando o link novo
-            
-            integral: (vTotal * 0.95).toFixed(2), 
-            linkIntegral,
-        });
-    } catch(e) { res.status(500).json({error: e.message}); }
+  try {
+    const [r] = await db.query(
+      "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
+      [req.params.id],
+    );
+    if (r.length === 0) return res.status(404).json({ error: "Erro" });
+
+    const vTotal = parseFloat(r[0].valor_final || 0);
+
+    const linkReserva = await criarLinkMP(
+      `Reserva - ${r[0].nome}`,
+      (vTotal * 0.4).toFixed(2),
+      req.params.id,
+    );
+    const linkRestante = await criarLinkMP(
+      `Restante - ${r[0].nome}`,
+      (vTotal * 0.6).toFixed(2),
+      req.params.id,
+    );
+    const linkIntegral = await criarLinkMP(
+      `Total - ${r[0].nome}`,
+      (vTotal * 0.95).toFixed(2),
+      req.params.id,
+    );
+
+    res.json({
+      reserva: (vTotal * 0.4).toFixed(2),
+      linkReserva,
+      restante: (vTotal * 0.6).toFixed(2),
+      linkRestante,
+      integral: (vTotal * 0.95).toFixed(2),
+      linkIntegral,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// --- ROTAS DE AVALIAÇÕES (ATUALIZADAS PARA GERENCIAR FOTOS) ---
+// --- 7. GESTÃO COMPLETA DE AVALIAÇÕES ---
 
-// 1. Listar (Agora traz ID e URL da foto juntos)
+// Listar (com concatenação de fotos)
 app.get("/api/admin/avaliacoes", checkAuth, async (req, res) => {
   try {
-    // Trazemos "id::url" separados por "||" para poder processar no front
     const sql = `SELECT d.*, o.data_festa, 
                  GROUP_CONCAT(CONCAT(f.id, '::', f.url_foto) SEPARATOR '||') as fotos_info 
                  FROM depoimentos d 
@@ -511,125 +538,140 @@ app.get("/api/admin/avaliacoes", checkAuth, async (req, res) => {
                  GROUP BY d.id 
                  ORDER BY d.data_criacao DESC`;
     const [rows] = await db.query(sql);
-    
-    // Tratamento dos dados para JSON limpo
-    const dados = rows.map((i) => {
-        let listaFotos = [];
-        if (i.fotos_info) {
-            listaFotos = i.fotos_info.split('||').map(f => {
-                const [id, url] = f.split('::');
-                return { id, url };
-            });
-        }
-        return { ...i, fotos: listaFotos };
-    });
 
+    const dados = rows.map((i) => {
+      let listaFotos = [];
+      if (i.fotos_info) {
+        listaFotos = i.fotos_info.split("||").map((f) => {
+          const [id, url] = f.split("::");
+          return { id, url };
+        });
+      }
+      return { ...i, fotos: listaFotos };
+    });
     res.json(dados);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// 2. Atualizar Texto/Status (Mantém igual, só para garantir)
+// Atualizar (Texto, Nota, Status)
 app.put("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { aprovado, texto, nota, nome_cliente } = req.body;
-    const [atuais] = await db.query("SELECT * FROM depoimentos WHERE id = ?", [id]);
-    if (atuais.length === 0) return res.status(404).json({ error: "Não encontrado" });
+    const [atuais] = await db.query("SELECT * FROM depoimentos WHERE id = ?", [
+      id,
+    ]);
+    if (atuais.length === 0)
+      return res.status(404).json({ error: "Não encontrado" });
     const atual = atuais[0];
 
     const novoAprovado = aprovado !== undefined ? aprovado : atual.aprovado;
     const novoTexto = texto !== undefined ? texto : atual.texto;
     const novaNota = nota !== undefined ? nota : atual.nota;
-    const novoNome = nome_cliente !== undefined ? nome_cliente : atual.nome_cliente;
+    const novoNome =
+      nome_cliente !== undefined ? nome_cliente : atual.nome_cliente;
 
     await db.query(
       "UPDATE depoimentos SET aprovado = ?, texto = ?, nota = ?, nome_cliente = ? WHERE id = ?",
-      [novoAprovado, novoTexto, novaNota, novoNome, id]
+      [novoAprovado, novoTexto, novaNota, novoNome, id],
     );
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// 3. Excluir Depoimento Inteiro
+// Excluir Avaliação
 app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
   try {
     await db.query("DELETE FROM depoimentos WHERE id = ?", [req.params.id]);
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// 4. ADICIONAR FOTO A UM DEPOIMENTO (NOVA ROTA)
-app.post("/api/admin/avaliacoes/:id/foto", checkAuth, upload.single("foto"), async (req, res) => {
+// Adicionar Foto em Avaliação Existente
+app.post(
+  "/api/admin/avaliacoes/:id/foto",
+  checkAuth,
+  upload.single("foto"),
+  async (req, res) => {
     try {
-        if (!req.file) return res.status(400).json({ error: "Nenhuma imagem enviada" });
-        
-        // Upload Cloudinary
-        const up = await cloudinary.uploader.upload(req.file.path, { folder: "cabana/fotos" });
-        fs.unlinkSync(req.file.path); // Limpa temp
-
-        // Salva no banco vinculada ao depoimento
-        await db.query("INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)", [req.params.id, up.secure_url]);
-        
-        res.json({ success: true, url: up.secure_url });
+      if (!req.file) return res.status(400).json({ error: "Nenhuma imagem" });
+      const up = await cloudinary.uploader.upload(req.file.path, {
+        folder: "cabana/fotos",
+      });
+      fs.unlinkSync(req.file.path);
+      await db.query(
+        "INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)",
+        [req.params.id, up.secure_url],
+      );
+      res.json({ success: true, url: up.secure_url });
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e.message });
     }
-});
+  },
+);
 
-// 5. DELETAR UMA FOTO ESPECÍFICA (NOVA ROTA)
+// Remover Foto Específica
 app.delete("/api/admin/fotos/:id", checkAuth, async (req, res) => {
-    try {
-        await db.query("DELETE FROM fotos_depoimento WHERE id = ?", [req.params.id]);
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+  try {
+    await db.query("DELETE FROM fotos_depoimento WHERE id = ?", [
+      req.params.id,
+    ]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// --- FIM DAS ROTAS DE AVALIAÇÕES ---
-// --- ROTA DE SEEDER (ATUALIZADA PARA MÚLTIPLAS FOTOS) ---
-app.post("/api/admin/seed-review", checkAuth, upload.array("fotos", 5), async (req, res) => {
+// --- ROTA DE SEEDER (IMPORTADOR VISUAL) ---
+app.post(
+  "/api/admin/seed-review",
+  checkAuth,
+  upload.array("fotos", 5),
+  async (req, res) => {
     try {
-        const { nome, texto, nota } = req.body;
-        
-        // 1. Garante Orçamento Fake
-        await db.query(`
-            INSERT IGNORE INTO orcamentos (id, nome, whatsapp, email, status) 
-            VALUES (9999, 'Cliente Seeder', '000', 'seeder@teste.com', 'concluido')
-        `);
+      const { nome, texto, nota } = req.body;
 
-        // 2. Cria o Depoimento
-        const [r] = await db.query(
-            "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado, data_criacao) VALUES (?, ?, ?, ?, 1, NOW())",
-            [9999, nome, texto, nota || 5]
-        );
-        const depId = r.insertId;
+      // Orçamento Fake para vincular
+      await db.query(
+        `INSERT IGNORE INTO orcamentos (id, nome, whatsapp, email, status) VALUES (9999, 'Cliente Seeder', '000', 'seeder@teste.com', 'concluido')`,
+      );
 
-        // 3. Upload das Fotos (Múltiplas)
-        if (req.files && req.files.length > 0) {
-            // Processa cada foto em paralelo para ser rápido
-            const uploads = req.files.map(file => {
-                return cloudinary.uploader.upload(file.path, { folder: "cabana/depoimentos_" })
-                    .then(up => {
-                        fs.unlinkSync(file.path); // Limpa temp
-                        return up.secure_url;
-                    });
+      // Cria o depoimento
+      const [r] = await db.query(
+        "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado, data_criacao) VALUES (?, ?, ?, ?, 1, NOW())",
+        [9999, nome, texto, nota || 5],
+      );
+      const depId = r.insertId;
+
+      // Upload Múltiplo
+      if (req.files && req.files.length > 0) {
+        const uploads = req.files.map((file) => {
+          return cloudinary.uploader
+            .upload(file.path, { folder: "cabana/depoimentos_fake" })
+            .then((up) => {
+              fs.unlinkSync(file.path);
+              return up.secure_url;
             });
-
-            const urls = await Promise.all(uploads);
-
-            // Salva URLs no banco
-            for (const url of urls) {
-                await db.query("INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)", [depId, url]);
-            }
+        });
+        const urls = await Promise.all(uploads);
+        for (const url of urls) {
+          await db.query(
+            "INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)",
+            [depId, url],
+          );
         }
-
-        res.json({ success: true, message: "Depoimento criado com sucesso!" });
-
+      }
+      res.json({ success: true, message: "Criado!" });
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: e.message });
+      res.status(500).json({ error: e.message });
     }
-});
+  },
+);
+
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

@@ -494,8 +494,9 @@ app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
     "UPDATE tabela_precos SET valor = ? WHERE id = ?",
     [valor, req.params.id],
     (e) => res.json({ success: !e }),
-  ),
+  )
 });
+
 app.delete("/api/admin/precos/:id", checkAuth, (req, res) =>
   db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>
     res.json({ success: !e }),

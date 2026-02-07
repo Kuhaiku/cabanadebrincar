@@ -44,7 +44,6 @@ cloudinary.config({
 const upload = multer({ dest: "uploads/" });
 
 // --- 2. BANCO DE DADOS (POOL PROMISE) ---
-// Usamos .promise() aqui para permitir async/await em todo o código
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -57,7 +56,7 @@ const pool = mysql.createPool({
   enableKeepAlive: true,
 });
 
-const db = pool.promise(); // <--- A MÁGICA QUE RESOLVE OS ERROS 500
+const db = pool.promise();
 
 // Mantém o banco vivo
 setInterval(async () => {
@@ -370,7 +369,6 @@ app.post("/api/admin/financeiro/festa/:id", checkAuth, async (req, res) => {
   }
 });
 
-// Outras rotas Admin (excluir, atualizar) seguem o mesmo padrão:
 app.delete("/api/admin/financeiro/geral/:id", checkAuth, async (req, res) => {
   try {
     await db.query("DELETE FROM custos_gerais WHERE id = ?", [req.params.id]);
@@ -468,6 +466,8 @@ app.delete("/api/admin/precos/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e });
   }
 });
+
+// >>> CORREÇÃO DO CÁLCULO DO RESTANTE <<<
 app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
   try {
     const [r] = await db.query(
@@ -475,7 +475,10 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
       [req.params.id],
     );
     if (r.length === 0) return res.status(404).json({ error: "Erro" });
+
     const vTotal = parseFloat(r[0].valor_final || 0);
+
+    // Links
     const linkReserva = await criarLinkMP(
       `Reserva - ${r[0].nome}`,
       (vTotal * 0.4).toFixed(2),
@@ -486,11 +489,13 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
       (vTotal * 0.95).toFixed(2),
       req.params.id,
     );
+
     res.json({
       reserva: (vTotal * 0.4).toFixed(2),
       linkReserva,
       integral: (vTotal * 0.95).toFixed(2),
       linkIntegral,
+      restante: (vTotal * 0.6).toFixed(2), // <--- O CAMPO QUE FALTAVA
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

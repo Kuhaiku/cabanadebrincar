@@ -496,6 +496,7 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
         });
     } catch(e) { res.status(500).json({error: e.message}); }
 });
+
 app.get("/api/admin/avaliacoes", checkAuth, async (req, res) => {
   try {
     const sql = `SELECT d.*, o.data_festa, GROUP_CONCAT(f.url_foto) as fotos 
@@ -513,9 +514,31 @@ app.get("/api/admin/avaliacoes", checkAuth, async (req, res) => {
 
 app.put("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
   try {
-    await db.query("UPDATE depoimentos SET aprovado = ? WHERE id = ?", [req.body.aprovado, req.params.id]);
+    const { id } = req.params;
+    const { aprovado, texto, nota, nome_cliente } = req.body;
+
+    // 1. Busca o depoimento atual no banco para evitar apagar dados acidentalmente
+    const [atuais] = await db.query("SELECT * FROM depoimentos WHERE id = ?", [id]);
+    if (atuais.length === 0) return res.status(404).json({ error: "Depoimento não encontrado" });
+    
+    const atual = atuais[0];
+
+    // 2. Mescla os dados novos com os antigos (Lógica de Segurança)
+    // Se o frontend mandou um valor novo, usa ele. Se não mandou (undefined), mantém o que já estava no banco.
+    const novoAprovado = aprovado !== undefined ? aprovado : atual.aprovado;
+    const novoTexto = texto !== undefined ? texto : atual.texto;
+    const novaNota = nota !== undefined ? nota : atual.nota;
+    const novoNome = nome_cliente !== undefined ? nome_cliente : atual.nome_cliente;
+
+    // 3. Executa a atualização completa
+    await db.query(
+      "UPDATE depoimentos SET aprovado = ?, texto = ?, nota = ?, nome_cliente = ? WHERE id = ?",
+      [novoAprovado, novoTexto, novaNota, novoNome, id]
+    );
+
     res.json({ success: true });
   } catch (e) {
+    console.error("Erro ao atualizar avaliação:", e);
     res.status(500).json({ error: e.message });
   }
 });

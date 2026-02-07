@@ -1,78 +1,96 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Semeador Visual de Depoimentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body class="bg-slate-50 min-h-screen p-6 pb-32">
-
+  </head>
+  <body class="bg-slate-50 min-h-screen p-6 pb-32">
     <div class="max-w-5xl mx-auto space-y-8">
-        
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-800">🌱 Semeador Visual</h1>
-                <p class="text-slate-500">Cole seu CSV, anexe as fotos e popule o banco.</p>
-            </div>
-            <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-xs font-mono border border-blue-200">
-                Formato CSV: Nome,Texto,Nota (1-5)
-            </div>
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-slate-800">
+            <a
+              href="painel.html"
+              class="text-slate-400 hover:text-pink-500 transition-colors"
+              ><i data-lucide="arrow-left"></i></a
+              >🌱 Semeador Visual
+          </h1>
+
+          <p class="text-slate-500">
+            Cole seu CSV, anexe as fotos e popule o banco.
+          </p>
         </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <label class="block text-sm font-bold text-slate-700 mb-2">1. Cole o CSV aqui:</label>
-            <textarea id="csvInput" rows="5" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Exemplo:&#10;Maria Silva,Amei a festa!,5&#10;João Souza,Muito bom.,4"></textarea>
-            <button onclick="gerarCards()" class="mt-4 bg-slate-800 text-white font-bold py-3 px-6 rounded-xl hover:bg-slate-700 transition-colors flex items-center gap-2">
-                <i data-lucide="layers"></i> 2. Gerar Cards de Edição
-            </button>
+        <div
+          class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-xs font-mono border border-blue-200"
+        >
+          Formato CSV: Nome,Texto,Nota (1-5)
         </div>
+      </div>
 
-        <div id="lista-cards" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <label class="block text-sm font-bold text-slate-700 mb-2"
+          >1. Cole o CSV aqui:</label
+        >
+        <textarea
+          id="csvInput"
+          rows="5"
+          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          placeholder="Exemplo:&#10;Maria Silva,Amei a festa!,5&#10;João Souza,Muito bom.,4"
+        ></textarea>
+        <button
+          onclick="gerarCards()"
+          class="mt-4 bg-slate-800 text-white font-bold py-3 px-6 rounded-xl hover:bg-slate-700 transition-colors flex items-center gap-2"
+        >
+          <i data-lucide="layers"></i> 2. Gerar Cards de Edição
+        </button>
+      </div>
 
+      <div id="lista-cards" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
     </div>
 
     <script>
-        lucide.createIcons();
-        const ADMIN_TOKEN = "Raposo88125442@@"; 
+      lucide.createIcons();
+      const ADMIN_TOKEN = "Raposo88125442@@";
 
-        function gerarCards() {
-            const input = document.getElementById('csvInput').value.trim();
-            const container = document.getElementById('lista-cards');
-            container.innerHTML = ""; // Limpa anterior
+      function gerarCards() {
+        const input = document.getElementById("csvInput").value.trim();
+        const container = document.getElementById("lista-cards");
+        container.innerHTML = ""; // Limpa anterior
 
-            if (!input) return alert("Cole algum texto CSV primeiro.");
+        if (!input) return alert("Cole algum texto CSV primeiro.");
 
-            const linhas = input.split('\n');
+        const linhas = input.split("\n");
 
-            linhas.forEach((linha, index) => {
-                if (!linha.trim()) return;
+        linhas.forEach((linha, index) => {
+          if (!linha.trim()) return;
 
-                // Parser simples de CSV (considerando vírgula como separador)
-                // Se o texto tiver vírgula, o ideal é usar aspas no CSV, mas aqui vamos simplificar:
-                // Divide apenas nas 2 primeiras vírgulas para garantir Nome e Nota, o resto é Texto.
-                const partes = linha.split(',');
-                if (partes.length < 2) return;
+          // Parser simples de CSV (considerando vírgula como separador)
+          // Se o texto tiver vírgula, o ideal é usar aspas no CSV, mas aqui vamos simplificar:
+          // Divide apenas nas 2 primeiras vírgulas para garantir Nome e Nota, o resto é Texto.
+          const partes = linha.split(",");
+          if (partes.length < 2) return;
 
-                const nome = partes[0].trim();
-                // A nota é o último elemento se for número, senão assume 5
-                let nota = 5;
-                let texto = "";
+          const nome = partes[0].trim();
+          // A nota é o último elemento se for número, senão assume 5
+          let nota = 5;
+          let texto = "";
 
-                const ultimo = partes[partes.length - 1].trim();
-                if (!isNaN(ultimo) && ultimo.length === 1) {
-                    nota = parseInt(ultimo);
-                    texto = partes.slice(1, -1).join(',').trim().replace(/^"|"$/g, ''); // Remove aspas extras
-                } else {
-                    texto = partes.slice(1).join(',').trim().replace(/^"|"$/g, '');
-                }
+          const ultimo = partes[partes.length - 1].trim();
+          if (!isNaN(ultimo) && ultimo.length === 1) {
+            nota = parseInt(ultimo);
+            texto = partes.slice(1, -1).join(",").trim().replace(/^"|"$/g, ""); // Remove aspas extras
+          } else {
+            texto = partes.slice(1).join(",").trim().replace(/^"|"$/g, "");
+          }
 
-                // Cria o HTML do Card
-                const card = document.createElement('div');
-                card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow";
-                card.innerHTML = `
+          // Cria o HTML do Card
+          const card = document.createElement("div");
+          card.className =
+            "bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow";
+          card.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
                         <div class="bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center font-bold text-slate-500 text-xs">#${index + 1}</div>
                         <input type="number" id="nota-${index}" value="${nota}" min="1" max="5" class="w-16 text-center border rounded p-1 text-sm font-bold text-yellow-500">
@@ -100,60 +118,61 @@
                         <i data-lucide="upload-cloud"></i> Salvar no Banco
                     </button>
                 `;
-                container.appendChild(card);
-            });
-            lucide.createIcons();
+          container.appendChild(card);
+        });
+        lucide.createIcons();
+      }
+
+      async function enviarCard(idx) {
+        const btn = document.getElementById(`btn-${idx}`);
+        const nome = document.getElementById(`nome-${idx}`).value;
+        const texto = document.getElementById(`texto-${idx}`).value;
+        const nota = document.getElementById(`nota-${idx}`).value;
+        const inputFotos = document.getElementById(`fotos-${idx}`);
+
+        if (inputFotos.files.length === 0) {
+          if (!confirm("⚠️ Enviar sem fotos?")) return;
         }
 
-        async function enviarCard(idx) {
-            const btn = document.getElementById(`btn-${idx}`);
-            const nome = document.getElementById(`nome-${idx}`).value;
-            const texto = document.getElementById(`texto-${idx}`).value;
-            const nota = document.getElementById(`nota-${idx}`).value;
-            const inputFotos = document.getElementById(`fotos-${idx}`);
+        btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Enviando...`;
+        btn.disabled = true;
+        lucide.createIcons();
 
-            if (inputFotos.files.length === 0) {
-                if(!confirm("⚠️ Enviar sem fotos?")) return;
-            }
+        const formData = new FormData();
+        formData.append("nome", nome);
+        formData.append("texto", texto);
+        formData.append("nota", nota);
 
-            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Enviando...`;
-            btn.disabled = true;
-            lucide.createIcons();
-
-            const formData = new FormData();
-            formData.append("nome", nome);
-            formData.append("texto", texto);
-            formData.append("nota", nota);
-            
-            // Adiciona múltiplas fotos
-            for (let i = 0; i < inputFotos.files.length; i++) {
-                formData.append("fotos", inputFotos.files[i]);
-            }
-
-            try {
-                const res = await fetch('/api/admin/seed-review', {
-                    method: 'POST',
-                    headers: { 'x-admin-password': ADMIN_TOKEN },
-                    body: formData
-                });
-
-                const data = await res.json();
-                
-                if (data.success) {
-                    btn.className = "w-full bg-slate-100 text-slate-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed";
-                    btn.innerHTML = `<i data-lucide="check"></i> Salvo!`;
-                    // Opcional: Remover o card da tela para limpar a visão
-                    // btn.closest('.bg-white').style.opacity = '0.5';
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Erro: " + error.message);
-                btn.innerHTML = "Tentar Novamente";
-                btn.disabled = false;
-            }
+        // Adiciona múltiplas fotos
+        for (let i = 0; i < inputFotos.files.length; i++) {
+          formData.append("fotos", inputFotos.files[i]);
         }
+
+        try {
+          const res = await fetch("/api/admin/seed-review", {
+            method: "POST",
+            headers: { "x-admin-password": ADMIN_TOKEN },
+            body: formData,
+          });
+
+          const data = await res.json();
+
+          if (data.success) {
+            btn.className =
+              "w-full bg-slate-100 text-slate-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed";
+            btn.innerHTML = `<i data-lucide="check"></i> Salvo!`;
+            // Opcional: Remover o card da tela para limpar a visão
+            // btn.closest('.bg-white').style.opacity = '0.5';
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (error) {
+          console.error(error);
+          alert("Erro: " + error.message);
+          btn.innerHTML = "Tentar Novamente";
+          btn.disabled = false;
+        }
+      }
     </script>
-</body>
+  </body>
 </html>

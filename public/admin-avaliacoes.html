@@ -3,34 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Avaliações | Cabana</title>
+    <title>Gestão de Avaliações | Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Estilização suave para a barra de rolagem */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-100 min-h-screen pb-20">
 
-    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50 shadow-sm flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <img src="assets/logo.png" class="h-8 w-auto" alt="Logo">
-            <span class="font-bold text-slate-700">Gerenciar Avaliações</span>
+            <div class="bg-brand-pink/10 p-2 rounded-lg">
+                <i data-lucide="message-square" class="text-pink-500 w-6 h-6"></i>
+            </div>
+            <h1 class="font-bold text-slate-800 text-lg hidden md:block">Gestão de Avaliações</h1>
         </div>
-        <div class="flex gap-4">
-            <a href="painel.html" class="text-sm text-slate-500 hover:text-slate-800">Voltar ao Painel</a>
-            <button onclick="logout()" class="text-sm text-red-500 font-bold hover:text-red-700">Sair</button>
+        <div class="flex items-center gap-4">
+            <span class="text-xs font-semibold bg-slate-100 px-3 py-1 rounded-full text-slate-600">
+                Total: <span id="contador">0</span>
+            </span>
+            <a href="painel.html" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Voltar</a>
+            <button onclick="logout()" class="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Sair">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+            </button>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto p-6">
+    <main class="max-w-7xl mx-auto p-6">
         
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-slate-800">Depoimentos Recebidos</h1>
-            <div class="text-sm text-slate-500">
-                <span id="contador">0</span> avaliações encontradas
+        <div id="lista-avaliacoes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
+                <i data-lucide="loader-2" class="w-10 h-10 animate-spin mb-4"></i>
+                <p>Carregando avaliações...</p>
             </div>
-        </div>
-
-        <div id="lista-avaliacoes" class="space-y-6">
-            <p class="text-center text-slate-400 py-10">Carregando...</p>
         </div>
 
     </main>
@@ -39,131 +49,141 @@
         lucide.createIcons();
         const API_URL = '/api/admin';
         
-        // --- AUTENTICAÇÃO E RECUPERAÇÃO DE TOKEN ---
+        // --- 1. AUTENTICAÇÃO LOCAL (CORRIGIDA) ---
         let ADMIN_TOKEN = localStorage.getItem('adminToken');
 
-        // Se não tiver token salvo, pede a senha na hora
         if (!ADMIN_TOKEN) {
-            const senhaDigitada = prompt("🔒 Área Restrita. Digite a senha de Admin:");
-            if (senhaDigitada) {
-                localStorage.setItem('adminToken', senhaDigitada);
-                ADMIN_TOKEN = senhaDigitada;
+            const senha = prompt("🔑 Digite a senha de Admin:");
+            if (senha) {
+                localStorage.setItem('adminToken', senha);
+                ADMIN_TOKEN = senha;
             } else {
-                window.location.href = 'index.html'; // Se cancelar, vai pro início
+                window.location.href = 'index.html';
             }
         }
 
         function logout() {
-            if(confirm("Deseja sair do painel?")) {
+            if(confirm("Sair do modo Admin?")) {
                 localStorage.removeItem('adminToken');
                 window.location.href = 'index.html';
             }
         }
 
+        // --- 2. CARREGAMENTO ---
         async function carregarAvaliacoes() {
             try {
                 const res = await fetch(`${API_URL}/avaliacoes`, {
                     headers: { 'x-admin-password': ADMIN_TOKEN }
                 });
-                
+
                 if (res.status === 401) {
-                    alert("Senha incorreta ou expirada.");
+                    alert("Senha incorreta. Faça login novamente.");
                     localStorage.removeItem('adminToken');
-                    location.reload(); // Recarrega para pedir a senha de novo
+                    location.reload();
                     return;
                 }
 
-                if (!res.ok) throw new Error("Falha ao buscar dados");
-                
                 const lista = await res.json();
                 document.getElementById('contador').innerText = lista.length;
-                renderizarLista(lista);
+                renderizarCards(lista);
             } catch (error) {
                 console.error(error);
-                document.getElementById('lista-avaliacoes').innerHTML = `<p class="text-red-500 text-center">Erro: ${error.message}</p>`;
+                document.getElementById('lista-avaliacoes').innerHTML = `
+                    <div class="col-span-full bg-red-50 text-red-600 p-4 rounded-xl text-center">
+                        Erro ao carregar: ${error.message}
+                    </div>`;
             }
         }
 
-        function renderizarLista(lista) {
+        // --- 3. RENDERIZAÇÃO (INTERFACE NOVA) ---
+        function renderizarCards(lista) {
             const container = document.getElementById('lista-avaliacoes');
             container.innerHTML = "";
 
             if (lista.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-400">Nenhuma avaliação encontrada.</p>`;
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-20 bg-white rounded-3xl border border-slate-200 border-dashed">
+                        <i data-lucide="inbox" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
+                        <p class="text-slate-500">Nenhuma avaliação encontrada.</p>
+                    </div>`;
+                lucide.createIcons();
                 return;
             }
 
             lista.forEach(item => {
-                const aprovadoClass = item.aprovado ? "bg-green-100 text-green-700 border-green-200" : "bg-yellow-100 text-yellow-700 border-yellow-200";
-                const statusTexto = item.aprovado ? "Publicado" : "Pendente";
-                
-                // HTML das Fotos com Botão de Excluir
+                const statusColor = item.aprovado ? "bg-green-100 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-600 border-yellow-100";
+                const statusIcon = item.aprovado ? "check-circle" : "clock";
+                const statusText = item.aprovado ? "No Site" : "Oculto";
+
+                // Gera HTML das fotos
                 let fotosHtml = '';
                 if (item.fotos && item.fotos.length > 0) {
-                    fotosHtml = `<div class="flex gap-2 overflow-x-auto pb-2 mt-3">`;
                     item.fotos.forEach(foto => {
                         fotosHtml += `
-                            <div class="relative group shrink-0">
-                                <img src="${foto.url}" class="w-24 h-24 object-cover rounded-lg border border-slate-200 shadow-sm">
-                                <button onclick="deletarFoto(${foto.id})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600" title="Remover foto">
-                                    <i data-lucide="x" class="w-3 h-3"></i>
-                                </button>
+                            <div class="relative group aspect-square rounded-lg overflow-hidden border border-slate-200">
+                                <img src="${foto.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button onclick="deletarFoto(${foto.id})" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg transform hover:scale-110 transition-all" title="Apagar foto">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
                             </div>
                         `;
                     });
-                    fotosHtml += `</div>`;
                 }
 
+                // Cria o Card
                 const card = document.createElement('div');
-                card.className = `bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md`;
+                card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col";
                 
                 card.innerHTML = `
-                    <div class="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                    <div class="p-5 border-b border-slate-50 flex justify-between items-start bg-slate-50/50">
                         <div class="flex-1">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="text-xs font-bold px-2 py-1 rounded-full border ${aprovadoClass}">
-                                    ${statusTexto}
-                                </span>
-                                <span class="text-xs text-slate-400">
-                                    ${new Date(item.data_criacao).toLocaleDateString('pt-BR')}
-                                </span>
-                            </div>
+                            <input type="text" id="nome-${item.id}" value="${item.nome_cliente}" 
+                                class="bg-transparent font-bold text-slate-800 text-lg w-full focus:bg-white focus:ring-2 focus:ring-blue-100 rounded px-1 outline-none transition-all placeholder-slate-400" placeholder="Nome do Cliente">
                             
-                            <div class="flex items-center gap-2 mb-1">
-                                <input type="text" id="nome-${item.id}" value="${item.nome_cliente}" class="font-bold text-lg text-slate-800 bg-transparent border-b border-transparent focus:border-slate-300 outline-none w-full md:w-auto hover:bg-slate-50 focus:bg-white transition-colors" title="Clique para editar nome">
-                                <span class="text-yellow-400 text-sm">★ ${item.nota}</span>
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="flex text-yellow-400 text-xs">
+                                    ${'★'.repeat(item.nota)}${'☆'.repeat(5 - item.nota)}
+                                </div>
+                                <span class="text-xs text-slate-400">• ${new Date(item.data_criacao).toLocaleDateString('pt-BR')}</span>
                             </div>
-
-                            <textarea id="texto-${item.id}" rows="3" class="w-full text-slate-600 text-sm bg-slate-50 p-3 rounded-lg border border-transparent focus:border-blue-300 focus:bg-white outline-none resize-none transition-all mt-2">${item.texto}</textarea>
                         </div>
-
-                        <div class="flex md:flex-col gap-2 shrink-0">
-                            <button onclick="toggleAprovacao(${item.id}, ${item.aprovado})" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${item.aprovado ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
-                                <i data-lucide="${item.aprovado ? 'eye-off' : 'eye'}"></i>
-                                ${item.aprovado ? 'Ocultar' : 'Aprovar'}
-                            </button>
-                            
-                            <button onclick="salvarEdicao(${item.id})" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">
-                                <i data-lucide="save"></i> Salvar Texto
-                            </button>
-
-                            <button onclick="excluir(${item.id})" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
-                                <i data-lucide="trash-2"></i> Excluir
-                            </button>
-                        </div>
+                        
+                        <button onclick="toggleStatus(${item.id}, ${item.aprovado})" 
+                            class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${statusColor}">
+                            <i data-lucide="${statusIcon}" class="w-3 h-3"></i> ${statusText}
+                        </button>
                     </div>
 
-                    <div class="border-t border-slate-100 pt-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase">Galeria de Fotos</label>
-                            
-                            <label class="cursor-pointer flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-full transition-colors">
-                                <i data-lucide="plus" class="w-3 h-3"></i> Adicionar Foto
-                                <input type="file" onchange="adicionarFoto(${item.id}, this)" class="hidden" accept="image/*">
+                    <div class="p-5 flex-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Depoimento</label>
+                        <textarea id="texto-${item.id}" rows="4" 
+                            class="w-full text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none resize-none transition-all">${item.texto}</textarea>
+                    </div>
+
+                    <div class="px-5 pb-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase">Fotos Anexadas</label>
+                            <label class="cursor-pointer text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Add Foto
+                                <input type="file" class="hidden" accept="image/*" onchange="uploadFoto(${item.id}, this)">
                             </label>
                         </div>
                         
-                        ${fotosHtml || '<p class="text-xs text-slate-400 italic">Sem fotos neste depoimento.</p>'}
+                        <div class="grid grid-cols-4 gap-2 mb-4">
+                            ${fotosHtml}
+                            ${item.fotos.length === 0 ? '<div class="col-span-4 text-xs text-slate-300 italic py-2 text-center bg-slate-50 rounded-lg">Sem fotos</div>' : ''}
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border-t border-slate-100 flex gap-2">
+                        <button onclick="salvar(${item.id})" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> Salvar
+                        </button>
+                        <button onclick="excluir(${item.id})" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-700 p-2.5 rounded-xl transition-colors" title="Excluir Depoimento">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -171,9 +191,14 @@
             lucide.createIcons();
         }
 
-        // --- AÇÕES ---
+        // --- 4. AÇÕES (LÓGICA) ---
 
-        async function salvarEdicao(id) {
+        async function salvar(id) {
+            const btn = event.currentTarget; // Pega o botão clicado
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>`;
+            lucide.createIcons();
+
             const nome = document.getElementById(`nome-${id}`).value;
             const texto = document.getElementById(`texto-${id}`).value;
 
@@ -183,79 +208,76 @@
                     headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
                     body: JSON.stringify({ nome_cliente: nome, texto: texto })
                 });
-                if(res.ok) {
-                    alert("✅ Alterações salvas!");
-                    carregarAvaliacoes();
-                } else alert("Erro ao salvar.");
-            } catch(e) { console.error(e); alert("Erro de conexão"); }
+                
+                if (res.ok) {
+                    btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Salvo!`;
+                    btn.classList.add('bg-green-600', 'text-white');
+                    setTimeout(() => {
+                        btn.innerHTML = originalContent;
+                        btn.classList.remove('bg-green-600');
+                        btn.classList.add('bg-slate-800');
+                        lucide.createIcons();
+                    }, 2000);
+                } else throw new Error();
+            } catch (e) {
+                alert("Erro ao salvar.");
+                btn.innerHTML = originalContent;
+            }
         }
 
-        async function toggleAprovacao(id, statusAtual) {
+        async function toggleStatus(id, atual) {
             try {
                 await fetch(`${API_URL}/avaliacoes/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
-                    body: JSON.stringify({ aprovado: !statusAtual ? 1 : 0 })
+                    body: JSON.stringify({ aprovado: !atual ? 1 : 0 })
                 });
-                carregarAvaliacoes();
-            } catch(e) { alert("Erro ao alterar status"); }
+                carregarAvaliacoes(); // Recarrega para atualizar visual
+            } catch (e) { alert("Erro de conexão"); }
         }
 
         async function excluir(id) {
-            if(!confirm("Tem certeza que deseja excluir este depoimento?")) return;
+            if(!confirm("⚠️ Tem certeza que deseja apagar este depoimento permanentemente?")) return;
             try {
                 await fetch(`${API_URL}/avaliacoes/${id}`, {
                     method: 'DELETE',
                     headers: { 'x-admin-password': ADMIN_TOKEN }
                 });
                 carregarAvaliacoes();
-            } catch(e) { alert("Erro ao excluir"); }
+            } catch (e) { alert("Erro ao excluir"); }
         }
 
-        // --- GESTÃO DE FOTOS ---
-
-        async function deletarFoto(fotoId) {
-            if(!confirm("Excluir esta foto?")) return;
-            try {
-                const res = await fetch(`${API_URL}/fotos/${fotoId}`, {
-                    method: 'DELETE',
-                    headers: { 'x-admin-password': ADMIN_TOKEN }
-                });
-                if(res.ok) carregarAvaliacoes(); // Recarrega para sumir a foto
-                else alert("Erro ao apagar foto");
-            } catch(e) { console.error(e); }
-        }
-
-        async function adicionarFoto(idDepoimento, input) {
+        async function uploadFoto(id, input) {
             if (input.files.length === 0) return;
-            
             const formData = new FormData();
             formData.append('foto', input.files[0]);
 
-            // Feedback visual rápido
+            // Feedback visual no botão
             const label = input.parentElement;
-            const textoOriginal = label.innerHTML;
-            label.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Enviando...`;
+            const originalHtml = label.innerHTML;
+            label.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>`;
             lucide.createIcons();
 
             try {
-                const res = await fetch(`${API_URL}/avaliacoes/${idDepoimento}/foto`, {
+                const res = await fetch(`${API_URL}/avaliacoes/${id}/foto`, {
                     method: 'POST',
                     headers: { 'x-admin-password': ADMIN_TOKEN },
                     body: formData
                 });
+                if(res.ok) carregarAvaliacoes();
+                else alert("Erro ao enviar foto");
+            } catch (e) { alert("Erro de conexão"); }
+        }
 
-                if(res.ok) {
-                    carregarAvaliacoes(); // Recarrega para mostrar a foto nova
-                } else {
-                    alert("Erro ao enviar foto.");
-                    label.innerHTML = textoOriginal;
-                }
-            } catch(e) {
-                console.error(e);
-                alert("Erro de conexão");
-                label.innerHTML = textoOriginal;
-            }
+        async function deletarFoto(idFoto) {
+            if(!confirm("Remover esta foto?")) return;
+            try {
+                const res = await fetch(`${API_URL}/fotos/${idFoto}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                if(res.ok) carregarAvaliacoes();
+            } catch (e) { alert("Erro ao deletar foto"); }
         }
 
         // Inicia

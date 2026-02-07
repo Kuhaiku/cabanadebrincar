@@ -497,59 +497,94 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
     } catch(e) { res.status(500).json({error: e.message}); }
 });
 
+// --- ROTAS DE AVALIAÇÕES (ATUALIZADAS PARA GERENCIAR FOTOS) ---
+
+// 1. Listar (Agora traz ID e URL da foto juntos)
 app.get("/api/admin/avaliacoes", checkAuth, async (req, res) => {
   try {
-    const sql = `SELECT d.*, o.data_festa, GROUP_CONCAT(f.url_foto) as fotos 
+    // Trazemos "id::url" separados por "||" para poder processar no front
+    const sql = `SELECT d.*, o.data_festa, 
+                 GROUP_CONCAT(CONCAT(f.id, '::', f.url_foto) SEPARATOR '||') as fotos_info 
                  FROM depoimentos d 
                  LEFT JOIN orcamentos o ON d.orcamento_id = o.id 
                  LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id 
                  GROUP BY d.id 
                  ORDER BY d.data_criacao DESC`;
     const [rows] = await db.query(sql);
-    res.json(rows.map((i) => ({ ...i, fotos: i.fotos ? i.fotos.split(",") : [] })));
+    
+    // Tratamento dos dados para JSON limpo
+    const dados = rows.map((i) => {
+        let listaFotos = [];
+        if (i.fotos_info) {
+            listaFotos = i.fotos_info.split('||').map(f => {
+                const [id, url] = f.split('::');
+                return { id, url };
+            });
+        }
+        return { ...i, fotos: listaFotos };
+    });
+
+    res.json(dados);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
+// 2. Atualizar Texto/Status (Mantém igual, só para garantir)
 app.put("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { aprovado, texto, nota, nome_cliente } = req.body;
-
-    // 1. Busca o depoimento atual no banco para evitar apagar dados acidentalmente
     const [atuais] = await db.query("SELECT * FROM depoimentos WHERE id = ?", [id]);
-    if (atuais.length === 0) return res.status(404).json({ error: "Depoimento não encontrado" });
-    
+    if (atuais.length === 0) return res.status(404).json({ error: "Não encontrado" });
     const atual = atuais[0];
 
-    // 2. Mescla os dados novos com os antigos (Lógica de Segurança)
-    // Se o frontend mandou um valor novo, usa ele. Se não mandou (undefined), mantém o que já estava no banco.
     const novoAprovado = aprovado !== undefined ? aprovado : atual.aprovado;
     const novoTexto = texto !== undefined ? texto : atual.texto;
     const novaNota = nota !== undefined ? nota : atual.nota;
     const novoNome = nome_cliente !== undefined ? nome_cliente : atual.nome_cliente;
 
-    // 3. Executa a atualização completa
     await db.query(
       "UPDATE depoimentos SET aprovado = ?, texto = ?, nota = ?, nome_cliente = ? WHERE id = ?",
       [novoAprovado, novoTexto, novaNota, novoNome, id]
     );
-
     res.json({ success: true });
-  } catch (e) {
-    console.error("Erro ao atualizar avaliação:", e);
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 3. Excluir Depoimento Inteiro
 app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
   try {
     await db.query("DELETE FROM depoimentos WHERE id = ?", [req.params.id]);
     res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 4. ADICIONAR FOTO A UM DEPOIMENTO (NOVA ROTA)
+app.post("/api/admin/avaliacoes/:id/foto", checkAuth, upload.single("foto"), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: "Nenhuma imagem enviada" });
+        
+        // Upload Cloudinary
+        const up = await cloudinary.uploader.upload(req.file.path, { folder: "cabana/fotos" });
+        fs.unlinkSync(req.file.path); // Limpa temp
+
+        // Salva no banco vinculada ao depoimento
+        await db.query("INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)", [req.params.id, up.secure_url]);
+        
+        res.json({ success: true, url: up.secure_url });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// 5. DELETAR UMA FOTO ESPECÍFICA (NOVA ROTA)
+app.delete("/api/admin/fotos/:id", checkAuth, async (req, res) => {
+    try {
+        await db.query("DELETE FROM fotos_depoimento WHERE id = ?", [req.params.id]);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // --- FIM DAS ROTAS DE AVALIAÇÕES ---

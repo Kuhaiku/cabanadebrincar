@@ -3,130 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Depoimentos Fake</title>
+    <title>Importador CSV de Depoimentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-slate-100 p-10">
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
 
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-slate-800 mb-2">🌱 Semeador de Depoimentos</h1>
-        <p class="text-slate-500 mb-8">Anexe a foto correspondente a cada "persona" e clique em enviar para popular o banco.</p>
-
-        <div id="lista-cards" class="grid gap-6">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl">
+        <div class="flex items-center gap-3 mb-6 border-b pb-4">
+            <div class="bg-green-100 p-3 rounded-full text-green-600">
+                <i data-lucide="file-spreadsheet" class="w-8 h-8"></i>
             </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Importar Depoimentos</h1>
+                <p class="text-slate-500 text-sm">Carregue um arquivo CSV para popular o banco.</p>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
+            <p class="font-bold mb-2">📢 Formato do Arquivo CSV:</p>
+            <p class="font-mono bg-white p-2 rounded border border-blue-200 mb-2">Nome,Texto,Nota,NomeArquivoFoto</p>
+            <ul class="list-disc pl-5 space-y-1">
+                <li><strong>Nome:</strong> Nome do cliente.</li>
+                <li><strong>Texto:</strong> O depoimento (se tiver vírgulas, use aspas: "Texto, com virgula").</li>
+                <li><strong>Nota:</strong> Número de 1 a 5.</li>
+                <li><strong>NomeArquivoFoto:</strong> Nome do arquivo na pasta <em>public/fotos</em> (ex: <code>foto1.webp</code>) ou URL da internet.</li>
+            </ul>
+        </div>
+
+        <div class="space-y-4">
+            <label class="block w-full cursor-pointer">
+                <input type="file" id="arquivoCsv" accept=".csv" class="block w-full text-sm text-slate-500
+                  file:mr-4 file:py-3 file:px-6
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-slate-800 file:text-white
+                  hover:file:bg-slate-700
+                "/>
+            </label>
+
+            <button onclick="enviarCSV()" id="btnEnviar" class="w-full bg-brand-pink bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="upload"></i> Processar Importação
+            </button>
+        </div>
+
+        <div id="status" class="mt-6 hidden p-4 rounded-lg text-center font-bold"></div>
     </div>
 
     <script>
-        // --- AQUI ESTÃO OS TEXTOS QUE EU CRIEI PARA VOCÊ ---
-        const personas = [
-            {
-                nome: "Juliana Paes",
-                texto: "Amei cada detalhe! O kit soneca é super confortável e cheiroso. A festa neon ficou maravilhosa com as luzes das cabanas. Com certeza farei novamente ano que vem.",
-                nota: 5,
-                desc_foto: "📸 FOTO IDEAL: Uma foto geral das cabanas com luzes apagadas ou ambiente mais escuro destacando o NEON ou LUZINHAS."
-            },
-            {
-                nome: "Pedro & Carla",
-                texto: "Contratei para os meus filhos e superou as expectativas. As cabanas são robustas e a decoração ficou incrível. A equipe chegou no horário certinho.",
-                nota: 5,
-                desc_foto: "📸 FOTO IDEAL: Uma foto focada em MENINOS ou um tema mais neutro/aventura (ex: Harry Potter, Acampamento)."
-            },
-            {
-                nome: "Patrícia Amorim",
-                texto: "Simplesmente encantada! As cabanas são lindas, o tecido é de qualidade. Minha filha amou a festa do pijama, foi inesquecível.",
-                nota: 5,
-                desc_foto: "📸 FOTO IDEAL: Uma foto bem feminina, rosa, princesas ou bem delicada."
-            },
-            {
-                nome: "Fernanda Costa",
-                texto: "Profissionalismo define. Desde o primeiro contato no WhatsApp até a desmontagem. Ficou tudo lindo e organizado. Minha sala virou um sonho!",
-                nota: 5,
-                desc_foto: "📸 FOTO IDEAL: Uma foto que mostre o ambiente inteiro (a sala transformada)."
-            },
-            {
-                nome: "Clara Menezes",
-                texto: "O café da manhã nas bandejinhas foi o ponto alto! Elas acordaram e já foram comer na cabana. Experiência completa.",
-                nota: 5,
-                desc_foto: "📸 FOTO IDEAL: Uma foto focada nos detalhes: bandeja de café, almofadas ou itens personalizados."
-            }
-        ];
-
-        const container = document.getElementById('lista-cards');
-
-        // Renderiza os Cards
-        personas.forEach((p, index) => {
-            const card = document.createElement('div');
-            card.className = "bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 items-start";
-            
-            card.innerHTML = `
-                <div class="flex-1">
-                    <div class="flex justify-between mb-2">
-                        <h3 class="font-bold text-lg text-slate-800">${p.nome}</h3>
-                        <div class="text-yellow-400">★★★★★</div>
-                    </div>
-                    <textarea id="texto-${index}" class="w-full border p-2 rounded text-slate-600 text-sm mb-2" rows="3">${p.texto}</textarea>
-                    <div class="bg-blue-50 text-blue-700 text-xs p-3 rounded border border-blue-100 font-bold">
-                        ${p.desc_foto}
-                    </div>
-                </div>
-
-                <div class="w-full md:w-64 flex flex-col gap-3">
-                    <input type="file" id="foto-${index}" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>
-                    
-                    <button onclick="enviarDepoimento(${index}, '${p.nome}', ${p.nota})" id="btn-${index}" class="bg-slate-800 text-white font-bold py-2 px-4 rounded hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> Enviar Este
-                    </button>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-
         lucide.createIcons();
-        const ADMIN_TOKEN = "Raposo88125442@@"; // Sua senha admin hardcoded para facilitar aqui
+        const ADMIN_TOKEN = "Raposo88125442@@"; 
 
-        async function enviarDepoimento(idx, nome, nota) {
-            const btn = document.getElementById(`btn-${idx}`);
-            const inputFoto = document.getElementById(`foto-${idx}`);
-            const texto = document.getElementById(`texto-${idx}`).value;
+        async function enviarCSV() {
+            const input = document.getElementById('arquivoCsv');
+            const btn = document.getElementById('btnEnviar');
+            const status = document.getElementById('status');
 
-            if(inputFoto.files.length === 0) {
-                alert("⚠️ Por favor, selecione uma foto antes de enviar.");
-                return;
-            }
+            if (!input.files[0]) return alert("Selecione um arquivo .csv");
 
-            btn.innerHTML = "Enviando...";
+            btn.innerHTML = "Processando...";
             btn.disabled = true;
 
             const formData = new FormData();
-            formData.append("nome", nome);
-            formData.append("texto", texto);
-            formData.append("nota", nota);
-            formData.append("foto", inputFoto.files[0]);
+            formData.append("arquivoCsv", input.files[0]);
 
             try {
-                const res = await fetch('/api/admin/seed-review', {
+                const res = await fetch('/api/admin/seed-csv', {
                     method: 'POST',
-                    headers: { 'x-admin-password': ADMIN_TOKEN }, // Autenticação
+                    headers: { 'x-admin-password': ADMIN_TOKEN },
                     body: formData
                 });
-
                 const data = await res.json();
+
+                status.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
                 
                 if (data.success) {
-                    btn.className = "bg-green-500 text-white font-bold py-2 px-4 rounded flex items-center justify-center gap-2";
-                    btn.innerHTML = `<i data-lucide="check"></i> Sucesso!`;
-                    btn.disabled = true; // Trava para não reenviar
-                    lucide.createIcons();
+                    status.classList.add('bg-green-100', 'text-green-700');
+                    status.innerHTML = `✅ ${data.message}`;
+                    input.value = ""; // Limpa input
                 } else {
-                    alert("Erro: " + data.error);
-                    btn.innerHTML = "Tentar Novamente";
-                    btn.disabled = false;
+                    throw new Error(data.error);
                 }
-            } catch (error) {
-                console.error(error);
-                alert("Erro de conexão");
+            } catch (err) {
+                status.classList.add('bg-red-100', 'text-red-700');
+                status.innerHTML = `❌ Erro: ${err.message}`;
+            } finally {
+                btn.innerHTML = `<i data-lucide="upload"></i> Processar Importação`;
                 btn.disabled = false;
+                lucide.createIcons();
             }
         }
     </script>

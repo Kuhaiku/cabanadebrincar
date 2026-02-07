@@ -47,35 +47,37 @@
         lucide.createIcons();
         const API_URL = '/api/admin';
         
-        // --- 1. AUTENTICAÇÃO PADRONIZADA (IGUAL AGENDA) ---
-        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token'); // Agora usa a mesma chave da agenda
+        // --- 1. AUTENTICAÇÃO INTELIGENTE ---
+        // Tenta pegar o token do painel novo OU do antigo para garantir que funcione
+        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token') || localStorage.getItem('adminToken');
         
-        // Se não tiver token, chuta pro painel imediatamente
+        // Se não tiver NENHUMA senha salva, manda pro login
         if (!ADMIN_TOKEN) {
             window.location.href = 'painel.html'; 
         }
 
         function logout() {
             if(confirm("Sair do modo Admin?")) {
+                // Limpa tudo para garantir
                 localStorage.removeItem('cabana_admin_token');
-                window.location.href = 'index.html';
+                localStorage.removeItem('adminToken');
+                window.location.href = 'painel.html';
             }
         }
 
         // --- 2. CARREGAMENTO ---
         async function carregarAvaliacoes() {
             try {
-                // Se não tem token, o redirect acima já agiu, então nem executa o fetch
-                if (!ADMIN_TOKEN) return;
+                if (!ADMIN_TOKEN) return; // Bloqueio extra
 
                 const res = await fetch(`${API_URL}/avaliacoes`, {
                     headers: { 'x-admin-password': ADMIN_TOKEN }
                 });
 
+                // Se a senha estiver errada/expirada no servidor
                 if (res.status === 401) {
-                    alert("Sessão expirada.");
-                    localStorage.removeItem('cabana_admin_token');
-                    window.location.href = 'painel.html';
+                    alert("Sessão expirada. Faça login novamente.");
+                    logout(); // Força o logout limpo
                     return;
                 }
 
@@ -91,7 +93,7 @@
             }
         }
 
-        // --- 3. RENDERIZAÇÃO ---
+        // --- 3. RENDERIZAÇÃO (INTERFACE GRID) ---
         function renderizarCards(lista) {
             const container = document.getElementById('lista-avaliacoes');
             container.innerHTML = "";
@@ -249,7 +251,6 @@
             formData.append('foto', input.files[0]);
 
             const label = input.parentElement;
-            const originalHtml = label.innerHTML;
             label.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>`;
             lucide.createIcons();
 

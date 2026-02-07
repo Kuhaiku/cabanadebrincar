@@ -1,175 +1,244 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliações | Cabana de Brincar</title>
+    <title>Admin - Avaliações | Cabana</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap'); body{font-family:'Quicksand',sans-serif}</style>
 </head>
-<body class="bg-slate-50 p-6">
+<body class="bg-slate-50 min-h-screen">
 
-    <div class="max-w-5xl mx-auto mb-6 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <a href="painel.html" class="text-slate-400 hover:text-pink-500 transition-colors flex items-center gap-1"> 
-                <i data-lucide="arrow-left"></i>  
-            </a>
-            <span class="text-slate-300">|</span>
-            Moderação de Depoimentos
-        </h1>
-    </div>
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <img src="assets/logo.png" class="h-8 w-auto" alt="Logo">
+            <span class="font-bold text-slate-700">Gerenciar Avaliações</span>
+        </div>
+        <div class="flex gap-4">
+            <a href="painel.html" class="text-sm text-slate-500 hover:text-slate-800">Voltar ao Painel</a>
+            <button onclick="logout()" class="text-sm text-red-500 font-bold hover:text-red-700">Sair</button>
+        </div>
+    </nav>
 
-    <div id="lista-avaliacoes" class="max-w-5xl mx-auto space-y-4">
-        <p class="text-center text-slate-400 py-10">Carregando...</p>
-    </div>
+    <main class="max-w-5xl mx-auto p-6">
+        
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-slate-800">Depoimentos Recebidos</h1>
+            <div class="text-sm text-slate-500">
+                <span id="contador">0</span> avaliações encontradas
+            </div>
+        </div>
 
-    <div id="modal-imagem" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm" onclick="fecharImagem()">
-        <button onclick="fecharImagem()" class="absolute top-4 right-4 text-white hover:text-red-500 transition-colors z-50">
-            <i data-lucide="x" class="w-10 h-10"></i>
-        </button>
-        <img id="img-preview" src="" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain" onclick="event.stopPropagation()">
-    </div>
+        <div id="lista-avaliacoes" class="space-y-6">
+            <p class="text-center text-slate-400 py-10">Carregando...</p>
+        </div>
+
+    </main>
 
     <script>
-        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
-        if(!ADMIN_TOKEN) window.location.href = 'painel.html';
+        lucide.createIcons();
+        const API_URL = '/api/admin';
+        const ADMIN_TOKEN = localStorage.getItem('adminToken');
+
+        if (!ADMIN_TOKEN) window.location.href = 'index.html';
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'index.html';
+        }
 
         async function carregarAvaliacoes() {
             try {
-                const res = await fetch('/api/admin/avaliacoes', {
+                const res = await fetch(`${API_URL}/avaliacoes`, {
                     headers: { 'x-admin-password': ADMIN_TOKEN }
                 });
-                const data = await res.json();
-                const container = document.getElementById('lista-avaliacoes');
+                if (!res.ok) throw new Error("Falha ao buscar dados");
                 
-                if(data.length === 0) {
-                    container.innerHTML = '<p class="text-center text-slate-400 py-10">Nenhuma avaliação recebida ainda.</p>';
-                    return;
-                }
-
-                container.innerHTML = '';
-                data.forEach(d => {
-                    const estrelas = '★'.repeat(d.nota) + '☆'.repeat(5 - d.nota);
-                    const statusColor = d.aprovado ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
-                    const statusText = d.aprovado ? 'Visível no Site' : 'Oculto / Pendente';
-
-                    // Lógica para montar o HTML das fotos com ONCLICK (Modal)
-                    let fotosHtml = '';
-                    if (d.fotos && d.fotos.length > 0) {
-                        fotosHtml = '<div class="flex gap-2 mt-3 flex-wrap">';
-                        d.fotos.forEach(foto => {
-                            fotosHtml += `
-                                <div onclick="abrirImagem('${foto}')" class="cursor-pointer relative group w-20 h-20">
-                                    <img src="${foto}" class="w-full h-full object-cover rounded-lg border border-slate-200 shadow-sm group-hover:opacity-80 transition-opacity">
-                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                                        <i data-lucide="eye" class="text-white w-6 h-6 drop-shadow-md"></i>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        fotosHtml += '</div>';
-                    }
-
-                    container.innerHTML += `
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-6 items-start">
-                            <div class="flex-1">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h3 class="font-bold text-slate-800 text-lg">${d.nome_cliente}</h3>
-                                        <p class="text-xs text-slate-400">Festa realizada em: ${new Date(d.data_festa).toLocaleDateString('pt-BR')}</p>
-                                    </div>
-                                    <span class="text-yellow-400 text-lg tracking-widest">${estrelas}</span>
-                                </div>
-                                
-                                <textarea id="texto-${d.id}" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-sm focus:outline-pink-500 mb-2" rows="3">${d.texto}</textarea>
-                                
-                                ${fotosHtml}
-
-                                <div class="flex gap-2 items-center mt-4">
-                                    <span class="text-xs font-bold px-2 py-1 rounded ${statusColor}">${statusText}</span>
-                                </div>
-                            </div>
-
-                            <div class="flex flex-col gap-2 min-w-[140px]">
-                                <button onclick="salvarAvaliacao(${d.id}, ${!d.aprovado})" class="w-full py-2 px-4 rounded-lg font-bold text-sm transition-colors ${d.aprovado ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
-                                    ${d.aprovado ? 'Ocultar' : 'Aprovar'}
-                                </button>
-                                <button onclick="salvarTexto(${d.id}, ${d.aprovado})" class="w-full py-2 px-4 rounded-lg font-bold text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100">
-                                    Salvar Edição
-                                </button>
-                                <button onclick="excluir(${d.id})" class="w-full py-2 px-4 rounded-lg font-bold text-sm bg-red-50 text-red-600 hover:bg-red-100">
-                                    Excluir
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-                lucide.createIcons();
+                const lista = await res.json();
+                document.getElementById('contador').innerText = lista.length;
+                renderizarLista(lista);
             } catch (error) {
-                console.error('Erro ao carregar avaliações:', error);
+                console.error(error);
+                document.getElementById('lista-avaliacoes').innerHTML = `<p class="text-red-500 text-center">Erro: ${error.message}</p>`;
             }
         }
 
-        // Funções do Modal
-        function abrirImagem(url) {
-            const modal = document.getElementById('modal-imagem');
-            const img = document.getElementById('img-preview');
-            img.src = url;
-            modal.classList.remove('hidden');
-        }
+        function renderizarLista(lista) {
+            const container = document.getElementById('lista-avaliacoes');
+            container.innerHTML = "";
 
-        function fecharImagem() {
-            const modal = document.getElementById('modal-imagem');
-            const img = document.getElementById('img-preview');
-            modal.classList.add('hidden');
-            setTimeout(() => img.src = '', 200); // Limpa src após animação (opcional)
-        }
+            if (lista.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400">Nenhuma avaliação encontrada.</p>`;
+                return;
+            }
 
-        // Funções de Gerenciamento
-        async function salvarAvaliacao(id, novoStatus) {
-            const texto = document.getElementById(`texto-${id}`).value;
-            await fetch(`/api/admin/avaliacoes/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
-                body: JSON.stringify({ texto, aprovado: novoStatus ? 1 : 0 })
+            lista.forEach(item => {
+                const aprovadoClass = item.aprovado ? "bg-green-100 text-green-700 border-green-200" : "bg-yellow-100 text-yellow-700 border-yellow-200";
+                const statusTexto = item.aprovado ? "Publicado" : "Pendente";
+                
+                // HTML das Fotos com Botão de Excluir
+                let fotosHtml = '';
+                if (item.fotos && item.fotos.length > 0) {
+                    fotosHtml = `<div class="flex gap-2 overflow-x-auto pb-2 mt-3">`;
+                    item.fotos.forEach(foto => {
+                        fotosHtml += `
+                            <div class="relative group shrink-0">
+                                <img src="${foto.url}" class="w-24 h-24 object-cover rounded-lg border border-slate-200 shadow-sm">
+                                <button onclick="deletarFoto(${foto.id})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600" title="Remover foto">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        `;
+                    });
+                    fotosHtml += `</div>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md`;
+                
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-xs font-bold px-2 py-1 rounded-full border ${aprovadoClass}">
+                                    ${statusTexto}
+                                </span>
+                                <span class="text-xs text-slate-400">
+                                    ${new Date(item.data_criacao).toLocaleDateString('pt-BR')}
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 mb-1">
+                                <input type="text" id="nome-${item.id}" value="${item.nome_cliente}" class="font-bold text-lg text-slate-800 bg-transparent border-b border-transparent focus:border-slate-300 outline-none w-full md:w-auto hover:bg-slate-50 focus:bg-white transition-colors" title="Clique para editar nome">
+                                <span class="text-yellow-400 text-sm">★ ${item.nota}</span>
+                            </div>
+
+                            <textarea id="texto-${item.id}" rows="3" class="w-full text-slate-600 text-sm bg-slate-50 p-3 rounded-lg border border-transparent focus:border-blue-300 focus:bg-white outline-none resize-none transition-all mt-2">${item.texto}</textarea>
+                        </div>
+
+                        <div class="flex md:flex-col gap-2 shrink-0">
+                            <button onclick="toggleAprovacao(${item.id}, ${item.aprovado})" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${item.aprovado ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
+                                <i data-lucide="${item.aprovado ? 'eye-off' : 'eye'}"></i>
+                                ${item.aprovado ? 'Ocultar' : 'Aprovar'}
+                            </button>
+                            
+                            <button onclick="salvarEdicao(${item.id})" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">
+                                <i data-lucide="save"></i> Salvar Texto
+                            </button>
+
+                            <button onclick="excluir(${item.id})" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
+                                <i data-lucide="trash-2"></i> Excluir
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase">Galeria de Fotos</label>
+                            
+                            <label class="cursor-pointer flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-full transition-colors">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Adicionar Foto
+                                <input type="file" onchange="adicionarFoto(${item.id}, this)" class="hidden" accept="image/*">
+                            </label>
+                        </div>
+                        
+                        ${fotosHtml || '<p class="text-xs text-slate-400 italic">Sem fotos neste depoimento.</p>'}
+                    </div>
+                `;
+                container.appendChild(card);
             });
-            carregarAvaliacoes();
+            lucide.createIcons();
         }
 
-        async function salvarTexto(id, statusAtual) {
-            await salvarAvaliacao(id, statusAtual);
-            alert("Texto atualizado!");
+        // --- AÇÕES ---
+
+        async function salvarEdicao(id) {
+            const nome = document.getElementById(`nome-${id}`).value;
+            const texto = document.getElementById(`texto-${id}`).value;
+
+            try {
+                const res = await fetch(`${API_URL}/avaliacoes/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
+                    body: JSON.stringify({ nome_cliente: nome, texto: texto })
+                });
+                if(res.ok) {
+                    alert("✅ Alterações salvas!");
+                    carregarAvaliacoes();
+                } else alert("Erro ao salvar.");
+            } catch(e) { console.error(e); alert("Erro de conexão"); }
+        }
+
+        async function toggleAprovacao(id, statusAtual) {
+            try {
+                await fetch(`${API_URL}/avaliacoes/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
+                    body: JSON.stringify({ aprovado: !statusAtual ? 1 : 0 })
+                });
+                carregarAvaliacoes();
+            } catch(e) { alert("Erro ao alterar status"); }
         }
 
         async function excluir(id) {
-            if(confirm("Tem certeza que deseja apagar este depoimento e suas fotos? Esta ação não pode ser desfeita.")) {
-                try {
-                    const res = await fetch(`/api/admin/avaliacoes/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'x-admin-password': ADMIN_TOKEN }
-                    });
-                    if(res.ok) {
-                        carregarAvaliacoes();
-                    } else {
-                        alert("Erro ao excluir.");
-                    }
-                } catch(e) {
-                    alert("Erro de conexão.");
+            if(!confirm("Tem certeza que deseja excluir este depoimento?")) return;
+            try {
+                await fetch(`${API_URL}/avaliacoes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                carregarAvaliacoes();
+            } catch(e) { alert("Erro ao excluir"); }
+        }
+
+        // --- GESTÃO DE FOTOS ---
+
+        async function deletarFoto(fotoId) {
+            if(!confirm("Excluir esta foto?")) return;
+            try {
+                const res = await fetch(`${API_URL}/fotos/${fotoId}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                if(res.ok) carregarAvaliacoes(); // Recarrega para sumir a foto
+                else alert("Erro ao apagar foto");
+            } catch(e) { console.error(e); }
+        }
+
+        async function adicionarFoto(idDepoimento, input) {
+            if (input.files.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('foto', input.files[0]);
+
+            // Feedback visual rápido
+            const label = input.parentElement;
+            const textoOriginal = label.innerHTML;
+            label.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Enviando...`;
+            lucide.createIcons();
+
+            try {
+                const res = await fetch(`${API_URL}/avaliacoes/${idDepoimento}/foto`, {
+                    method: 'POST',
+                    headers: { 'x-admin-password': ADMIN_TOKEN },
+                    body: formData
+                });
+
+                if(res.ok) {
+                    carregarAvaliacoes(); // Recarrega para mostrar a foto nova
+                } else {
+                    alert("Erro ao enviar foto.");
+                    label.innerHTML = textoOriginal;
                 }
+            } catch(e) {
+                console.error(e);
+                alert("Erro de conexão");
+                label.innerHTML = textoOriginal;
             }
         }
 
-        // Tecla ESC fecha modal
-        document.addEventListener('keydown', function(event) {
-            if (event.key === "Escape") {
-                fecharImagem();
-            }
-        });
-
-        // Inicialização
+        // Inicia
         carregarAvaliacoes();
-        lucide.createIcons();
     </script>
 </body>
 </html>

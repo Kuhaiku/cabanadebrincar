@@ -469,37 +469,32 @@ app.delete("/api/admin/precos/:id", checkAuth, async (req, res) => {
 
 // >>> CORREÇÃO DO CÁLCULO DO RESTANTE <<<
 app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
-  try {
-    const [r] = await db.query(
-      "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
-      [req.params.id],
-    );
-    if (r.length === 0) return res.status(404).json({ error: "Erro" });
-
-    const vTotal = parseFloat(r[0].valor_final || 0);
-
-    // Links
-    const linkReserva = await criarLinkMP(
-      `Reserva - ${r[0].nome}`,
-      (vTotal * 0.4).toFixed(2),
-      req.params.id,
-    );
-    const linkIntegral = await criarLinkMP(
-      `Total - ${r[0].nome}`,
-      (vTotal * 0.95).toFixed(2),
-      req.params.id,
-    );
-
-    res.json({
-      reserva: (vTotal * 0.4).toFixed(2),
-      linkReserva,
-      integral: (vTotal * 0.95).toFixed(2),
-      linkIntegral,
-      restante: (vTotal * 0.6).toFixed(2), // <--- O CAMPO QUE FALTAVA
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+    try {
+        const [r] = await db.query("SELECT valor_final, nome FROM orcamentos WHERE id = ?", [req.params.id]);
+        if (r.length === 0) return res.status(404).json({ error: "Erro" });
+        
+        const vTotal = parseFloat(r[0].valor_final || 0);
+        
+        // 1. Link da Reserva (40%)
+        const linkReserva = await criarLinkMP(`Reserva - ${r[0].nome}`, (vTotal * 0.4).toFixed(2), req.params.id);
+        
+        // 2. Link do Restante (60%) - NOVO!
+        const linkRestante = await criarLinkMP(`Restante - ${r[0].nome}`, (vTotal * 0.6).toFixed(2), req.params.id);
+        
+        // 3. Link Integral com Desconto (95%)
+        const linkIntegral = await criarLinkMP(`Total - ${r[0].nome}`, (vTotal * 0.95).toFixed(2), req.params.id);
+        
+        res.json({ 
+            reserva: (vTotal * 0.4).toFixed(2), 
+            linkReserva, 
+            
+            restante: (vTotal * 0.6).toFixed(2),
+            linkRestante, // Enviando o link novo
+            
+            integral: (vTotal * 0.95).toFixed(2), 
+            linkIntegral,
+        });
+    } catch(e) { res.status(500).json({error: e.message}); }
 });
 
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

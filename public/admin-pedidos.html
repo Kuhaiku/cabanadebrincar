@@ -602,108 +602,100 @@
         pedidoAtual.totalCalculado = total.toFixed(2);
       }
 
-      async function copiarOrcamento() {
-        if (!pedidoAtual) return;
+ async function copiarOrcamento() {
+    if (!pedidoAtual) return;
 
-        const btn = document.getElementById("btn-copiar");
-        const originalText = btn.innerHTML;
-        btn.innerHTML =
-          '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Gerando Links...';
-        lucide.createIcons();
+    const btn = document.getElementById("btn-copiar");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Gerando Links...';
+    lucide.createIcons();
 
-        try {
-          // Atualizar o valor_final no banco antes de gerar os links
-          const extraVal = document.getElementById("valor-extra").value;
-          const extraDesc = document.getElementById("desc-extra").value;
+    try {
+        // Atualiza valores no banco antes de gerar
+        const extraVal = document.getElementById("valor-extra").value;
+        const extraDesc = document.getElementById("desc-extra").value;
 
-          await fetch(`${API_URL}/admin/pedidos/${pedidoAtual.id}/financeiro`, {
+        await fetch(`${API_URL}/admin/pedidos/${pedidoAtual.id}/financeiro`, {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "x-admin-password": ADMIN_TOKEN,
-            },
+            headers: { "Content-Type": "application/json", "x-admin-password": ADMIN_TOKEN },
             body: JSON.stringify({
-              valor_final: pedidoAtual.totalCalculado,
-              valor_itens_extras: extraVal,
-              descricao_itens_extras: extraDesc,
+                valor_final: pedidoAtual.totalCalculado,
+                valor_itens_extras: extraVal,
+                descricao_itens_extras: extraDesc,
             }),
-          });
+        });
 
-          // Solicita os links do Mercado Pago ao servidor
-          const res = await fetch(
-            `${API_URL}/admin/gerar-links-mp/${pedidoAtual.id}`,
-            {
-              method: "POST",
-              headers: { "x-admin-password": ADMIN_TOKEN },
-            },
-          );
-          const d = await res.json();
+        // Pede os links ao servidor
+        const res = await fetch(`${API_URL}/admin/gerar-links-mp/${pedidoAtual.id}`, {
+            method: "POST", headers: { "x-admin-password": ADMIN_TOKEN },
+        });
+        const d = await res.json();
+        if (d.error) throw new Error(d.error);
 
-          if (d.error) throw new Error(d.error);
+        // Formata data
+        let dataFesta = pedidoAtual.data_festa;
+        if (dataFesta && dataFesta.includes("T")) dataFesta = dataFesta.split("T")[0];
+        const dFmt = new Date(dataFesta).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 
-          let dataFesta = pedidoAtual.data_festa;
-          if (dataFesta && dataFesta.includes("T"))
-            dataFesta = dataFesta.split("T")[0];
-          const dFmt = new Date(dataFesta).toLocaleDateString("pt-BR", {
-            timeZone: "UTC",
-          });
+        // Monta a mensagem
+        let txt = `*Orçamento Cabana de Brincar* ⛺✨\n`;
+        txt += `Olá *${pedidoAtual.nome}*! Tudo bem? 💖\n\n`;
+        txt += `Recebemos seu pedido! Segue o resumo:\n\n`;
+        txt += `🗓 *Data:* ${dFmt} às ${pedidoAtual.horario || "??"}\n`;
+        txt += `📍 *Local:* ${pedidoAtual.endereco}\n\n`;
+        
+        txt += `🎪 *Estrutura:*\n`;
+        txt += `▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n`;
+        txt += `▪️ ${pedidoAtual.qtd_criancas} Pessoas (${pedidoAtual.faixa_etaria})\n`;
+        txt += `▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n`;
 
-          const itens = safeParse(pedidoAtual.itens_padrao);
-          const comida = safeParse(pedidoAtual.alimentacao);
+        // Itens e Comida
+        const itens = safeParse(pedidoAtual.itens_padrao);
+        const comida = safeParse(pedidoAtual.alimentacao);
+        
+        txt += `📦 *Itens:*\n`;
+        if (itens.length > 0) itens.forEach((i) => (txt += `  • ${i}\n`));
+        else txt += `  • (Itens básicos da estrutura)\n`;
 
-          let txt = `*Orçamento Cabana de Brincar* ⛺✨\n`;
-          txt += `Olá *${pedidoAtual.nome}*! Tudo bem? 💖\n\n`;
-          txt += `Recebemos seu pedido! Segue o resumo:\n\n`;
-          txt += `🗓 *Data:* ${dFmt} às ${pedidoAtual.horario || "??"}\n`;
-          txt += `📍 *Local:* ${pedidoAtual.endereco}\n\n`;
-          txt += `🎪 *Estrutura:*\n`;
-          txt += `▪️ ${pedidoAtual.qtd_barracas}x ${pedidoAtual.modelo_barraca}\n`;
-          txt += `▪️ ${pedidoAtual.qtd_criancas} Pessoas (${pedidoAtual.faixa_etaria})\n`;
-          txt += `▪️ Tema: ${pedidoAtual.tema || "A definir"} ${pedidoAtual.cores ? `(${pedidoAtual.cores})` : ""}\n\n`;
-
-          txt += `📦 *Itens:*\n`;
-          if (itens.length > 0) itens.forEach((i) => (txt += `  • ${i}\n`));
-          else txt += `  • (Itens básicos da estrutura)\n`;
-
-          if (comida.length > 0) {
+        if (comida.length > 0) {
             txt += `\n🍽️ *Alimentação:*\n`;
-            comida.forEach(
-              (c) => (txt += `  • ${c} (${pedidoAtual.qtd_criancas}x)\n`),
-            );
-          }
-
-          if (pedidoAtual.itens_adicionais)
-            txt += `\n📝 *Obs:* ${pedidoAtual.itens_adicionais}\n`;
-          if (pedidoAtual.alergias)
-            txt += `\n⚠️ *Alergias:* ${pedidoAtual.alergias}\n`;
-
-          txt += `\n*────────────────────*\n`;
-          txt += `💰 *VALOR TOTAL: R$ ${pedidoAtual.totalCalculado}*`;
-          txt += `\n*────────────────────*\n\n`;
-
-          txt += `Para garantirmos a sua data e toda a qualidade que sua festa merece, solicitamos o pagamento da reserva. Como limitamos o número de eventos por dia, esse valor assegura sua exclusividade em nossa agenda! ✨\n\n`;
-
-          txt += `✅ *Podemos confirmar o agendamento?*\n\n`;
-          txt += `• *Reserva (40%):* R$ ${d.reserva}\n`;
-          txt += `🔗 Link de pagamento: ${d.linkReserva}\n\n`;
-          txt += `• *Restante:* R$ ${d.restante} (pagos na entrega)\n\n`;
-          txt += `• *Ou valor integral com 5% de desconto:* R$ ${d.integral}\n`;
-          txt += `🔗 Link de pagamento: ${d.linkIntegral}\n\n`;
-
-          txt += `_Obs: O valor da reserva é utilizado para bloquear a data e organizar a logística, por isso, não é reembolsável em caso de cancelamento._\n\n`;
-          txt += `Estamos ansiosos para fazer parte deste momento especial! 🎉`;
-
-          await navigator.clipboard.writeText(txt);
-          alert("✅ Resumo com links reais copiado com sucesso!");
-        } catch (e) {
-          console.error(e);
-          alert("Erro ao gerar links: " + e.message);
-        } finally {
-          btn.innerHTML = originalText;
-          lucide.createIcons();
+            comida.forEach((c) => (txt += `  • ${c} (${pedidoAtual.qtd_criancas}x)\n`));
         }
-      }
 
+        if (pedidoAtual.itens_adicionais) txt += `\n📝 *Obs:* ${pedidoAtual.itens_adicionais}\n`;
+        if (pedidoAtual.alergias) txt += `\n⚠️ *Alergias:* ${pedidoAtual.alergias}\n`;
+
+        txt += `\n*────────────────────*\n`;
+        txt += `💰 *VALOR TOTAL: R$ ${pedidoAtual.totalCalculado}*`;
+        txt += `\n*────────────────────*\n\n`;
+
+        txt += `Para garantirmos a sua data, solicitamos o pagamento da reserva:\n\n`;
+
+        txt += `✅ *OPÇÃO 1: SINAL + RESTANTE*\n`;
+        txt += `• *Sinal (40%):* R$ ${d.reserva}\n`;
+        txt += `🔗 Pagar Sinal: ${d.linkReserva}\n\n`;
+        
+        txt += `• *Restante (60%):* R$ ${d.restante}\n`;
+        txt += `🔗 Pagar Restante: ${d.linkRestante} _(Pode ser pago até o dia da festa)_\n\n`;
+
+        txt += `✅ *OPÇÃO 2: À VISTA (5% OFF)*\n`;
+        txt += `• *Valor com desconto:* R$ ${d.integral}\n`;
+        txt += `🔗 Pagar Tudo: ${d.linkIntegral}\n\n`;
+
+        txt += `_Obs: O valor da reserva não é reembolsável em caso de cancelamento._\n\n`;
+        txt += `Estamos ansiosos para fazer parte deste momento especial! 🎉`;
+
+        await navigator.clipboard.writeText(txt);
+        alert("✅ Links gerados e copiados!");
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro: " + e.message);
+    } finally {
+        btn.innerHTML = originalText;
+        lucide.createIcons();
+    }
+}
       async function enviarParaAgenda() {
         if (!confirm(`Confirmar e Agendar festa de ${pedidoAtual.nome}?`))
           return;

@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Estilização suave para a barra de rolagem */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -27,7 +26,7 @@
             <span class="text-xs font-semibold bg-slate-100 px-3 py-1 rounded-full text-slate-600">
                 Total: <span id="contador">0</span>
             </span>
-            <a href="painel.html" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Voltar</a>
+            <a href="painel.html" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Voltar ao Painel</a>
             <button onclick="logout()" class="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Sair">
                 <i data-lucide="log-out" class="w-5 h-5"></i>
             </button>
@@ -49,17 +48,13 @@
         lucide.createIcons();
         const API_URL = '/api/admin';
         
-        // --- 1. AUTENTICAÇÃO LOCAL (CORRIGIDA) ---
-        let ADMIN_TOKEN = localStorage.getItem('adminToken');
+        // --- 1. AUTENTICAÇÃO (CORRIGIDA) ---
+        // Busca o token salvo pelo Painel Principal
+        const ADMIN_TOKEN = localStorage.getItem('adminToken');
 
+        // Se não tiver token, manda de volta pro painel em vez de pedir senha
         if (!ADMIN_TOKEN) {
-            const senha = prompt("🔑 Digite a senha de Admin:");
-            if (senha) {
-                localStorage.setItem('adminToken', senha);
-                ADMIN_TOKEN = senha;
-            } else {
-                window.location.href = 'index.html';
-            }
+            window.location.href = 'painel.html'; 
         }
 
         function logout() {
@@ -72,14 +67,17 @@
         // --- 2. CARREGAMENTO ---
         async function carregarAvaliacoes() {
             try {
+                // Se não tem token, nem tenta carregar (o redirect acima já tratou)
+                if (!ADMIN_TOKEN) return;
+
                 const res = await fetch(`${API_URL}/avaliacoes`, {
                     headers: { 'x-admin-password': ADMIN_TOKEN }
                 });
 
                 if (res.status === 401) {
-                    alert("Senha incorreta. Faça login novamente.");
+                    alert("Sessão expirada. Faça login novamente no painel.");
                     localStorage.removeItem('adminToken');
-                    location.reload();
+                    window.location.href = 'painel.html';
                     return;
                 }
 
@@ -95,7 +93,7 @@
             }
         }
 
-        // --- 3. RENDERIZAÇÃO (INTERFACE NOVA) ---
+        // --- 3. RENDERIZAÇÃO ---
         function renderizarCards(lista) {
             const container = document.getElementById('lista-avaliacoes');
             container.innerHTML = "";
@@ -191,10 +189,10 @@
             lucide.createIcons();
         }
 
-        // --- 4. AÇÕES (LÓGICA) ---
+        // --- 4. AÇÕES ---
 
         async function salvar(id) {
-            const btn = event.currentTarget; // Pega o botão clicado
+            const btn = event.currentTarget; 
             const originalContent = btn.innerHTML;
             btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>`;
             lucide.createIcons();
@@ -232,7 +230,7 @@
                     headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
                     body: JSON.stringify({ aprovado: !atual ? 1 : 0 })
                 });
-                carregarAvaliacoes(); // Recarrega para atualizar visual
+                carregarAvaliacoes(); 
             } catch (e) { alert("Erro de conexão"); }
         }
 
@@ -252,7 +250,6 @@
             const formData = new FormData();
             formData.append('foto', input.files[0]);
 
-            // Feedback visual no botão
             const label = input.parentElement;
             const originalHtml = label.innerHTML;
             label.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>`;

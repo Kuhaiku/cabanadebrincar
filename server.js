@@ -496,5 +496,39 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
         });
     } catch(e) { res.status(500).json({error: e.message}); }
 });
+app.get("/api/admin/avaliacoes", checkAuth, async (req, res) => {
+  try {
+    const sql = `SELECT d.*, o.data_festa, GROUP_CONCAT(f.url_foto) as fotos 
+                 FROM depoimentos d 
+                 LEFT JOIN orcamentos o ON d.orcamento_id = o.id 
+                 LEFT JOIN fotos_depoimento f ON d.id = f.depoimento_id 
+                 GROUP BY d.id 
+                 ORDER BY d.data_criacao DESC`;
+    const [rows] = await db.query(sql);
+    res.json(rows.map((i) => ({ ...i, fotos: i.fotos ? i.fotos.split(",") : [] })));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
+  try {
+    await db.query("UPDATE depoimentos SET aprovado = ? WHERE id = ?", [req.body.aprovado, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete("/api/admin/avaliacoes/:id", checkAuth, async (req, res) => {
+  try {
+    await db.query("DELETE FROM depoimentos WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- FIM DAS ROTAS DE AVALIAÇÕES ---
 
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

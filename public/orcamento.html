@@ -161,7 +161,7 @@
                 </h2>
                 
                 <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div>
+                      <div>
                         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block pl-1">Modelo da Barraca</label>
                         <div class="relative">
                             <select id="modelo_barraca" onchange="atualizarSimulador()" class="clean-input appearance-none cursor-pointer bg-white">
@@ -223,7 +223,11 @@
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">WhatsApp</label>
                         <input type="tel" id="whatsapp" required placeholder="(DDD) 99999-9999" class="clean-input">
                     </div>
-                     <div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">E-mail (Opcional)</label>
+                        <input type="email" id="email" placeholder="Para confirmação" class="clean-input">
+                    </div>
+                    <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Endereço da Festa</label>
                         <input type="text" id="endereco" required placeholder="Rua, Número e Bairro" class="clean-input">
                     </div>
@@ -298,7 +302,7 @@
                 <i data-lucide="check" class="w-10 h-10"></i>
             </div>
             <h2 class="font-display text-3xl font-bold text-brand-dark mb-2">Pedido Enviado!</h2>
-            <p class="text-slate-500 mb-8 leading-relaxed">Recebemos sua configuração mágica.<br>Logo entraremos em contato no WhatsApp.</p>
+            <p class="text-slate-500 mb-8 leading-relaxed">Recebemos sua configuração mágica.<br>Logo entraremos em contato.</p>
             <button onclick="location.reload()" class="bg-brand-pink text-white font-bold py-4 px-12 rounded-full shadow-xl hover:bg-pink-600 transition-colors">Voltar ao Início</button>
         </div>
     </div>
@@ -314,7 +318,7 @@
                 </button>
             </div>
             <div id="lista-historico" class="space-y-4">
-                </div>
+            </div>
         </div>
     </div>
 
@@ -502,6 +506,7 @@
           const formData = {
               nome: document.getElementById('nome').value,
               whatsapp: document.getElementById('whatsapp').value,
+              email: document.getElementById('email').value, // <--- CAMPO EMAIL
               endereco: document.getElementById('endereco').value,
               qtd_criancas: document.getElementById('qtd_criancas').value,
               faixa_etaria: document.getElementById('faixa_etaria').value,

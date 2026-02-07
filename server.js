@@ -9,12 +9,22 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { randomUUID: uuidv4 } = require("crypto");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
-const venom = require("venom-bot");
+const nodemailer = require("nodemailer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- 1. CONFIGURAÇÕES ---
+
+// Configuração do Email (Nodemailer)
+// Certifique-se de ter EMAIL_USER e EMAIL_PASS no seu arquivo .env
+const transporter = nodemailer.createTransport({
+  service: "gmail", // Se usar outro (Hostgator, UOL, etc), altere aqui
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
@@ -44,10 +54,10 @@ const db = mysql.createPool({
   enableKeepAlive: true,
 });
 
-// Mantém o banco vivo
+// Mantém o banco vivo (Ping a cada 30s)
 setInterval(() => {
   db.query("SELECT 1", (err) => {
-    if (err) console.error("Ping Error:", err.code);
+    if (err) console.error("Ping DB Error:", err.code);
   });
 }, 30000);
 
@@ -58,65 +68,11 @@ function checkAuth(req, res, next) {
   next();
 }
 
-// --- 2. INICIALIZAÇÃO DO ROBÔ WHATSAPP (CORRIGIDO) ---
-
-// >>> LIMPEZA DE SESSÃO ANTIGA (Evita erro SingletonLock) <<<
-const sessionDir = path.resolve(__dirname, 'tokens');
-if (fs.existsSync(sessionDir)) {
-    console.log("🧹 Limpando sessão antiga do WhatsApp para evitar conflitos...");
-    try {
-        fs.rmSync(sessionDir, { recursive: true, force: true });
-    } catch (e) {
-        console.log("⚠️ Aviso: Não foi possível limpar a pasta tokens (pode estar em uso).");
-    }
-}
-// ------------------------------------------------------------
-
-let whatsappClient = null;
-
-venom
-  .create(
-    "sessao-cabana",
-    (base64Qr, asciiQR) => {
-      console.log("\n📷 ESCANEIE O QR CODE ABAIXO:\n");
-      console.log(asciiQR);
-    },
-    (statusSession, session) => {
-      console.log("Status Sessão WhatsApp:", statusSession);
-    },
-    {
-      headless: "new",
-      useChrome: false,
-      logQR: false,
-      disableWelcome: true,
-      disableSpins: true,
-      updatesLog: false,
-      autoClose: false,
-      browserArgs: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--no-first-run",
-        "--no-zygote",
-        "--disable-gpu",
-      ],
-    },
-  )
-  .then((client) => {
-    console.log("✅ Robô do WhatsApp conectado e PRONTO!");
-    whatsappClient = client;
-  })
-  .catch((erro) => {
-    console.error("❌ Erro fatal ao iniciar o WhatsApp:", erro);
-  });
-
-// --- 3. FUNÇÕES AUXILIARES ---
+// --- 2. FUNÇÕES AUXILIARES ---
 
 async function criarLinkMP(titulo, valor, pedidoId) {
   try {
     const preference = new Preference(mpClient);
-
     let domain = process.env.DOMAIN || `localhost:${PORT}`;
     domain = domain.replace(/\/$/, "");
     if (!domain.startsWith("http")) domain = `https://${domain}`;
@@ -147,49 +103,91 @@ async function criarLinkMP(titulo, valor, pedidoId) {
   }
 }
 
-async function enviarWhatsappViaRobo(nome, telefone, valor, tentativa = 1) {
-  if (!whatsappClient) {
-    if (tentativa > 20) {
-      console.log("❌ Robô demorou demais (>1min) para conectar. Desisti.");
-      return;
-    }
-    console.log(
-      `⏳ Robô carregando... Tentativa ${tentativa}/20 em 3 segundos.`,
-    );
-    setTimeout(() => {
-      enviarWhatsappViaRobo(nome, telefone, valor, tentativa + 1);
-    }, 3000);
-    return;
+// Lógica de Envio de E-mail Inteligente
+async function enviarEmailConfirmacao(
+  email,
+  nome,
+  valorPago,
+  valorTotal,
+  linkRestante,
+) {
+  if (!email || email.length < 5) return; // Se não tem email, ignora
+
+  const saldoDevedor = valorTotal - valorPago;
+  // Consideramos quitado se faltar menos de 1 real (arredondamentos)
+  const isQuitado = saldoDevedor <= 1.0;
+
+  let assunto = "Pagamento Confirmado - Cabana de Brincar ⛺";
+  let corpoHtml = `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
+      <h2 style="color: #6C63FF;">Olá, ${nome}! 🎉</h2>
+      <p>Recebemos a confirmação do seu pagamento de <strong>R$ ${Number(valorPago).toFixed(2)}</strong>.</p>
+  `;
+
+  if (isQuitado) {
+    // CENÁRIO: TUDO PAGO (Integral)
+    corpoHtml += `
+      <div style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <strong>✅ Sua reserva está 100% quitada!</strong>
+      </div>
+      <p>Agora é só esperar o dia da festa! Nossa equipe entrará em contato próximo à data para combinar os detalhes da montagem.</p>
+    `;
+  } else {
+    // CENÁRIO: PAGAMENTO PARCIAL (Sinal)
+    corpoHtml += `
+      <div style="background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <strong>✅ Reserva Garantida (Sinal)!</strong>
+      </div>
+      <p>Você pagou o sinal para reservar a data. Veja o resumo:</p>
+      <ul>
+        <li>Valor Total do Pacote: R$ ${Number(valorTotal).toFixed(2)}</li>
+        <li>Valor Pago Agora: R$ ${Number(valorPago).toFixed(2)}</li>
+        <li><strong>Restante a Pagar: R$ ${Number(saldoDevedor).toFixed(2)}</strong></li>
+      </ul>
+      <p>Quando desejar quitar o restante, utilize o link abaixo:</p>
+      <br>
+      <a href="${linkRestante}" style="background-color: #ff6b6b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Pagar Restante (R$ ${saldoDevedor.toFixed(2)})</a>
+      <p style="font-size: 12px; margin-top: 10px;">Ou copie este link: ${linkRestante}</p>
+    `;
   }
 
-  let numeroLimpo = telefone.replace(/\D/g, "");
-  if (numeroLimpo.length <= 11) numeroLimpo = `55${numeroLimpo}`;
-  const chatId = `${numeroLimpo}@c.us`;
-
-  const mensagem = `Olá *${nome}*! ⛺✨\n\nRecebemos a confirmação do seu pagamento de *R$ ${valor}* na Cabana de Brincar.\n\nSua reserva está garantida! 🎉\nEm breve entraremos em contato para combinar os detalhes.`;
+  corpoHtml += `
+      <br><hr>
+      <p style="text-align: center; font-size: 12px; color: #888;">
+        Cabana de Brincar - Transformando noites em sonhos.<br>
+        Dúvidas? Chame no WhatsApp.
+      </p>
+    </div>
+  `;
 
   try {
-    await whatsappClient.sendText(chatId, mensagem);
-    console.log(`📱 Mensagem WhatsApp enviada para ${numeroLimpo}`);
-  } catch (error) {
-    console.error("Erro ao enviar WhatsApp:", error);
+    await transporter.sendMail({
+      from: `"Cabana de Brincar" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: assunto,
+      html: corpoHtml,
+    });
+    console.log(`📧 E-mail enviado com sucesso para ${email}`);
+  } catch (err) {
+    console.error("❌ Erro ao enviar e-mail:", err.message);
   }
 }
 
-// --- 4. WEBHOOK ---
+// --- 3. WEBHOOK (PAGAMENTO) ---
 
 app.post("/api/webhook", async (req, res) => {
+  // Responde rápido para o Mercado Pago não ficar tentando de novo
   res.status(200).send("OK");
 
   const notification = req.body || {};
-  const query = req.query || {};
-  const topic =
-    notification.topic || notification.type || query.topic || query.type;
-  const id =
-    notification.data?.id || notification.id || query.id || query["data.id"];
+  const id = notification.data?.id || notification.id || req.query.id;
 
-  if (topic === "payment" && id) {
+  // Verifica se é um evento de pagamento
+  if (notification.type === "payment" || req.query.topic === "payment") {
+    if (!id) return;
+
     try {
+      // Consulta status no Mercado Pago
       const response = await fetch(
         `https://api.mercadopago.com/v1/payments/${id}`,
         {
@@ -202,70 +200,75 @@ app.post("/api/webhook", async (req, res) => {
 
         if (paymentData.status === "approved") {
           const pedidoId = paymentData.external_reference;
-          const valorPago = paymentData.transaction_amount;
+          const valorPago = parseFloat(paymentData.transaction_amount);
 
-          const dataPagamento = new Date(paymentData.date_approved);
-          const dia = dataPagamento.getDate().toString().padStart(2, "0");
-          const mes = (dataPagamento.getMonth() + 1)
-            .toString()
-            .padStart(2, "0");
-          const hora = dataPagamento.getHours().toString().padStart(2, "0");
-          const min = dataPagamento.getMinutes().toString().padStart(2, "0");
+          console.log(
+            `\n💰 Pagamento Aprovado: R$ ${valorPago} (Pedido #${pedidoId})`,
+          );
 
+          // Busca dados do orçamento para enviar o email correto
           db.query(
-            "SELECT nome, whatsapp FROM orcamentos WHERE id = ?",
+            "SELECT * FROM orcamentos WHERE id = ?",
             [pedidoId],
-            (err, results) => {
+            async (err, results) => {
               if (!err && results.length > 0) {
-                const cliente = results[0];
+                const pedido = results[0];
+                const valorTotal = parseFloat(pedido.valor_final || 0);
 
-                console.log("\n");
-                console.log("🟢 === PAGAMENTO CONFIRMADO! ===");
-                console.log(`👤 Nome: ${cliente.nome}`);
-                console.log(`📱 WhatsApp: ${cliente.whatsapp}`);
-                console.log(`📅 Data: ${dia}/${mes} às ${hora}:${min}`);
-                console.log("================================\n");
-
+                // Atualiza status no banco
                 db.query(
                   "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?",
                   [pedidoId],
                 );
 
-                enviarWhatsappViaRobo(
-                  cliente.nome,
-                  cliente.whatsapp,
-                  valorPago,
-                );
+                // Gera link do restante (se houver saldo devedor significativo)
+                let linkRestante = "#";
+                const saldoDevedor = valorTotal - valorPago;
+
+                if (valorTotal > 0 && saldoDevedor > 5) {
+                  linkRestante = await criarLinkMP(
+                    `Restante - ${pedido.nome}`,
+                    saldoDevedor.toFixed(2),
+                    pedidoId,
+                  );
+                }
+
+                // Envia o E-mail
+                if (pedido.email) {
+                  enviarEmailConfirmacao(
+                    pedido.email,
+                    pedido.nome,
+                    valorPago,
+                    valorTotal,
+                    linkRestante,
+                  );
+                } else {
+                  console.log(
+                    "⚠️ Cliente sem e-mail cadastrado, pulando envio.",
+                  );
+                }
               }
             },
           );
         }
       }
     } catch (e) {
-      console.error("Erro no Webhook:", e.message);
+      console.error("Erro no processamento do Webhook:", e.message);
     }
   }
 });
 
-// --- 5. ROTAS DE API ---
+// --- 4. ROTAS ---
 
-app.get("/api/itens-disponiveis", (req, res) => {
-  db.query(
-    "SELECT descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'alimentacao', 'tendas') AND disponivel = TRUE ORDER BY categoria, descricao",
-    (err, r) => res.json(r || []),
-  );
-});
-
-// >>> ROTA CORRIGIDA (EVITA ERRO 500) <<<
+// Rota de Salvar Orçamento
 app.post("/api/orcamento", (req, res) => {
   const data = req.body;
   const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`;
-  
-  // Array de valores com proteções (JSON.stringify e valores padrão)
+
   const values = [
     data.nome,
     data.whatsapp,
-    data.email || "",
+    data.email || null, // Garante que salve NULL se vier vazio
     data.endereco,
     data.qtd_criancas,
     data.faixa_etaria,
@@ -273,22 +276,30 @@ app.post("/api/orcamento", (req, res) => {
     data.qtd_barracas,
     data.cores,
     data.tema,
-    JSON.stringify(data.itens_padrao || []),     // Proteção 1
-    JSON.stringify(data.itens_adicionais || []), // Proteção 2 (Correção Principal)
+    JSON.stringify(data.itens_padrao || []),
+    JSON.stringify(data.itens_adicionais || []),
     data.data_festa,
     data.horario,
-    JSON.stringify(data.alimentacao || []),      // Proteção 3
+    JSON.stringify(data.alimentacao || []),
     data.alergias || "",
   ];
 
   db.query(sql, values, (err) => {
     if (err) {
-        // Log detalhado para você ver o erro real no terminal
-        console.error("🔴 ERRO AO SALVAR ORÇAMENTO (SQL):", err);
-        return res.status(500).json({ error: "Erro interno ao salvar no banco. Verifique os logs." });
+      console.error("🔴 ERRO SQL:", err.message);
+      return res
+        .status(500)
+        .json({ error: "Erro ao salvar no banco de dados." });
     }
     res.status(201).json({ success: true });
   });
+});
+
+app.get("/api/itens-disponiveis", (req, res) => {
+  db.query(
+    "SELECT descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'alimentacao', 'tendas') AND disponivel = TRUE ORDER BY categoria, descricao",
+    (err, r) => res.json(r || []),
+  );
 });
 
 app.get("/api/depoimentos/publicos", (req, res) => {
@@ -467,9 +478,19 @@ app.delete("/api/admin/financeiro/geral/:id", checkAuth, (req, res) =>
 );
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
   try {
-    const [g] = await db.promise().query("SELECT * FROM custos_gerais ORDER BY data_registro DESC");
-    const [f] = await db.promise().query("SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id");
-    const [fat] = await db.promise().query("SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'");
+    const [g] = await db
+      .promise()
+      .query("SELECT * FROM custos_gerais ORDER BY data_registro DESC");
+    const [f] = await db
+      .promise()
+      .query(
+        "SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id",
+      );
+    const [fat] = await db
+      .promise()
+      .query(
+        "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'",
+      );
     res.json({ gerais: g, festas: f, faturamento: fat });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -488,15 +509,13 @@ app.post("/api/admin/precos", checkAuth, (req, res) =>
     (e) => res.json({ success: !e }),
   ),
 );
-app.put("/api/admin/precos/:id", checkAuth, (req, res) => {
-  const { valor } = req.body;
+app.put("/api/admin/precos/:id", checkAuth, (req, res) =>
   db.query(
     "UPDATE tabela_precos SET valor = ? WHERE id = ?",
-    [valor, req.params.id],
+    [req.body.valor, req.params.id],
     (e) => res.json({ success: !e }),
-  )
-});
-
+  ),
+);
 app.delete("/api/admin/precos/:id", checkAuth, (req, res) =>
   db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id], (e) =>
     res.json({ success: !e }),

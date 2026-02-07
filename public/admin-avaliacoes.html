@@ -38,13 +38,26 @@
     <script>
         lucide.createIcons();
         const API_URL = '/api/admin';
-        const ADMIN_TOKEN = localStorage.getItem('adminToken');
+        
+        // --- AUTENTICAÇÃO E RECUPERAÇÃO DE TOKEN ---
+        let ADMIN_TOKEN = localStorage.getItem('adminToken');
 
-        if (!ADMIN_TOKEN) window.location.href = 'index.html';
+        // Se não tiver token salvo, pede a senha na hora
+        if (!ADMIN_TOKEN) {
+            const senhaDigitada = prompt("🔒 Área Restrita. Digite a senha de Admin:");
+            if (senhaDigitada) {
+                localStorage.setItem('adminToken', senhaDigitada);
+                ADMIN_TOKEN = senhaDigitada;
+            } else {
+                window.location.href = 'index.html'; // Se cancelar, vai pro início
+            }
+        }
 
         function logout() {
-            localStorage.removeItem('adminToken');
-            window.location.href = 'index.html';
+            if(confirm("Deseja sair do painel?")) {
+                localStorage.removeItem('adminToken');
+                window.location.href = 'index.html';
+            }
         }
 
         async function carregarAvaliacoes() {
@@ -52,6 +65,14 @@
                 const res = await fetch(`${API_URL}/avaliacoes`, {
                     headers: { 'x-admin-password': ADMIN_TOKEN }
                 });
+                
+                if (res.status === 401) {
+                    alert("Senha incorreta ou expirada.");
+                    localStorage.removeItem('adminToken');
+                    location.reload(); // Recarrega para pedir a senha de novo
+                    return;
+                }
+
                 if (!res.ok) throw new Error("Falha ao buscar dados");
                 
                 const lista = await res.json();

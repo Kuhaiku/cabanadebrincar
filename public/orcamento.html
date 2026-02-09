@@ -238,6 +238,34 @@
       const ctx = canvas.getContext("2d");
       const mapaVisualizacao = { "Mesa de Café": "mesa", "Kit Almofadas": "almofadas", "Colchonete": "colchonete", "Luzinhas LED": "luz" };
 
+
+      // --- FUNÇÕES DE ZOOM ---
+      function abrirZoom() {
+          const canvas = document.getElementById("simuladorCanvas");
+          const modal = document.getElementById("modal-zoom");
+          const imgPreview = document.getElementById("img-zoom-preview");
+
+          // Converte o desenho atual do canvas em uma imagem PNG
+          imgPreview.src = canvas.toDataURL("image/png");
+
+          modal.classList.remove("hidden");
+          // Pequena animação de entrada
+          modal.classList.add("animate-fade-in");
+          document.body.style.overflow = "hidden"; // Trava o scroll da página
+      }
+
+      function fecharZoom() {
+          const modal = document.getElementById("modal-zoom");
+          modal.classList.add("hidden");
+          document.body.style.overflow = ""; // Destrava o scroll
+      }
+      
+      // Fecha com a tecla ESC
+      document.addEventListener('keydown', function(event) {
+          if (event.key === "Escape") {
+              fecharZoom();
+          }
+      });
       // --- CONFIGURAÇÃO DE CAMPOS OBRIGATÓRIOS ---
       // Todos os campos que não podem ficar vazios
       const camposObrigatorios = [

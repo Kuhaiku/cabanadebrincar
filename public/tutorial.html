@@ -30,7 +30,7 @@
                 soft: "#FFF5F8",
                 accent: "#FFD9E3",
                 purple: "#8B5CF6",
-                gold: "#F59E0B", // Nova cor para o Tabernáculo
+                gold: "#F59E0B",
               },
             },
           },
@@ -39,6 +39,17 @@
     </script>
   </head>
   <body class="font-sans text-slate-600 bg-brand-soft antialiased overflow-x-hidden">
+
+    <div 
+        id="modal-preview" 
+        class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-brand-dark/80 backdrop-blur-sm transition-opacity duration-300"
+        onclick="fecharPreview()"
+    >
+        <div class="bg-white p-3 rounded-2xl shadow-2xl transform transition-all scale-100 hover:scale-105 border-4 border-white rotate-2">
+            <img id="img-preview" src="" class="w-72 h-72 object-cover rounded-xl bg-slate-100 shadow-inner">
+            <p class="text-center text-xs font-bold text-slate-300 mt-3 tracking-widest uppercase">Visualização</p>
+        </div>
+    </div>
 
     <header class="fixed w-full bg-white/90 backdrop-blur-md border-b border-slate-100 z-50">
       <div class="container mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
@@ -52,7 +63,9 @@
     </header>
 
     <main class="pt-24 pb-16 px-4">
-      <div class="container mx-auto max-w-7xl"> <div class="text-center mb-12">
+      <div class="container mx-auto max-w-7xl">
+        
+        <div class="text-center mb-12">
           <div class="inline-block px-4 py-1.5 rounded-full bg-white border border-brand-pink/20 text-brand-pink text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
             🎓 Antes de começar
           </div>
@@ -65,91 +78,125 @@
           </p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 items-stretch">
           
-          <div class="bg-white rounded-[2rem] p-6 shadow-xl border-4 border-white hover:border-brand-purple/30 transition-all group h-full">
-            <div class="h-40 bg-purple-100 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
-                <i data-lucide="tent" class="w-16 h-16 text-brand-purple opacity-50"></i>
-                <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-purple/60 text-xs tracking-widest">ESTILO "SALÃO"</div>
-            </div>
-            
-            <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2">
-              A Tenda Gigante
-            </h2>
-            <span class="inline-block bg-purple-100 text-brand-purple text-xs font-bold px-2 py-1 rounded-full mb-4">Até 10 crianças</span>
-            
-            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
-              Sabe aquela brincadeira nostálgica de fazer <strong>"cabaninha de sofá"</strong> com lençóis? É exatamente essa a magia da Tenda! Todos juntos num único esconderijo.
-            </p>
+          <div class="h-full group cursor-pointer" onclick="abrirPreview('fotos/fotos (3).webp')">
+             <div class="bg-white rounded-[2rem] shadow-xl border-4 border-white group-hover:border-brand-purple/50 transition-all h-full relative overflow-hidden duration-500">
+                
+                <div class="absolute inset-0 bg-[url('fotos/fotos (3).webp')] bg-cover bg-center opacity-10 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0">
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500"></div>
+                </div>
 
-            <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50 p-4 rounded-xl">
-              <li class="flex items-start gap-2">
-                <i data-lucide="users" class="w-4 h-4 text-brand-purple shrink-0 mt-0.5"></i>
-                <span><strong>Coletiva:</strong> Uma única estrutura grande para o grupo todo.</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i data-lucide="layout" class="w-4 h-4 text-brand-purple shrink-0 mt-0.5"></i>
-                <span><strong>Espaço:</strong> Ideal para salas amplas ou quintais cobertos.</span>
-              </li>
-            </ul>
+                <div class="relative z-10 p-6 h-full flex flex-col">
+                    <div class="h-40 bg-purple-100/90 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden backdrop-blur-sm transition-all duration-500 group-hover:bg-white/10 group-hover:backdrop-blur-md">
+                        <i data-lucide="tent" class="w-16 h-16 text-brand-purple opacity-50 transition-colors duration-500 group-hover:text-white group-hover:opacity-100"></i>
+                        <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-purple/60 text-xs tracking-widest transition-colors duration-500 group-hover:text-white/80">ESTILO "SALÃO"</div>
+                    </div>
+                    
+                    <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2 transition-colors duration-500 group-hover:text-white">
+                      A Tenda Gigante
+                    </h2>
+                    <div>
+                        <span class="inline-block bg-purple-100 text-brand-purple text-xs font-bold px-2 py-1 rounded-full mb-4 transition-all duration-500 group-hover:bg-white group-hover:text-brand-purple">Até 10 crianças</span>
+                    </div>
+                    
+                    <p class="text-slate-500 text-sm mb-6 leading-relaxed flex-grow font-medium transition-colors duration-500 group-hover:text-slate-100">
+                      Sabe aquela brincadeira nostálgica de fazer <strong>"cabaninha de sofá"</strong> com lençóis? É exatamente essa a magia da Tenda! Todos juntos num único esconderijo.
+                    </p>
+
+                    <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50/95 p-4 rounded-xl backdrop-blur-sm shadow-sm transition-all duration-500 group-hover:bg-black/40 group-hover:text-white border border-transparent group-hover:border-white/20">
+                      <li class="flex items-start gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-brand-purple shrink-0 mt-0.5 transition-colors duration-500 group-hover:text-white"></i>
+                        <span><strong>Coletiva:</strong> Uma única estrutura grande para o grupo todo.</span>
+                      </li>
+                      <li class="flex items-start gap-2">
+                        <i data-lucide="layout" class="w-4 h-4 text-brand-purple shrink-0 mt-0.5 transition-colors duration-500 group-hover:text-white"></i>
+                        <span><strong>Espaço:</strong> Ideal para salas amplas ou quintais cobertos.</span>
+                      </li>
+                    </ul>
+                </div>
+            </div>
           </div>
 
-          <div class="bg-white rounded-[2rem] p-6 shadow-xl border-4 border-brand-pink hover:scale-105 transition-transform duration-300 relative z-10 h-full">
-            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-pink text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg uppercase tracking-wider whitespace-nowrap">
+          <div class="h-full relative group hover:scale-105 transition-transform duration-300 z-10 cursor-pointer" onclick="abrirPreview('fotos/fotos (5).webp')">
+            
+             <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-pink text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg uppercase tracking-wider whitespace-nowrap z-20 border-2 border-white group-hover:border-brand-pink transition-colors">
               ★ Mais Pedida das Crianças
             </div>
 
-            <div class="h-40 bg-pink-50 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
-                <i data-lucide="tent-tree" class="w-16 h-16 text-brand-pink opacity-50"></i>
-                <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-pink/60 text-xs tracking-widest">ESTILO "TIPI"</div>
-            </div>
-            
-            <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2">
-              Cabana de Índio
-            </h2>
-            <span class="inline-block bg-pink-100 text-brand-pink text-xs font-bold px-2 py-1 rounded-full mb-4">Duplas (Parzinho)</span>
-            
-            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
-              As clássicas cabaninhas estilo "Tipi Americano". Criam uma mini aldeia, oferecendo privacidade para as duplas de amigos fofocarem a noite toda.
-            </p>
+            <div class="bg-white rounded-[2rem] shadow-xl border-4 border-brand-pink h-full relative overflow-hidden transition-all duration-500">
+                
+                <div class="absolute inset-0 bg-[url('fotos/fotos (5).webp')] bg-cover bg-center opacity-10 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0">
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500"></div>
+                </div>
+                
+                <div class="relative z-10 p-6 h-full flex flex-col pt-8"> 
+                    <div class="h-40 bg-pink-50/90 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden backdrop-blur-sm transition-all duration-500 group-hover:bg-white/10 group-hover:backdrop-blur-md">
+                        <i data-lucide="tent-tree" class="w-16 h-16 text-brand-pink opacity-50 transition-colors duration-500 group-hover:text-white group-hover:opacity-100"></i>
+                        <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-pink/60 text-xs tracking-widest transition-colors duration-500 group-hover:text-white/80">ESTILO "TIPI"</div>
+                    </div>
+                    
+                    <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2 transition-colors duration-500 group-hover:text-white">
+                      Cabana de Índio
+                    </h2>
+                    <div>
+                         <span class="inline-block bg-pink-100 text-brand-pink text-xs font-bold px-2 py-1 rounded-full mb-4 transition-all duration-500 group-hover:bg-white group-hover:text-brand-pink">Duplas (Parzinho)</span>
+                    </div>
+                    
+                    <p class="text-slate-500 text-sm mb-6 leading-relaxed flex-grow font-medium transition-colors duration-500 group-hover:text-slate-100">
+                      As clássicas cabaninhas estilo "Tipi Americano". Criam uma mini aldeia, oferecendo privacidade para as duplas de amigos fofocarem a noite toda.
+                    </p>
 
-            <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-brand-soft p-4 rounded-xl border border-pink-100">
-              <li class="flex items-start gap-2">
-                <i data-lucide="calculator" class="w-4 h-4 text-brand-pink shrink-0 mt-0.5"></i>
-                <span><strong>Cálculo:</strong> Convidados ÷ 2. <br>(Ex: 8 crianças = 4 cabanas).</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i data-lucide="sparkles" class="w-4 h-4 text-brand-pink shrink-0 mt-0.5"></i>
-                <span><strong>Visual:</strong> Cria um efeito visual incrível de "cidadezinha".</span>
-              </li>
-            </ul>
+                    <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-brand-soft/95 p-4 rounded-xl border border-pink-100 backdrop-blur-sm shadow-sm transition-all duration-500 group-hover:bg-black/40 group-hover:text-white group-hover:border-white/20">
+                      <li class="flex items-start gap-2">
+                        <i data-lucide="calculator" class="w-4 h-4 text-brand-pink shrink-0 mt-0.5 transition-colors duration-500 group-hover:text-white"></i>
+                        <span><strong>Cálculo:</strong> Convidados ÷ 2. <br>(Ex: 8 crianças = 4 cabanas).</span>
+                      </li>
+                      <li class="flex items-start gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-brand-pink shrink-0 mt-0.5 transition-colors duration-500 group-hover:text-white"></i>
+                        <span><strong>Visual:</strong> Cria um efeito visual incrível de "cidadezinha".</span>
+                      </li>
+                    </ul>
+                </div>
+            </div>
           </div>
 
-          <div class="bg-white rounded-[2rem] p-6 shadow-xl border-4 border-white hover:border-brand-gold/50 transition-all group h-full">
-            <div class="h-40 bg-amber-50 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
-                <i data-lucide="store" class="w-16 h-16 text-brand-gold opacity-50"></i>
-                <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-gold/60 text-xs tracking-widest">ESTILO "GAZEBO/LOUNGE"</div>
-            </div>
-            
-            <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2">
-              O Tabernáculo
-            </h2>
-            <span class="inline-block bg-amber-100 text-brand-gold text-xs font-bold px-2 py-1 rounded-full mb-4">Adulto / Decorativo</span>
-            
-            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
-              Semelhante a um <strong>toldo ou gazebo elegante</strong>. É uma estrutura aberta, com tecidos fluidos, focada na estética e na convivência, não apenas em dormir.
-            </p>
+          <div class="h-full group cursor-pointer" onclick="abrirPreview('fotos/fotos (6).webp')">
+            <div class="bg-white rounded-[2rem] shadow-xl border-4 border-white group-hover:border-brand-gold/50 transition-all h-full relative overflow-hidden duration-500">
 
-            <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50 p-4 rounded-xl">
-              <li class="flex items-start gap-2">
-                <i data-lucide="wine" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5"></i>
-                <span><strong>Vibe Adulta:</strong> Perfeito para noites de vinhos, fotos e rodas de conversa.</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i data-lucide="camera" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5"></i>
-                <span><strong>Cenográfico:</strong> Mais decorativo, ideal para compor o ambiente da festa.</span>
-              </li>
-            </ul>
+                <div class="absolute inset-0 bg-[url('fotos/fotos (6).webp')] bg-cover bg-center opacity-15 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0">
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500"></div>
+                </div>
+                
+                <div class="relative z-10 p-6 h-full flex flex-col">
+                    <div class="h-40 bg-amber-50/90 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden backdrop-blur-sm transition-all duration-500 group-hover:bg-white/10 group-hover:backdrop-blur-md">
+                        <i data-lucide="store" class="w-16 h-16 text-brand-gold opacity-50 transition-colors duration-500 group-hover:text-white group-hover:opacity-100"></i>
+                        <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-gold/60 text-xs tracking-widest transition-colors duration-500 group-hover:text-white/80">ESTILO "GAZEBO/LOUNGE"</div>
+                    </div>
+                    
+                    <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2 transition-colors duration-500 group-hover:text-white">
+                      O Tabernáculo
+                    </h2>
+                    <div>
+                        <span class="inline-block bg-amber-100 text-brand-gold text-xs font-bold px-2 py-1 rounded-full mb-4 transition-all duration-500 group-hover:bg-white group-hover:text-brand-gold">Adulto / Decorativo</span>
+                    </div>
+                    
+                    <p class="text-slate-500 text-sm mb-6 leading-relaxed flex-grow font-medium transition-colors duration-500 group-hover:text-slate-100">
+                      Semelhante a um <strong>toldo ou gazebo elegante</strong>. É uma estrutura aberta, com tecidos fluidos, focada na estética e na convivência, não apenas em dormir.
+                    </p>
+
+                    <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50/95 p-4 rounded-xl backdrop-blur-sm shadow-sm transition-all duration-500 group-hover:bg-black/40 group-hover:text-white border border-transparent group-hover:border-white/20">
+                      <li class="flex items-start gap-2">
+                        <i data-lucide="wine" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5 transition-colors duration-500 group-hover:text-white"></i>
+                        <span><strong>Vibe Adulta:</strong> Perfeito para noites de vinhos, fotos e rodas de conversa.</span>
+                      </li>
+                      <li class="flex items-start gap-2">
+                        <i data-lucide="camera" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5 transition-colors duration-500 group-hover:text-white"></i>
+                        <span><strong>Cenográfico:</strong> Mais decorativo, ideal para compor o ambiente da festa.</span>
+                      </li>
+                    </ul>
+                </div>
+            </div>
           </div>
 
         </div>
@@ -167,6 +214,23 @@
 
     <script>
       lucide.createIcons();
+
+      // Script para abrir/fechar o preview da foto
+      function abrirPreview(url) {
+          const modal = document.getElementById('modal-preview');
+          const img = document.getElementById('img-preview');
+          img.src = url;
+          modal.classList.remove('hidden');
+          // Bloqueia scroll do fundo
+          document.body.style.overflow = 'hidden';
+      }
+
+      function fecharPreview() {
+          const modal = document.getElementById('modal-preview');
+          modal.classList.add('hidden');
+           // Libera scroll
+          document.body.style.overflow = '';
+      }
     </script>
   </body>
 </html>

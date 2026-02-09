@@ -30,6 +30,7 @@
                 soft: "#FFF5F8",
                 accent: "#FFD9E3",
                 purple: "#8B5CF6",
+                gold: "#F59E0B", // Nova cor para o Tabernáculo
               },
             },
           },
@@ -51,78 +52,102 @@
     </header>
 
     <main class="pt-24 pb-16 px-4">
-      <div class="container mx-auto max-w-4xl">
-        
-        <div class="text-center mb-12">
+      <div class="container mx-auto max-w-7xl"> <div class="text-center mb-12">
           <div class="inline-block px-4 py-1.5 rounded-full bg-white border border-brand-pink/20 text-brand-pink text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
             🎓 Antes de começar
           </div>
           <h1 class="font-display text-3xl md:text-5xl font-bold text-brand-dark mb-4">
             Qual é o estilo da sua festa?
           </h1>
-          <p class="text-slate-500 text-lg">
-            Muitas pessoas confundem <strong>Tenda</strong> com <strong>Cabana</strong>. <br class="hidden md:block">
-            Veja qual opção combina mais com o espaço e a diversão que planeia!
+          <p class="text-slate-500 text-lg max-w-2xl mx-auto">
+            Da brincadeira de criança ao lounge sofisticado. <br class="hidden md:block">
+            Entenda a diferença entre nossas estruturas e escolha a ideal.
           </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-start">
           
-          <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl border-4 border-white hover:border-brand-purple/30 transition-all group">
-            <div class="h-48 bg-purple-100 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
-                   <i data-lucide="tent-tree" class="w-20 h-20 text-brand-purple  opacity-50"></i>
-                
-                <div class="absolute bottom-4 left-0 right-0 text-center font-display font-bold text-brand-purple/60 text-sm">ESTILO "SALÃO"</div>
+          <div class="bg-white rounded-[2rem] p-6 shadow-xl border-4 border-white hover:border-brand-purple/30 transition-all group h-full">
+            <div class="h-40 bg-purple-100 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
+                <i data-lucide="tent" class="w-16 h-16 text-brand-purple opacity-50"></i>
+                <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-purple/60 text-xs tracking-widest">ESTILO "SALÃO"</div>
             </div>
             
-            <h2 class="font-display text-2xl font-bold text-brand-dark mb-3 flex items-center gap-2">
+            <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2">
               A Tenda Gigante
-              <span class="bg-purple-100 text-brand-purple text-xs px-2 py-1 rounded-full">Até 10 crianças</span>
             </h2>
+            <span class="inline-block bg-purple-100 text-brand-purple text-xs font-bold px-2 py-1 rounded-full mb-4">Até 10 crianças</span>
             
-            <p class="text-slate-500 mb-6 leading-relaxed">
-              Sabe aquela brincadeira nostálgica de fazer <strong>"cabaninha de sofá"</strong> com lençóis, onde todos se juntam num único esconderijo? É exatamente essa a magia da Tenda!
+            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
+              Sabe aquela brincadeira nostálgica de fazer <strong>"cabaninha de sofá"</strong> com lençóis? É exatamente essa a magia da Tenda! Todos juntos num único esconderijo.
             </p>
 
-            <ul class="space-y-3 text-sm text-slate-600 bg-slate-50 p-4 rounded-xl">
+            <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50 p-4 rounded-xl">
               <li class="flex items-start gap-2">
-                <i data-lucide="users" class="w-5 h-5 text-brand-purple shrink-0"></i>
-                <span><strong>Coletiva:</strong> Uma única estrutura grande para todos brincarem juntos.</span>
+                <i data-lucide="users" class="w-4 h-4 text-brand-purple shrink-0 mt-0.5"></i>
+                <span><strong>Coletiva:</strong> Uma única estrutura grande para o grupo todo.</span>
               </li>
               <li class="flex items-start gap-2">
-                <i data-lucide="layout" class="w-5 h-5 text-brand-purple shrink-0"></i>
+                <i data-lucide="layout" class="w-4 h-4 text-brand-purple shrink-0 mt-0.5"></i>
                 <span><strong>Espaço:</strong> Ideal para salas amplas ou quintais cobertos.</span>
               </li>
             </ul>
           </div>
 
-          <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl border-4 border-brand-pink hover:scale-105 transition-transform duration-300 relative z-10">
-            <div class="absolute -top-4 right-8 bg-brand-pink text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg uppercase tracking-wider">
-              Mais Pedida
+          <div class="bg-white rounded-[2rem] p-6 shadow-xl border-4 border-brand-pink hover:scale-105 transition-transform duration-300 relative z-10 h-full">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-pink text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg uppercase tracking-wider whitespace-nowrap">
+              ★ Mais Pedida das Crianças
             </div>
 
-            <div class="h-48 bg-pink-50 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
-                <i data-lucide="tent" class="w-20 h-20 text-brand-pink opacity-50"></i>
-                <div class="absolute bottom-4 left-0 right-0 text-center font-display font-bold text-brand-pink/60 text-sm">ESTILO "TIPI AMERICANO"</div>
+            <div class="h-40 bg-pink-50 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
+                <i data-lucide="tent-tree" class="w-16 h-16 text-brand-pink opacity-50"></i>
+                <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-pink/60 text-xs tracking-widest">ESTILO "TIPI"</div>
             </div>
             
-            <h2 class="font-display text-2xl font-bold text-brand-dark mb-3 flex items-center gap-2">
+            <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2">
               Cabana de Índio
-              <span class="bg-pink-100 text-brand-pink text-xs px-2 py-1 rounded-full">Duplas</span>
             </h2>
+            <span class="inline-block bg-pink-100 text-brand-pink text-xs font-bold px-2 py-1 rounded-full mb-4">Duplas (Parzinho)</span>
             
-            <p class="text-slate-500 mb-6 leading-relaxed">
-              As clássicas cabaninhas estilo "Tipi". Elas criam pequenas aldeias dentro de casa, oferecendo mais privacidade para as duplas de amigos conversarem a noite toda.
+            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
+              As clássicas cabaninhas estilo "Tipi Americano". Criam uma mini aldeia, oferecendo privacidade para as duplas de amigos fofocarem a noite toda.
             </p>
 
-            <ul class="space-y-3 text-sm text-slate-600 bg-brand-soft p-4 rounded-xl border border-pink-100">
+            <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-brand-soft p-4 rounded-xl border border-pink-100">
               <li class="flex items-start gap-2">
-                <i data-lucide="calculator" class="w-5 h-5 text-brand-pink shrink-0"></i>
-                <span><strong>A conta é simples:</strong> Número de convidados dividido por 2. (Ex: 8 crianças = 4 cabanas).</span>
+                <i data-lucide="calculator" class="w-4 h-4 text-brand-pink shrink-0 mt-0.5"></i>
+                <span><strong>Cálculo:</strong> Convidados ÷ 2. <br>(Ex: 8 crianças = 4 cabanas).</span>
               </li>
               <li class="flex items-start gap-2">
-                <i data-lucide="user-check" class="w-5 h-5 text-brand-pink shrink-0"></i>
-                <span><strong>Capacidade:</strong> Cada cabana comporta até 2 crianças de aprox. 6 anos.</span>
+                <i data-lucide="sparkles" class="w-4 h-4 text-brand-pink shrink-0 mt-0.5"></i>
+                <span><strong>Visual:</strong> Cria um efeito visual incrível de "cidadezinha".</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-white rounded-[2rem] p-6 shadow-xl border-4 border-white hover:border-brand-gold/50 transition-all group h-full">
+            <div class="h-40 bg-amber-50 rounded-2xl mb-6 flex items-center justify-center relative overflow-hidden">
+                <i data-lucide="store" class="w-16 h-16 text-brand-gold opacity-50"></i>
+                <div class="absolute bottom-3 left-0 right-0 text-center font-display font-bold text-brand-gold/60 text-xs tracking-widest">ESTILO "GAZEBO/LOUNGE"</div>
+            </div>
+            
+            <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2">
+              O Tabernáculo
+            </h2>
+            <span class="inline-block bg-amber-100 text-brand-gold text-xs font-bold px-2 py-1 rounded-full mb-4">Adulto / Decorativo</span>
+            
+            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
+              Semelhante a um <strong>toldo ou gazebo elegante</strong>. É uma estrutura aberta, com tecidos fluidos, focada na estética e na convivência, não apenas em dormir.
+            </p>
+
+            <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50 p-4 rounded-xl">
+              <li class="flex items-start gap-2">
+                <i data-lucide="wine" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5"></i>
+                <span><strong>Vibe Adulta:</strong> Perfeito para noites de vinhos, fotos e rodas de conversa.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="camera" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5"></i>
+                <span><strong>Cenográfico:</strong> Mais decorativo, ideal para compor o ambiente da festa.</span>
               </li>
             </ul>
           </div>
@@ -130,9 +155,9 @@
         </div>
 
         <div class="text-center">
-            <p class="text-slate-400 mb-4 text-sm font-bold">Agora que já sabe a diferença...</p>
+            <p class="text-slate-400 mb-4 text-sm font-bold">Já escolheu a estrutura perfeita?</p>
             <a href="orcamento.html" class="inline-flex items-center gap-3 bg-brand-pink text-white px-10 py-5 rounded-full font-bold text-xl shadow-lg shadow-pink-500/30 hover:bg-pink-500 transition-all transform hover:-translate-y-1 group">
-                Vamos Montar a Festa!
+                Simular meu Orçamento
                 <i data-lucide="arrow-right" class="w-6 h-6 group-hover:translate-x-1 transition-transform"></i>
             </a>
         </div>

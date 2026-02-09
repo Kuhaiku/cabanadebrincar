@@ -466,16 +466,34 @@ app.post("/api/admin/precos", checkAuth, async (req, res) => {
 
 app.put("/api/admin/precos/:id", checkAuth, async (req, res) => {
   try {
-    await db.query("UPDATE tabela_precos SET valor = ? WHERE id = ?", [
-      req.body.valor,
-      req.params.id,
+    const id = req.params.id;
+    const data = req.body;
+    
+    // Lista de colunas permitidas para edição
+    const allowedColumns = ['descricao', 'valor', 'categoria', 'disponivel'];
+
+    // Encontra qual campo foi enviado no JSON (ex: 'descricao', 'valor', etc)
+    const column = Object.keys(data).find(key => allowedColumns.includes(key));
+
+    if (!column) {
+      return res.status(400).json({ error: "Campo inválido ou não permitido." });
+    }
+
+    const value = data[column];
+
+    // Atualiza dinamicamente a coluna correta no banco
+    // Nota: Como 'column' foi validado na lista 'allowedColumns', é seguro interpolar
+    await db.query(`UPDATE tabela_precos SET ${column} = ? WHERE id = ?`, [
+      value,
+      id,
     ]);
+
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e });
+    console.error("Erro ao atualizar item:", e);
+    res.status(500).json({ error: e.message });
   }
 });
-
 app.delete("/api/admin/precos/:id", checkAuth, async (req, res) => {
   try {
     await db.query("DELETE FROM tabela_precos WHERE id = ?", [req.params.id]);

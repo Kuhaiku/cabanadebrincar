@@ -223,7 +223,15 @@
             <button onclick="location.reload()" class="bg-brand-pink text-white font-bold py-4 px-12 rounded-full shadow-xl hover:bg-pink-600 transition-colors">Voltar ao Início</button>
         </div>
     </div>
-
+    <div id="modal-zoom" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-brand-dark/90 backdrop-blur-md p-4 transition-opacity duration-300" onclick="fecharZoom()">
+        <div class="relative max-w-4xl w-full transform transition-all scale-100" onclick="event.stopPropagation()">
+            <button onclick="fecharZoom()" class="absolute -top-12 right-0 text-white hover:text-brand-pink transition-colors p-2">
+                <i data-lucide="x" class="w-8 h-8"></i>
+            </button>
+            <img id="img-zoom-preview" src="" class="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl border-4 border-white/20 bg-white">
+            <p class="text-center text-white/50 text-sm mt-4 font-bold uppercase tracking-widest">Sua Cabana Personalizada</p>
+        </div>
+    </div>
     <script>
       lucide.createIcons();
       const canvas = document.getElementById("simuladorCanvas");

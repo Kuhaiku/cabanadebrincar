@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Simulador | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { pink: '#FF6B95', dark: '#2D2A4A', soft: '#FFF5F8', purple: '#8B5CF6' }
+                    },
+                    fontFamily: { sans: ['Nunito', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        .pattern-grid {
+            background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        /* Toggle Switch Customizado */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #FF6B95;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #FF6B95;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <a href="painel.html" class="p-2 text-slate-400 hover:text-brand-pink transition-colors">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </a>
+                    <h1 class="text-xl font-bold text-brand-dark flex items-center gap-2">
+                        <i data-lucide="layers" class="text-brand-pink"></i> Gestor do Simulador
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <div class="lg:col-span-5 space-y-6">
+                
+                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 bg-brand-soft/30">
+                        <h2 class="text-lg font-bold text-brand-dark flex items-center gap-2">
+                            <i data-lucide="play-circle" class="text-brand-pink"></i> Área de Teste
+                        </h2>
+                        <p class="text-sm text-slate-500">Veja como a cabana fica montada.</p>
+                    </div>
+                    
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Selecione a Cabana</label>
+                            <div class="relative">
+                                <select id="preview_cabana" onchange="carregarPreview()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-brand-pink cursor-pointer appearance-none">
+                                    <option value="">Escolha para testar...</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <div id="controles-wrapper" class="hidden space-y-4 animate-fade-in">
+                            
+                            <div id="controle-luz" class="hidden bg-yellow-50 border border-yellow-100 p-4 rounded-xl flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
+                                        <i data-lucide="lightbulb" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-700">Iluminação</p>
+                                        <p class="text-[10px] text-slate-400">Testar camada de luz</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-block w-12 h-6 cursor-pointer">
+                                    <input type="checkbox" id="chk-luz" class="sr-only peer" onchange="atualizarCanvas()">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
+                                </label>
+                            </div>
+
+                            <div class="border-t border-slate-100 my-4"></div>
+
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase mb-3">Itens Cadastrados</h3>
+                                <div id="lista-itens-preview" class="space-y-2">
+                                    </div>
+                            </div>
+                        </div>
+                        
+                        <div id="msg-vazio" class="text-center py-4 text-slate-400 text-sm italic">
+                            Selecione uma cabana acima para carregar os controles.
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
+                    <div class="p-6 border-b border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-800">Adicionar Novo Ativo</h2>
+                    </div>
+                    
+                    <div class="p-6">
+                        <form id="formUpload" class="space-y-4">
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertence a qual Cabana?</label>
+                                <select id="tipo_cabana" name="tipo_cabana" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-brand-pink">
+                                    <option value="">Carregando...</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Categoria</label>
+                                    <select id="categoria_ativo" name="categoria_ativo" onchange="toggleItemSelect()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-brand-pink">
+                                        <option value="item" selected>✨ Item</option>
+                                        <option value="base">🏠 Base</option>
+                                        <option value="base_luz">💡 Luz</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ordem (Z)</label>
+                                    <input type="number" id="camada_z" name="camada_z" value="10" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-brand-pink">
+                                </div>
+                            </div>
+
+                            <div id="wrapper-item-id">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Vincular ao Produto</label>
+                                <select id="item_id" name="item_id" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-brand-pink">
+                                    <option value="">Carregando itens...</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Arquivo (PNG)</label>
+                                <input type="file" id="imagem" name="imagem" accept="image/png, image/webp" required class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-pink/10 file:text-brand-pink hover:file:bg-brand-pink/20 cursor-pointer border border-slate-200 rounded-lg bg-slate-50">
+                            </div>
+
+                            <button type="submit" id="btn-upload" class="w-full bg-brand-dark text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-dark/20 mt-2">
+                                <i data-lucide="upload-cloud" class="w-4 h-4"></i> Enviar Ativo
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-7 space-y-6">
+                
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 flex items-center justify-center relative min-h-[400px]">
+                    <div class="absolute top-4 left-6 text-sm font-bold text-slate-300 uppercase tracking-widest">Visualização Ao Vivo</div>
+                    
+                    <div id="loader-preview" class="absolute inset-0 flex items-center justify-center bg-white/80 z-20 hidden backdrop-blur-sm rounded-3xl">
+                        <div class="flex flex-col items-center gap-2">
+                            <i data-lucide="loader-2" class="animate-spin text-brand-pink w-10 h-10"></i>
+                            <span class="text-xs font-bold text-slate-400">Montando cabana...</span>
+                        </div>
+                    </div>
+
+                    <canvas id="canvasPreview" width="1080" height="1080" class="max-w-full h-auto max-h-[500px] drop-shadow-2xl"></canvas>
+                </div>
+
+                <div id="galeria-container" class="space-y-6">
+                    </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modal-zoom" class="hidden fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm" onclick="this.classList.add('hidden')">
+        <img id="img-zoom" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain">
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const token = localStorage.getItem("cabana_admin_token");
+        if (!token) window.location.href = "painel.html";
+
+        // --- LÓGICA DO PREVIEW ---
+        const canvas = document.getElementById("canvasPreview");
+        const ctx = canvas.getContext("2d");
+        let ativosPreview = [];
+        let imagensCache = {};
+
+        async function carregarImagem(url) {
+            if (imagensCache[url]) return imagensCache[url];
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = url;
+                img.onload = () => { imagensCache[url] = img; resolve(img); };
+                img.onerror = () => resolve(null);
+            });
+        }
+
+        async function carregarPreview() {
+            const select = document.getElementById('preview_cabana');
+            const cabana = select.value;
+            const loader = document.getElementById('loader-preview');
+            const wrapper = document.getElementById('controles-wrapper');
+            const msgVazio = document.getElementById('msg-vazio');
+            const listaItens = document.getElementById('lista-itens-preview');
+            const divLuz = document.getElementById('controle-luz');
+            
+            if (!cabana) {
+                wrapper.classList.add('hidden');
+                msgVazio.classList.remove('hidden');
+                return;
+            }
+            
+            loader.classList.remove('hidden');
+            wrapper.classList.remove('hidden');
+            msgVazio.classList.add('hidden');
+
+            try {
+                // 1. Busca Ativos
+                const res = await fetch(`/api/simulador/ativos/${encodeURIComponent(cabana)}`);
+                ativosPreview = await res.json();
+                
+                // 2. Pré-carrega imagens
+                await Promise.all(ativosPreview.map(a => carregarImagem(a.url_cloudinary)));
+                
+                // 3. Detecta Luz
+                const temBaseLuz = ativosPreview.some(a => a.categoria_ativo === 'base_luz');
+                if (temBaseLuz) {
+                    divLuz.classList.remove('hidden');
+                    document.getElementById('chk-luz').checked = false; // Reset
+                } else {
+                    divLuz.classList.add('hidden');
+                }
+
+                // 4. Gera Checkboxes para Itens
+                listaItens.innerHTML = '';
+                
+                // Filtra itens únicos
+                const itensUnicos = ativosPreview.filter(a => a.categoria_ativo === 'item')
+                    .reduce((acc, current) => {
+                        if (!acc.find(item => item.item_id === current.item_id)) acc.push(current);
+                        return acc;
+                    }, []);
+
+                if(itensUnicos.length === 0) {
+                     listaItens.innerHTML = '<p class="text-xs text-slate-400 italic">Nenhum item extra cadastrado para esta cabana.</p>';
+                } else {
+                    itensUnicos.forEach(item => {
+                        const nome = item.nome_item || `Item #${item.item_id}`;
+                        
+                        const html = `
+                            <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-brand-pink/50 transition-all group">
+                                <div class="relative flex items-center">
+                                    <input type="checkbox" 
+                                        class="chk-preview peer appearance-none w-5 h-5 border-2 border-slate-300 rounded checked:bg-brand-pink checked:border-brand-pink transition-all" 
+                                        value="${item.item_id}" 
+                                        onchange="atualizarCanvas()">
+                                    <i data-lucide="check" class="absolute w-3 h-3 text-white left-1 opacity-0 peer-checked:opacity-100 pointer-events-none"></i>
+                                </div>
+                                <span class="text-sm font-bold text-slate-600 group-hover:text-brand-dark select-none">${nome}</span>
+                                <span class="ml-auto text-[10px] font-bold text-slate-300 bg-white px-1.5 py-0.5 rounded border border-slate-100">Z: ${item.camada_z}</span>
+                            </label>
+                        `;
+                        listaItens.innerHTML += html;
+                        lucide.createIcons();
+                    });
+                }
+
+                atualizarCanvas();
+
+            } catch (e) {
+                console.error(e);
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        async function atualizarCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (ativosPreview.length === 0) return;
+
+            // Pega estado dos controles
+            const chkLuz = document.getElementById('chk-luz');
+            const luzAtiva = chkLuz ? chkLuz.checked : false;
+
+            const checkboxes = document.querySelectorAll('.chk-preview:checked');
+            const idsSelecionados = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            
+            let camadas = [];
+
+            // 1. Base
+            const base = ativosPreview.find(a => a.categoria_ativo === 'base');
+            if (base) camadas.push(base);
+
+            // 2. Luz (Se ativada no switch e existir imagem)
+            if (luzAtiva) {
+                const luz = ativosPreview.find(a => a.categoria_ativo === 'base_luz');
+                if (luz) camadas.push(luz);
+            }
+
+            // 3. Itens selecionados
+            const itens = ativosPreview.filter(a => 
+                a.categoria_ativo === 'item' && idsSelecionados.includes(a.item_id)
+            );
+            
+            // Ordena pelo Z-Index cadastrado
+            itens.sort((a, b) => a.camada_z - b.camada_z);
+            camadas = [...camadas, ...itens];
+
+            // Desenha
+            for (const c of camadas) {
+                const img = await carregarImagem(c.url_cloudinary);
+                if (img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
+        }
+
+
+        // --- DADOS E UPLOAD ---
+
+        async function carregarDadosIniciais() {
+            try {
+                const res = await fetch('/api/admin/precos', { headers: { 'x-admin-password': token } });
+                const dados = await res.json();
+                
+                // 1. Popular Selects de Barraca
+                const tendas = dados.filter(i => i.categoria === 'tendas');
+                const selectUpload = document.getElementById('tipo_cabana');
+                const selectPreview = document.getElementById('preview_cabana');
+                
+                let opts = '<option value="">Selecione...</option>';
+                tendas.forEach(t => {
+                    opts += `<option value="${t.descricao}">${t.descricao}</option>`;
+                });
+                selectUpload.innerHTML = opts;
+                selectPreview.innerHTML = '<option value="">Escolha para testar...</option>' + opts.replace('Selecione...', '');
+
+                // 2. Popular Itens
+                const selectItem = document.getElementById('item_id');
+                selectItem.innerHTML = '<option value="">Selecione o item...</option>';
+                dados.filter(i => i.categoria === 'padrao' || i.categoria === 'alimentacao')
+                     .forEach(item => {
+                         const opt = document.createElement('option');
+                         opt.value = item.id;
+                         opt.textContent = `${item.descricao}`;
+                         selectItem.appendChild(opt);
+                     });
+
+            } catch (e) { console.error(e); }
+        }
+
+        function toggleItemSelect() {
+            const tipo = document.getElementById('categoria_ativo').value;
+            const wrapper = document.getElementById('wrapper-item-id');
+            const inputZ = document.getElementById('camada_z');
+            if (tipo.startsWith('base')) {
+                wrapper.classList.add('hidden');
+                inputZ.value = 0; 
+            } else {
+                wrapper.classList.remove('hidden'); 
+                inputZ.value = 10; 
+            }
+        }
+
+        document.getElementById('formUpload').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-upload');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Enviando...`;
+            btn.disabled = true;
+
+            const formData = new FormData(e.target);
+            try {
+                const res = await fetch('/api/admin/ativos-simulador', {
+                    method: 'POST',
+                    headers: { 'x-admin-password': token },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Ativo vinculado com sucesso!');
+                    e.target.reset();
+                    toggleItemSelect();
+                    carregarGaleria();
+                    // Atualiza o preview se estiver na mesma cabana
+                    const cabanaAtual = document.getElementById('preview_cabana').value;
+                    if(cabanaAtual) carregarPreview();
+                } else {
+                    alert('Erro: ' + data.error);
+                }
+            } catch (err) { alert('Erro de conexão.'); } 
+            finally { btn.innerHTML = originalText; btn.disabled = false; lucide.createIcons(); }
+        });
+
+        async function carregarGaleria() {
+            const container = document.getElementById('galeria-container');
+            try {
+                const res = await fetch('/api/admin/ativos-simulador', { headers: { 'x-admin-password': token } });
+                const ativos = await res.json();
+                
+                if (ativos.length === 0) {
+                    container.innerHTML = `<div class="text-center py-12 text-slate-400">Nada cadastrado.</div>`;
+                    return;
+                }
+
+                const grupos = {};
+                ativos.forEach(ativo => {
+                    const chave = ativo.tipo_cabana;
+                    if (!grupos[chave]) grupos[chave] = [];
+                    grupos[chave].push(ativo);
+                });
+
+                let html = '';
+                for (const [tipo, itens] of Object.entries(grupos)) {
+                    itens.sort((a, b) => a.camada_z - b.camada_z);
+                    html += `
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                                <h3 class="font-bold text-lg text-brand-dark uppercase tracking-wide flex items-center gap-2">
+                                    <i data-lucide="tent" class="w-4 h-4 text-brand-pink"></i> ${tipo}
+                                </h3>
+                                <span class="text-xs font-bold text-slate-400 bg-white px-2 py-1 rounded border border-slate-100">${itens.length} ativos</span>
+                            </div>
+                            <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                ${itens.map(item => `
+                                    <div class="group relative bg-slate-50 rounded-xl border border-slate-200 p-2 flex flex-col gap-2 hover:shadow-md transition-all">
+                                        <div class="relative aspect-square bg-white rounded-lg overflow-hidden border border-slate-100 cursor-zoom-in flex items-center justify-center pattern-grid" 
+                                             onclick="abrirZoom('${item.url_cloudinary}')">
+                                            <img src="${item.url_cloudinary}" class="max-w-full max-h-full object-contain">
+                                            <div class="absolute top-1 left-1 bg-black/50 text-white text-[10px] font-bold px-1.5 rounded">Z: ${item.camada_z}</div>
+                                        </div>
+                                        <div class="px-1">
+                                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">${item.categoria_ativo === 'item' ? 'Item' : (item.categoria_ativo === 'base_luz' ? 'Luz' : 'Base')}</div>
+                                            <div class="text-xs font-bold text-slate-700 truncate" title="${item.item_id || 'Base'}">
+                                                ${item.item_id ? (item.nome_item || `ID: ${item.item_id}`) : (item.categoria_ativo === 'base_luz' ? 'Com Luzes' : 'Padrão')}
+                                            </div>
+                                        </div>
+                                        <button onclick="deletarAtivo(${item.id})" class="absolute top-2 right-2 p-1.5 bg-white text-red-500 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+                lucide.createIcons();
+            } catch (e) { container.innerHTML = 'Erro na galeria'; }
+        }
+
+        async function deletarAtivo(id) {
+            if (!confirm('Excluir este ativo?')) return;
+            try {
+                await fetch(`/api/admin/ativos-simulador/${id}`, { method: 'DELETE', headers: { 'x-admin-password': token } });
+                carregarGaleria();
+                const cabanaAtual = document.getElementById('preview_cabana').value;
+                if(cabanaAtual) carregarPreview();
+            } catch (e) { alert('Erro.'); }
+        }
+
+        function abrirZoom(url) {
+            document.getElementById('img-zoom').src = url;
+            document.getElementById('modal-zoom').classList.remove('hidden');
+        }
+
+        carregarDadosIniciais();
+        carregarGaleria();
+    </script>
+</body>
+</html>

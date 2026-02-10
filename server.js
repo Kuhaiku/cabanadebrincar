@@ -258,10 +258,12 @@ app.post("/api/orcamento", async (req, res) => {
 });
 
 // Listar Itens Disponíveis
+// --- CORREÇÃO AQUI: Adicionado 'id' no SELECT ---
 app.get("/api/itens-disponiveis", async (req, res) => {
   try {
+    // Antes estava: SELECT descricao, categoria... (Faltava o ID!)
     const [rows] = await db.query(
-      "SELECT descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'alimentacao', 'tendas') AND disponivel = TRUE ORDER BY categoria, descricao",
+      "SELECT id, descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'alimentacao', 'tendas') AND disponivel = TRUE ORDER BY categoria, descricao",
     );
     res.json(rows);
   } catch (e) {
@@ -692,4 +694,66 @@ app.post(
   },
 );
 
+// --- NOVAS ROTAS: GESTÃO DO SIMULADOR DINÂMICO ---
+// 1. Upload de Ativo (Base ou Item)
+app.post("/api/admin/ativos-simulador", checkAuth, upload.single("imagem"), async (req, res) => {
+  try {
+    const { tipo_cabana, categoria_ativo, item_id, camada_z } = req.body;
+    if (!req.file) return res.status(400).json({ error: "Nenhuma imagem enviada" });
+
+    // Define pasta baseada no tipo
+    const pasta = categoria_ativo === 'item' ? "simulador/itens" : "simulador/bases";
+    
+    const up = await cloudinary.uploader.upload(req.file.path, { folder: `cabana/${pasta}` });
+    fs.unlinkSync(req.file.path);
+
+    const sql = `INSERT INTO ativos_simulador (tipo_cabana, categoria_ativo, item_id, url_cloudinary, camada_z) VALUES (?, ?, ?, ?, ?)`;
+    await db.query(sql, [tipo_cabana, categoria_ativo, item_id || null, up.secure_url, camada_z || 0]);
+
+    res.json({ success: true, url: up.secure_url });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 2. Buscar Ativos da Cabana Específica (Para o Orcamento.html)
+app.get("/api/simulador/ativos/:tipo", async (req, res) => {
+  try {
+    const { tipo } = req.params;
+    // Traz APENAS o que foi cadastrado para este NOME de cabana
+    const sql = `
+      SELECT a.*, tp.descricao as nome_item 
+      FROM ativos_simulador a
+      LEFT JOIN tabela_precos tp ON a.item_id = tp.id
+      WHERE a.tipo_cabana = ?
+      ORDER BY a.camada_z ASC
+    `;
+    const [rows] = await db.query(sql, [tipo]);
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 3. Listar todos os ativos (Para o Painel Admin)
+app.get("/api/admin/ativos-simulador", checkAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM ativos_simulador ORDER BY tipo_cabana, camada_z");
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 4. Excluir um ativo
+app.delete("/api/admin/ativos-simulador/:id", checkAuth, async (req, res) => {
+  try {
+    // Opcional: Deletar do Cloudinary também se quiser implementar depois
+    await db.query("DELETE FROM ativos_simulador WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

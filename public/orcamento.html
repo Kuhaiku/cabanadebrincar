@@ -92,6 +92,20 @@
         border-color: #ff6b95;
         background-color: #fff5f8;
       }
+      /* Estilos para Cardápio */
+      .card-combo {
+        transition: all 0.3s ease;
+        border: 2px solid #f1f5f9;
+      }
+      .card-combo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+      }
+      .card-combo.selected {
+        border-color: #ff6b95;
+        background-color: #fff5f8;
+      }
+
       @keyframes zoomIn {
         from {
           opacity: 0;
@@ -294,15 +308,34 @@
                 class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200"
                 >3</span
               >
-              Alimentação
+              Alimentação (Opcional)
             </h2>
-            <div
-              class="grid grid-cols-1 sm:grid-cols-2 gap-2 relative z-10"
-              id="container-alimentacao"
-            >
-              <span class="text-xs text-slate-300 italic"
-                >Carregando menu...</span
+
+            <div class="relative z-10 mb-6">
+              <p class="text-xs text-slate-400 font-bold uppercase mb-3 ml-1">
+                Pacotes Promocionais
+              </p>
+              <div
+                id="gridCombos"
+                class="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
+                <span class="text-xs text-slate-300 italic"
+                  >Carregando cardápios...</span
+                >
+              </div>
+            </div>
+
+            <div
+              id="areaExtrasComida"
+              class="relative z-10 hidden border-t border-slate-100 pt-6"
+            >
+              <p class="text-xs text-slate-400 font-bold uppercase mb-3 ml-1">
+                Itens Avulsos (Adicione se quiser)
+              </p>
+              <div
+                id="listaExtrasComida"
+                class="grid grid-cols-1 sm:grid-cols-2 gap-3"
+              ></div>
             </div>
           </section>
 
@@ -398,7 +431,7 @@
               <div>
                 <label
                   class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Qtd. Pessoas *</label
+                  >Qtd. Crianças *</label
                 >
                 <input
                   type="number"
@@ -422,33 +455,20 @@
                   class="clean-input"
                 />
               </div>
-              <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Qtd. Barracas *</label
-                >
-                <input
-                  type="number"
-                  id="qtd_barracas"
-                  required
-                  min="1"
-                  placeholder="Ex: 1"
-                  class="clean-input"
-                />
-              </div>
             </div>
+
             <div class="space-y-4 mt-4">
               <div>
                 <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
+                  class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1"
                   >Observações / Extras *</label
                 >
                 <textarea
                   id="itens_adicionais"
                   rows="2"
-                  class="clean-input resize-none"
-                  placeholder="Quer adicionar algo especial?"
                   required
+                  class="clean-input resize-none border-brand-pink/30"
+                  placeholder="Detalhes adicionais importantes..."
                 ></textarea>
               </div>
               <div>
@@ -459,9 +479,9 @@
                 <textarea
                   id="alergias"
                   rows="2"
+                  required
                   class="clean-input resize-none border-brand-pink/30 bg-brand-soft/20"
                   placeholder="Caso não tenha, escreva 'Não'"
-                  required
                 ></textarea>
               </div>
             </div>
@@ -476,21 +496,19 @@
               Ops! Faltam preencher:
               <span id="campos-faltantes" class="font-normal"></span>
             </div>
+
             <button
               type="submit"
               id="btn-submit"
-              class="w-full bg-brand-dark text-white font-display font-bold text-xl py-5 rounded-2xl shadow-xl shadow-slate-300 hover:bg-slate-800 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
+              class="w-full bg-brand-pink text-white font-display font-bold text-xl py-5 rounded-2xl shadow-xl shadow-pink-200 hover:bg-pink-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
             >
               <span class="relative z-10 flex items-center gap-3">
                 <i
                   data-lucide="send"
-                  class="w-6 h-6 text-brand-pink group-hover:text-white transition-colors"
+                  class="w-6 h-6 text-white transition-colors"
                 ></i>
                 Solicitar Orçamento Grátis
               </span>
-              <div
-                class="absolute inset-0 bg-slate-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left z-0"
-              ></div>
             </button>
             <p
               class="text-center text-xs text-slate-400 mt-4 flex items-center justify-center gap-1"
@@ -561,9 +579,13 @@
       const canvas = document.getElementById("simuladorCanvas");
       const ctx = canvas.getContext("2d");
 
+      // --- ESTADO GLOBAL ---
       let ativosAtuais = [];
       let imagensCarregadas = {};
+      let dadosAPI = { modelos: [], combos: [], extras: [] };
+      let selecao = { modeloId: null, comboId: null, extras: {} };
 
+      // --- FUNÇÕES VISUALIZADOR (MANTIDAS) ---
       async function carregarImagem(url) {
         if (imagensCarregadas[url]) return imagensCarregadas[url];
         return new Promise((resolve) => {
@@ -582,6 +604,10 @@
         const select = document.getElementById("modelo_barraca");
         const modeloNome = select.value;
         if (!modeloNome) return;
+
+        const mod = dadosAPI.modelos.find((m) => m.descricao === modeloNome);
+        if (mod) selecao.modeloId = mod.id;
+
         document.getElementById("canvas-loader").classList.remove("hidden");
         try {
           const res = await fetch(
@@ -600,19 +626,14 @@
         }
       }
 
-      // --- LOGICA IGUAL AO ADMIN (Base < Luz < Itens) ---
       async function atualizarSimulador() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (ativosAtuais.length === 0) return;
 
-        // 1. Pega os IDs dos itens marcados
         const checkboxes = document.querySelectorAll(".chk-padrao:checked");
-        // AQUI ESTAVA O ERRO NO SERVER: cb.dataset.id vinha vazio!
         const idsSelecionados = Array.from(checkboxes).map((cb) =>
           parseInt(cb.dataset.id),
         );
-
-        // 2. Detecta se tem luz pelo nome do item
         const nomesSelecionados = Array.from(checkboxes).map((cb) =>
           cb.value.toLowerCase(),
         );
@@ -621,12 +642,9 @@
         );
 
         let camadas = [];
-
-        // Camada 0: Base
         const base = ativosAtuais.find((a) => a.categoria_ativo === "base");
         if (base) camadas.push(base);
 
-        // Camada 1: Luz (Se detectada e existir imagem)
         if (temLuz) {
           const luz = ativosAtuais.find(
             (a) => a.categoria_ativo === "base_luz",
@@ -634,52 +652,55 @@
           if (luz) camadas.push(luz);
         }
 
-        // Camada 2: Itens (Almofadas, Mesas, etc)
         const itens = ativosAtuais.filter(
           (a) =>
             a.categoria_ativo === "item" && idsSelecionados.includes(a.item_id),
         );
 
-        // Ordena pelo Z-Index do Painel
         itens.sort((a, b) => a.camada_z - b.camada_z);
         camadas = [...camadas, ...itens];
 
-        // Desenha
         for (const c of camadas) {
           const img = await carregarImagem(c.url_cloudinary);
           if (img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
       }
 
+      // --- CARREGAMENTO DE DADOS ---
       async function carregarDadosAPI() {
         try {
-          const res = await fetch("/api/itens-disponiveis");
-          const itens = await res.json();
+          // 1. Itens Básicos e Barracas
+          const res1 = await fetch("/api/itens-disponiveis");
+          const itens = await res1.json();
 
+          // 2. Cardápios
+          const res2 = await fetch("/api/cardapios");
+          dadosAPI.combos = await res2.json();
+
+          // 3. Extras de Comida
+          const res3 = await fetch("/api/alimentos?publico=true");
+          dadosAPI.extras = await res3.json();
+
+          // Renderizar Barracas (SEM PREÇO)
           const selModelo = document.getElementById("modelo_barraca");
+          selModelo.innerHTML = '<option value="">Selecione...</option>';
+          const tendas = itens.filter((i) => i.categoria === "tendas");
+          dadosAPI.modelos = tendas;
+          tendas.forEach((t) => {
+            const opt = document.createElement("option");
+            opt.value = t.descricao;
+            opt.textContent = `${t.descricao}`; // Removido preço
+            selModelo.appendChild(opt);
+          });
+
+          // Renderizar Personalização
           const divPersonalizacao = document.getElementById(
             "container-personalizacao",
           );
-          const divAlimentacao = document.getElementById(
-            "container-alimentacao",
-          );
-          selModelo.innerHTML = '<option value="">Selecione...</option>';
           divPersonalizacao.innerHTML = "";
-          divAlimentacao.innerHTML = "";
-
-          const tendas = itens.filter((i) => i.categoria === "tendas");
-          if (tendas.length > 0)
-            tendas.forEach((t) => {
-              const opt = document.createElement("option");
-              opt.value = t.descricao;
-              opt.textContent = t.descricao;
-              selModelo.appendChild(opt);
-            });
-
           itens
             .filter((i) => i.categoria === "padrao")
             .forEach((item) => {
-              // AQUI O DATA-ID É VITAL PARA O FUNCIONAMENTO
               divPersonalizacao.innerHTML += `
                     <label class="item-card flex items-center gap-3 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-pink/30 transition-colors">
                         <input type="checkbox" value="${item.descricao}" data-id="${item.id}" checked onchange="atualizarSimulador()" class="chk-padrao custom-checkbox w-5 h-5 text-brand-pink">
@@ -687,18 +708,97 @@
                     </label>`;
             });
 
-          itens
-            .filter((i) => i.categoria === "alimentacao")
-            .forEach((item) => {
-              divAlimentacao.innerHTML += `<label class="item-card flex items-center gap-3 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-pink/30 transition-colors"><input type="checkbox" value="${item.descricao}" class="chk-alim custom-checkbox w-5 h-5 text-brand-pink"><span class="text-sm font-bold text-slate-600">${item.descricao}</span></label>`;
-            });
+          // Renderizar COMBOS (SEM PREÇO)
+          const divCombos = document.getElementById("gridCombos");
+          if (dadosAPI.combos.length === 0) {
+            divCombos.innerHTML =
+              '<span class="text-xs text-slate-300 italic">Nenhum pacote disponível.</span>';
+          } else {
+            divCombos.innerHTML = dadosAPI.combos
+              .map((c) => {
+                return `
+                 <div class="card-combo cursor-pointer rounded-xl overflow-hidden relative group bg-white" onclick="selecionarCombo(this, ${c.id})">
+                    <div class="absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 border-slate-300 bg-white flex items-center justify-center check-icon transition-colors">
+                        <div class="w-3 h-3 bg-brand-pink rounded-full opacity-0 transition-opacity"></div>
+                    </div>
+                    <div class="flex h-24">
+                        <img src="${c.url_capa || "assets/logo.png"}" class="w-24 h-full object-cover bg-slate-100">
+                        <div class="p-3 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-700 text-sm leading-tight">${c.titulo}</h4>
+                                <p class="text-[10px] text-slate-400 mt-1 line-clamp-2">${c.descricao}</p>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+                 `;
+              })
+              .join("");
+          }
 
-          if (selModelo.value) aoMudarModelo();
+          // Renderizar EXTRAS (SEM PREÇO)
+          const divExtras = document.getElementById("listaExtrasComida");
+          const areaExtras = document.getElementById("areaExtrasComida");
+          if (dadosAPI.extras.length > 0) {
+            areaExtras.classList.remove("hidden");
+            divExtras.innerHTML = dadosAPI.extras
+              .map(
+                (e) => `
+                <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <div class="flex-1">
+                        <p class="text-xs font-bold text-slate-700">${e.nome}</p>
+                        <p class="text-[10px] text-slate-400">${e.medida}${e.unidade}</p>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white rounded-lg border border-slate-100 px-1">
+                        <button type="button" onclick="alterarExtra(${e.id}, -1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">-</button>
+                        <span id="qtd_extra_${e.id}" class="text-xs font-bold text-slate-600 w-3 text-center">0</span>
+                        <button type="button" onclick="alterarExtra(${e.id}, 1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">+</button>
+                    </div>
+                </div>
+              `,
+              )
+              .join("");
+          }
         } catch (e) {
           console.error("Erro API", e);
         }
       }
 
+      // --- LÓGICA DE INTERAÇÃO ---
+
+      function selecionarCombo(el, id) {
+        if (selecao.comboId === id) {
+          selecao.comboId = null; // Desmarca
+          el.classList.remove("selected");
+          el.querySelector(".check-icon").classList.remove("border-brand-pink");
+          el.querySelector(".bg-brand-pink").classList.add("opacity-0");
+        } else {
+          // Limpa outros
+          document.querySelectorAll(".card-combo").forEach((c) => {
+            c.classList.remove("selected");
+            c.querySelector(".check-icon").classList.remove(
+              "border-brand-pink",
+            );
+            c.querySelector(".bg-brand-pink").classList.add("opacity-0");
+          });
+          // Marca atual
+          selecao.comboId = id;
+          el.classList.add("selected");
+          el.querySelector(".check-icon").classList.add("border-brand-pink");
+          el.querySelector(".bg-brand-pink").classList.remove("opacity-0");
+        }
+      }
+
+      function alterarExtra(id, delta) {
+        const atual = selecao.extras[id] || 0;
+        const novo = atual + delta;
+        if (novo >= 0) {
+          selecao.extras[id] = novo;
+          document.getElementById(`qtd_extra_${id}`).innerText = novo;
+        }
+      }
+
+      // --- MODAL ZOOM ---
       function abrirZoom() {
         const modal = document.getElementById("modal-zoom");
         const img = document.getElementById("img-zoom-preview");
@@ -715,6 +815,7 @@
         if (event.key === "Escape") fecharZoom();
       });
 
+      // --- VALIDAÇÃO E SUBMIT ---
       const camposObrigatorios = [
         { id: "modelo_barraca", nome: "Modelo" },
         { id: "tema", nome: "Tema" },
@@ -727,10 +828,10 @@
         { id: "horario", nome: "Horário" },
         { id: "qtd_criancas", nome: "Pessoas" },
         { id: "faixa_etaria", nome: "Idade" },
-        { id: "qtd_barracas", nome: "Qtd" },
-        { id: "itens_adicionais", nome: "Obs" },
-        { id: "alergias", nome: "Alergias" },
+        { id: "itens_adicionais", nome: "Observações" }, // Agora obrigatório
+        { id: "alergias", nome: "Alergias" }, // Agora obrigatório
       ];
+
       function validarTodoFormulario() {
         let faltantes = [];
         camposObrigatorios.forEach((campo) => {
@@ -753,6 +854,7 @@
           return true;
         }
       }
+
       document.addEventListener("DOMContentLoaded", () => {
         camposObrigatorios.forEach((campo) => {
           const el = document.getElementById(campo.id);
@@ -767,6 +869,7 @@
         });
         carregarDadosAPI();
       });
+
       document
         .getElementById("orcamentoForm")
         .addEventListener("submit", async (e) => {
@@ -781,14 +884,36 @@
           const textoOriginal = btn.innerHTML;
           btn.innerHTML = "Enviando...";
           btn.disabled = true;
+
+          // Montar Itens Padrão
           const itensPadrao = [];
           document
             .querySelectorAll(".chk-padrao:checked")
             .forEach((el) => itensPadrao.push(el.value));
-          const alimentacao = [];
-          document
-            .querySelectorAll(".chk-alim:checked")
-            .forEach((el) => alimentacao.push(el.value));
+
+          // Montar Objeto Alimentação (Envio com valores ocultos para o Admin processar)
+          const objAlimentacao = { combo: null, extras: [] };
+          if (selecao.comboId) {
+            const c = dadosAPI.combos.find((x) => x.id === selecao.comboId);
+            objAlimentacao.combo = {
+              id: c.id,
+              titulo: c.titulo,
+              valor_unitario: c.valor_final,
+              modo: c.modo_cobranca,
+            };
+          }
+          for (const [id, qtd] of Object.entries(selecao.extras)) {
+            if (qtd > 0) {
+              const i = dadosAPI.extras.find((x) => x.id == id);
+              objAlimentacao.extras.push({
+                id: i.id,
+                nome: i.nome,
+                qtd: qtd,
+                valor: i.valor,
+              });
+            }
+          }
+
           const formData = {
             nome: document.getElementById("nome").value,
             whatsapp: document.getElementById("whatsapp").value,
@@ -797,16 +922,19 @@
             qtd_criancas: document.getElementById("qtd_criancas").value,
             faixa_etaria: document.getElementById("faixa_etaria").value,
             modelo_barraca: document.getElementById("modelo_barraca").value,
-            qtd_barracas: document.getElementById("qtd_barracas").value,
+            qtd_barracas: Math.ceil(
+              document.getElementById("qtd_criancas").value / 2,
+            ),
             cores: document.getElementById("cores").value,
             tema: document.getElementById("tema").value,
             itens_padrao: itensPadrao,
             itens_adicionais: document.getElementById("itens_adicionais").value,
             data_festa: document.getElementById("data_festa").value,
             horario: document.getElementById("horario").value,
-            alimentacao: alimentacao,
+            alimentacao: objAlimentacao,
             alergias: document.getElementById("alergias").value,
           };
+
           try {
             const res = await fetch("/api/orcamento", {
               method: "POST",

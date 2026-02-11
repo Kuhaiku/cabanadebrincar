@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criador de Cardápio | Cabana Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap'); 
+        body { font-family: 'Quicksand', sans-serif; }
+        
+        /* Estilo do Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-6">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="flex items-center gap-4 mb-8">
+            <a href="painel.html" class="p-2 bg-white rounded-xl hover:bg-slate-100 transition-colors"><i data-lucide="arrow-left" class="text-slate-600"></i></a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Gestão de Cardápios</h1>
+                <p class="text-slate-500 text-sm">Crie combos e gerencie ofertas de alimentação.</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit sticky top-6">
+                <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="text-pink-500"></i> Novo Pacote</h2>
+                
+                <form id="formCriar" onsubmit="salvarNovo(event)" class="space-y-4">
+                    <div class="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-xl h-40 flex items-center justify-center hover:border-pink-400 transition-all bg-slate-50 overflow-hidden">
+                        <input type="file" id="new_capa" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImagem(this, 'new_imgPreview')">
+                        <img id="new_imgPreview" class="absolute inset-0 w-full h-full object-cover hidden">
+                        <div class="text-center text-slate-400">
+                            <i data-lucide="image-plus" class="w-8 h-8 mx-auto mb-2"></i>
+                            <span class="text-xs font-bold">Foto de Capa</span>
+                        </div>
+                    </div>
+
+                    <input type="text" id="new_titulo" placeholder="Nome do Combo (ex: Festa Pizza)" class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none" required>
+                    <textarea id="new_descricao" placeholder="Descrição comercial..." rows="3" class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-pink-200 outline-none"></textarea>
+
+                    <div class="p-4 bg-slate-50 rounded-xl">
+                        <label class="block text-xs font-bold text-slate-400 mb-2 uppercase">Regra de Preço</label>
+                        <div class="flex gap-2 mb-3">
+                            <button type="button" onclick="setTipoPreco('new', 'soma')" id="new_btnSoma" class="flex-1 py-2 rounded-lg text-xs font-bold bg-pink-500 text-white transition-all">Somar Itens</button>
+                            <button type="button" onclick="setTipoPreco('new', 'fixo')" id="new_btnFixo" class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all">Valor Fixo</button>
+                        </div>
+                        <div id="new_boxPrecoFixo" class="hidden relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">R$</span>
+                            <input type="number" id="new_valorFixo" step="0.01" placeholder="0.00" class="w-full pl-8 p-2 rounded-lg text-sm font-bold border border-slate-200">
+                        </div>
+                        <p id="new_msgSoma" class="text-xs text-center text-slate-400 mt-2">Total Estimado: R$ 0,00</p>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Itens: <span id="new_contador" class="text-pink-500">0</span></h3>
+                        <div id="new_listaItens" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar bg-slate-50 p-2 rounded-lg min-h-[100px]">
+                            <p class="text-xs text-slate-300 text-center py-8">Arraste ou clique nos itens ao lado.</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition-all shadow-lg flex justify-center items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Criar Cardápio
+                    </button>
+                </form>
+            </div>
+
+           <div class="lg:col-span-8 space-y-8">
+    
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <i data-lucide="chef-hat" class="text-pink-500"></i> Cadastrar Novo Alimento / Insumo
+        </h3>
+        
+        <form onsubmit="cadastrarAlimento(event)" class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end bg-slate-50 p-4 rounded-xl">
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Nome</label>
+                <input type="text" id="cad_nome" placeholder="Ex: Mini Pizza" class="w-full p-2 rounded border border-slate-200 text-sm" required>
+            </div>
+            
+            <div class="md:col-span-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Medida</label>
+                <div class="flex">
+                    <input type="number" id="cad_medida" placeholder="1" class="w-1/2 p-2 rounded-l border border-slate-200 text-sm" required>
+                    <select id="cad_unidade" class="w-1/2 p-2 rounded-r border border-y border-r border-slate-200 text-sm bg-white">
+                        <option value="un">un</option>
+                        <option value="g">g</option>
+                        <option value="kg">kg</option>
+                        <option value="ml">ml</option>
+                        <option value="lt">lt</option>
+                        <option value="fatia">fatia</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="md:col-span-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Valor (R$)</label>
+                <input type="number" id="cad_valor" step="0.01" placeholder="0.00" class="w-full p-2 rounded border border-slate-200 text-sm" required>
+            </div>
+
+            <div class="md:col-span-1 flex flex-col items-center justify-center pb-2">
+                 <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Visível no Site?</label>
+                 <div class="relative inline-block w-10 align-middle select-none">
+                    <input type="checkbox" id="cad_visivel" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 checked:right-0 checked:border-green-500 transition-all"/>
+                    <label for="cad_visivel" class="block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer checked:bg-green-500"></label>
+                </div>
+            </div>
+
+            <div class="md:col-span-1">
+                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded hover:bg-slate-900 transition-all text-sm">Salvar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <i data-lucide="shopping-basket" class="text-orange-500"></i> Estoque de Alimentos
+        </h3>
+        
+        <input type="text" id="buscaItem" placeholder="Buscar ingrediente..." class="w-full p-2 mb-4 bg-slate-50 rounded-lg text-sm border-none outline-none" onkeyup="filtrarItens()">
+
+        <div id="gridItens" class="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+            </div>
+    </div>
+</div>
+
+<script>
+    // --- FUNÇÃO EXTRA PARA O SCRIPT JÁ EXISTENTE ---
+    async function cadastrarAlimento(e) {
+        e.preventDefault();
+        const payload = {
+            nome: document.getElementById('cad_nome').value,
+            medida: document.getElementById('cad_medida').value,
+            unidade: document.getElementById('cad_unidade').value,
+            valor: document.getElementById('cad_valor').value,
+            visivel_site: document.getElementById('cad_visivel').checked
+        };
+
+        try {
+            await fetch('/api/admin/alimentos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
+                body: JSON.stringify(payload)
+            });
+            // Limpa form e recarrega
+            e.target.reset();
+            carregarItens(); // Atualiza a lista na hora
+        } catch(err) {
+            alert('Erro ao salvar alimento');
+        }
+    }
+
+    // --- ATUALIZAR O carregarItens() NO SCRIPT ORIGINAL ---
+    // Substitua a função antiga por esta:
+    async function carregarItens() {
+        // Agora busca na nova rota de alimentos
+        const res = await fetch('/api/alimentos', { headers: { 'x-admin-password': ADMIN_TOKEN } });
+        todosItens = await res.json();
+        
+        // Mapeia para o formato que o renderizador espera, adicionando a formatação visual
+        todosItens = todosItens.map(i => ({
+            ...i,
+            descricao: `${i.nome} (${i.medida}${i.unidade})` + (i.visivel_site ? '' : ' 👁️‍🗨️') // Ícone de olho cortado se for invisível
+        }));
+        
+        renderizarItensDisponiveis(todosItens);
+    }
+</script>
+        </div>
+    </div>
+
+    <div id="modalEditar" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h2 class="text-xl font-bold text-slate-800">Editar Cardápio</h2>
+                <button onclick="fecharModal()" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <form id="formEditar" onsubmit="salvarEdicao(event)" class="p-6 space-y-6">
+                <input type="hidden" id="edit_id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-xl h-40 flex items-center justify-center hover:border-pink-400 transition-all bg-slate-50 overflow-hidden">
+                            <input type="file" id="edit_capa" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImagem(this, 'edit_imgPreview')">
+                            <img id="edit_imgPreview" class="absolute inset-0 w-full h-full object-cover">
+                            <div class="text-center text-slate-400 absolute z-0 pointer-events-none">
+                                <span class="text-xs font-bold">Trocar Foto</span>
+                            </div>
+                        </div>
+                        <input type="text" id="edit_titulo" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm" required>
+                        <textarea id="edit_descricao" rows="3" class="w-full p-3 bg-slate-50 rounded-xl text-sm"></textarea>
+                        
+                        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
+                            <span class="text-sm font-bold text-slate-600">Ativo no Site?</span>
+                            <div class="relative inline-block w-12 align-middle select-none">
+                                <input type="checkbox" id="edit_ativo" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 checked:right-0 checked:border-green-500 transition-all"/>
+                                <label for="edit_ativo" class="block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer checked:bg-green-500"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="p-4 bg-slate-50 rounded-xl">
+                            <div class="flex gap-2 mb-3">
+                                <button type="button" onclick="setTipoPreco('edit', 'soma')" id="edit_btnSoma" class="flex-1 py-1 rounded text-xs font-bold border transition-all">Somar</button>
+                                <button type="button" onclick="setTipoPreco('edit', 'fixo')" id="edit_btnFixo" class="flex-1 py-1 rounded text-xs font-bold border transition-all">Fixo</button>
+                            </div>
+                            <input type="number" id="edit_valorFixo" class="w-full p-2 rounded border text-sm hidden" placeholder="Valor Fixo">
+                            <p id="edit_msgSoma" class="text-xs text-center text-slate-500 mt-2">Soma auto.</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Itens do Pacote</h3>
+                            <div id="edit_listaItens" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar bg-slate-50 p-2 rounded-lg"></div>
+                            <p class="text-[10px] text-slate-400 mt-1">*Adicione itens clicando na lista "Itens de Alimentação" no fundo (o modal não bloqueia).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="excluirCardapio()" class="px-6 py-3 rounded-xl text-red-500 font-bold hover:bg-red-50 transition-all">Excluir</button>
+                    <button type="submit" class="flex-1 bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
+        if (!ADMIN_TOKEN) window.location.href = 'painel.html';
+
+        let todosItens = [];
+        let cardapios = [];
+        
+        // Estado dos Editores (Novo e Edit)
+        const state = {
+            new: { itens: [], tipo: 'soma' },
+            edit: { itens: [], tipo: 'soma', id: null }
+        };
+
+        // Modo atual de adição de itens ('new' ou 'edit')
+        // Quando o modal abre, muda para 'edit'. Quando fecha, volta pra 'new'.
+        let targetMode = 'new'; 
+
+        async function init() {
+            lucide.createIcons();
+            await carregarItens();
+            await carregarCardapios();
+            setTipoPreco('new', 'soma'); // Inicializa UI
+        }
+
+        // --- 1. CARREGAR DADOS ---
+        async function carregarItens() {
+            const res = await fetch('/api/admin/precos', { headers: { 'x-admin-password': ADMIN_TOKEN } });
+            const dados = await res.json();
+            // FILTRO RIGOROSO: Só Alimentação
+            todosItens = dados.filter(i => i.categoria === 'alimentacao');
+            renderizarItensDisponiveis(todosItens);
+        }
+
+        async function carregarCardapios() {
+            // Chama API com flag admin=true para vir inativos também
+            const res = await fetch('/api/cardapios?admin=true');
+            cardapios = await res.json();
+            renderizarCardapios();
+        }
+
+        // --- 2. RENDERS ---
+        function renderizarItensDisponiveis(lista) {
+            const grid = document.getElementById('gridItens');
+            grid.innerHTML = lista.map(item => `
+                <div class="bg-white p-2 rounded-lg border border-slate-100 hover:border-pink-300 hover:shadow-md transition-all cursor-pointer group select-none" onclick="adicionarItem('${item.id}')">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-1 rounded truncate max-w-[60px]">${item.descricao}</span>
+                        <span class="text-xs font-bold text-pink-500">R$${item.valor}</span>
+                    </div>
+                    <div class="text-center text-xs text-slate-300 group-hover:text-green-500 font-bold">+ Adicionar</div>
+                </div>
+            `).join('');
+        }
+
+        function renderizarCardapios() {
+            const grid = document.getElementById('gridCardapios');
+            grid.innerHTML = cardapios.map(c => `
+                <div class="bg-white p-3 rounded-xl border border-slate-100 flex gap-3 items-center hover:shadow-lg transition-all group cursor-pointer relative" onclick="abrirModalEdicao(${c.id})">
+                    <img src="${c.url_capa || 'https://via.placeholder.com/150'}" class="w-16 h-16 rounded-lg object-cover bg-slate-100">
+                    
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-slate-800 text-sm leading-tight">${c.titulo}</h4>
+                            <span class="text-xs ${c.ativo ? 'text-green-500 bg-green-50' : 'text-slate-400 bg-slate-100'} px-2 py-0.5 rounded font-bold ml-2">
+                                ${c.ativo ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 line-clamp-1 mt-1">${c.descricao}</p>
+                        <span class="text-sm font-bold text-pink-500 mt-1 block">R$ ${parseFloat(c.valor_final).toFixed(2)}</span>
+                    </div>
+
+                    <div class="absolute bottom-3 right-3 z-10" onclick="event.stopPropagation()">
+                         <button onclick="toggleStatus(${c.id}, ${!c.ativo})" class="p-1.5 rounded-full ${c.ativo ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'} hover:scale-110 transition-transform" title="Ativar/Desativar">
+                            <i data-lucide="power" class="w-4 h-4"></i>
+                         </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- 3. LÓGICA DE ITENS (GENÉRICA) ---
+        function adicionarItem(id) {
+            const itemDb = todosItens.find(i => i.id == id);
+            if (!itemDb) return;
+            
+            // Verifica qual lista estamos editando (Novo ou Edit)
+            const lista = state[targetMode].itens;
+            
+            const existente = lista.find(i => i.id == id);
+            if (existente) existente.quantidade++;
+            else lista.push({ ...itemDb, quantidade: 1 });
+
+            atualizarListaVisual(targetMode);
+        }
+
+        function removerItem(mode, id) {
+            const index = state[mode].itens.findIndex(i => i.id == id);
+            if (index > -1) {
+                if (state[mode].itens[index].quantidade > 1) state[mode].itens[index].quantidade--;
+                else state[mode].itens.splice(index, 1);
+            }
+            atualizarListaVisual(mode);
+        }
+
+        function atualizarListaVisual(mode) {
+            const container = document.getElementById(`${mode}_listaItens`);
+            const lista = state[mode].itens;
+            
+            // Renderiza HTML da lista
+            container.innerHTML = lista.map(i => `
+                <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-100 text-xs">
+                    <span class="font-bold text-slate-600 truncate flex-1">${i.descricao}</span>
+                    <div class="flex items-center gap-2 ml-2">
+                        <button type="button" onclick="removerItem('${mode}', ${i.id})" class="text-slate-400 hover:text-red-500 px-1 font-bold">-</button>
+                        <span class="w-4 text-center font-bold">${i.quantidade}</span>
+                        <button type="button" onclick="targetMode='${mode}'; adicionarItem('${i.id}')" class="text-slate-400 hover:text-green-500 px-1 font-bold">+</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Atualiza Contadores e Preços
+            if (mode === 'new') document.getElementById('new_contador').innerText = lista.length;
+
+            const total = lista.reduce((acc, i) => acc + (parseFloat(i.valor) * i.quantidade), 0);
+            document.getElementById(`${mode}_msgSoma`).innerText = `Soma Auto: R$ ${total.toFixed(2)}`;
+        }
+
+        // --- 4. CONTROLES DE FORMULÁRIO ---
+        function setTipoPreco(mode, tipo) {
+            state[mode].tipo = tipo;
+            const btnSoma = document.getElementById(`${mode}_btnSoma`);
+            const btnFixo = document.getElementById(`${mode}_btnFixo`);
+            const inputFixo = mode === 'new' ? document.getElementById(`${mode}_boxPrecoFixo`) : document.getElementById(`${mode}_valorFixo`);
+            const msgSoma = document.getElementById(`${mode}_msgSoma`);
+
+            // Estilização dos botões
+            if (tipo === 'soma') {
+                btnSoma.className = "flex-1 py-1 rounded text-xs font-bold bg-pink-500 text-white transition-all";
+                btnFixo.className = "flex-1 py-1 rounded text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
+                if(mode==='new') inputFixo.classList.add('hidden'); else inputFixo.classList.add('hidden');
+                msgSoma.classList.remove('hidden');
+            } else {
+                btnFixo.className = "flex-1 py-1 rounded text-xs font-bold bg-pink-500 text-white transition-all";
+                btnSoma.className = "flex-1 py-1 rounded text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
+                if(mode==='new') inputFixo.classList.remove('hidden'); else inputFixo.classList.remove('hidden');
+                msgSoma.classList.add('hidden');
+            }
+        }
+
+        function previewImagem(input, imgId) {
+            const img = document.getElementById(imgId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { img.src = e.target.result; img.classList.remove('hidden'); }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function filtrarItens() {
+            const termo = document.getElementById('buscaItem').value.toLowerCase();
+            const filtrados = todosItens.filter(i => i.descricao.toLowerCase().includes(termo));
+            renderizarItensDisponiveis(filtrados);
+        }
+
+        // --- 5. MODAL & EDIÇÃO ---
+        function abrirModalEdicao(id) {
+            const c = cardapios.find(x => x.id === id);
+            if (!c) return;
+
+            state.edit.id = c.id;
+            state.edit.tipo = c.tipo_preco;
+            // Clona os itens para não mexer na referência original até salvar
+            state.edit.itens = c.itens.map(i => ({ id: i.id, descricao: i.descricao, valor: i.valor, quantidade: i.quantidade }));
+
+            // Preenche Campos
+            document.getElementById('edit_id').value = c.id;
+            document.getElementById('edit_titulo').value = c.titulo;
+            document.getElementById('edit_descricao').value = c.descricao;
+            document.getElementById('edit_imgPreview').src = c.url_capa || '';
+            document.getElementById('edit_ativo').checked = c.ativo == 1;
+            
+            document.getElementById('edit_valorFixo').value = c.preco_fixo;
+            
+            // Configura UI
+            setTipoPreco('edit', c.tipo_preco);
+            atualizarListaVisual('edit');
+
+            // Muda o alvo dos cliques do mercadinho
+            targetMode = 'edit';
+            
+            document.getElementById('modalEditar').classList.remove('hidden');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalEditar').classList.add('hidden');
+            targetMode = 'new'; // Volta o foco para o criador
+        }
+
+        // --- 6. SALVAR / ATUALIZAR ---
+
+        async function salvarNovo(e) {
+            e.preventDefault();
+            await enviarDados('POST', '/api/admin/cardapios', {
+                titulo: document.getElementById('new_titulo').value,
+                descricao: document.getElementById('new_descricao').value,
+                tipo_preco: state.new.tipo,
+                preco_fixo: document.getElementById('new_valorFixo').value || 0,
+                itens_json: JSON.stringify(state.new.itens),
+                capa: document.getElementById('new_capa').files[0]
+            });
+            window.location.reload();
+        }
+
+        async function salvarEdicao(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            await enviarDados('PUT', `/api/admin/cardapios/${id}`, {
+                titulo: document.getElementById('edit_titulo').value,
+                descricao: document.getElementById('edit_descricao').value,
+                tipo_preco: state.edit.tipo,
+                preco_fixo: document.getElementById('edit_valorFixo').value || 0,
+                ativo: document.getElementById('edit_ativo').checked ? 1 : 0,
+                itens_json: JSON.stringify(state.edit.itens),
+                capa: document.getElementById('edit_capa').files[0]
+            });
+            window.location.reload();
+        }
+
+        async function enviarDados(method, url, dataObj) {
+            const formData = new FormData();
+            for (const key in dataObj) {
+                formData.append(key, dataObj[key]);
+            }
+            
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'x-admin-password': ADMIN_TOKEN },
+                    body: formData
+                });
+                const json = await res.json();
+                if (!json.success) alert('Erro: ' + json.error);
+                return json;
+            } catch (e) {
+                alert('Erro de conexão');
+            }
+        }
+
+        async function toggleStatus(id, novoStatus) {
+            await fetch(`/api/admin/cardapios/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
+                body: JSON.stringify({ ativo: novoStatus })
+            });
+            carregarCardapios(); // Recarrega sem refresh total
+        }
+
+        async function excluirCardapio() {
+            if(!confirm("Tem certeza? Isso removerá este pacote do orçamento.")) return;
+            const id = state.edit.id;
+            await fetch(`/api/admin/cardapios/${id}`, { method: 'DELETE', headers: { 'x-admin-password': ADMIN_TOKEN } });
+            window.location.reload();
+        }
+
+        init();
+    </script>
+</body>
+</html>

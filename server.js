@@ -756,4 +756,127 @@ app.delete("/api/admin/ativos-simulador/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// --- 8. ROTAS DE CARDÁPIOS (ATUALIZADO) ---
+
+// Listar Cardápios (Versão Pública vs Admin)
+app.get("/api/cardapios", async (req, res) => {
+  try {
+    const isAdmin = req.query.admin === 'true'; // Se for admin, traz tudo. Se não, só ativos.
+    const filtro = isAdmin ? "" : "WHERE ativo = TRUE";
+    
+    const [menus] = await db.query(`SELECT * FROM cardapios ${filtro} ORDER BY id DESC`);
+    
+    const menusCompletos = await Promise.all(menus.map(async (menu) => {
+        const [itens] = await db.query(`
+            SELECT ci.quantidade, tp.id, tp.descricao, tp.valor 
+            FROM cardapio_itens ci 
+            JOIN tabela_precos tp ON ci.item_id = tp.id 
+            WHERE ci.cardapio_id = ?
+        `, [menu.id]);
+        
+        // Recalcula valor se for soma
+        let valorCalculado = 0;
+        if (menu.tipo_preco === 'soma') {
+            valorCalculado = itens.reduce((acc, item) => acc + (parseFloat(item.valor) * item.quantidade), 0);
+        } else {
+            valorCalculado = parseFloat(menu.preco_fixo);
+        }
+
+        return { ...menu, itens, valor_final: valorCalculado };
+    }));
+
+    res.json(menusCompletos);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Criar Novo
+app.post("/api/admin/cardapios", checkAuth, upload.single("capa"), async (req, res) => {
+    try {
+        const { titulo, descricao, tipo_preco, preco_fixo, itens_json } = req.body;
+        let url_capa = "";
+
+        if (req.file) {
+            const up = await cloudinary.uploader.upload(req.file.path, { folder: "cabana/cardapios" });
+            url_capa = up.secure_url;
+            fs.unlinkSync(req.file.path);
+        }
+
+        const [result] = await db.query(
+            "INSERT INTO cardapios (titulo, descricao, url_capa, tipo_preco, preco_fixo, ativo) VALUES (?, ?, ?, ?, ?, 1)",
+            [titulo, descricao, url_capa, tipo_preco, preco_fixo]
+        );
+        const cardapioId = result.insertId;
+
+        if (itens_json) {
+            const itens = JSON.parse(itens_json);
+            for (const item of itens) {
+                await db.query("INSERT INTO cardapio_itens (cardapio_id, item_id, quantidade) VALUES (?, ?, ?)", [cardapioId, item.id, item.quantidade]);
+            }
+        }
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// EDITAR COMPLETO (PUT)
+app.put("/api/admin/cardapios/:id", checkAuth, upload.single("capa"), async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { titulo, descricao, tipo_preco, preco_fixo, itens_json, ativo } = req.body;
+        
+        // 1. Atualiza dados básicos
+        let sql = "UPDATE cardapios SET titulo=?, descricao=?, tipo_preco=?, preco_fixo=?, ativo=? WHERE id=?";
+        let params = [titulo, descricao, tipo_preco, preco_fixo, ativo, id];
+
+        // Se mandou nova foto, atualiza a URL
+        if (req.file) {
+            const up = await cloudinary.uploader.upload(req.file.path, { folder: "cabana/cardapios" });
+            fs.unlinkSync(req.file.path);
+            sql = "UPDATE cardapios SET titulo=?, descricao=?, tipo_preco=?, preco_fixo=?, ativo=?, url_capa=? WHERE id=?";
+            params = [titulo, descricao, tipo_preco, preco_fixo, ativo, up.secure_url, id];
+        }
+
+        await db.query(sql, params);
+
+        // 2. Atualiza os Itens (Apaga todos antigos e recria os novos)
+        if (itens_json) {
+            await db.query("DELETE FROM cardapio_itens WHERE cardapio_id = ?", [id]);
+            const itens = JSON.parse(itens_json);
+            for (const item of itens) {
+                await db.query("INSERT INTO cardapio_itens (cardapio_id, item_id, quantidade) VALUES (?, ?, ?)", [id, item.id, item.quantidade]);
+            }
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// TOGGLE STATUS (PATCH)
+app.patch("/api/admin/cardapios/:id/status", checkAuth, async (req, res) => {
+    try {
+        const { ativo } = req.body; // true ou false
+        await db.query("UPDATE cardapios SET ativo = ? WHERE id = ?", [ativo, req.params.id]);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// EXCLUIR
+app.delete("/api/admin/cardapios/:id", checkAuth, async (req, res) => {
+    try {
+        await db.query("DELETE FROM cardapios WHERE id = ?", [req.params.id]);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

@@ -457,11 +457,17 @@ app.delete("/api/admin/cardapios/:id", checkAuth, async (req, res) => {
 // =========================================================================
 
 // Salvar Orçamento
+// Salvar Orçamento (ATUALIZADO PARA RECEBER VALOR)
 app.post("/api/orcamento", async (req, res) => {
   const data = req.body;
   const qtdCriancas = parseInt(data.qtd_criancas) || 0;
   const qtdBarracas = parseInt(data.qtd_barracas) || 0;
-  const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')`;
+  
+  // RECEBE O VALOR CALCULADO NO FRONTEND
+  const valorEstimado = parseFloat(data.valor_estimado) || 0; 
+
+  const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento, valor_final) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', ?)`;
+  
   const values = [
     data.nome,
     data.whatsapp,
@@ -479,11 +485,14 @@ app.post("/api/orcamento", async (req, res) => {
     data.horario,
     JSON.stringify(data.alimentacao || []),
     data.alergias || "",
+    valorEstimado // Salva o valor calculado
   ];
+
   try {
     await db.query(sql, values);
     res.status(201).json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Erro ao salvar no banco." });
   }
 });

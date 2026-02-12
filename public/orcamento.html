@@ -702,7 +702,122 @@
           atualizarSimulador();
         }
       }
+      // FUNÇÃO DE CÁLCULO DE PREÇO (NOVA)
+    function calcularTotalEstimado() {
+        let total = 0;
 
+        // 1. Barracas
+        const modeloNome = document.getElementById("modelo_barraca").value;
+        const qtdCriancas = parseInt(document.getElementById("qtd_criancas").value) || 0;
+        const qtdBarracas = Math.ceil(qtdCriancas / 2);
+
+        const modeloObj = dadosAPI.modelos.find(m => m.descricao === modeloNome);
+        if (modeloObj) {
+            total += parseFloat(modeloObj.valor) * qtdBarracas;
+        }
+
+        // 2. Alimentação (Combo)
+        if (selecao.comboId) {
+            const comboObj = dadosAPI.combos.find(c => c.id === selecao.comboId);
+            if (comboObj) {
+                const precoCombo = parseFloat(comboObj.valor_final); // valor vindo da API cardapios
+                if (comboObj.modo_cobranca === 'por_pessoa') {
+                    total += precoCombo * qtdCriancas;
+                } else {
+                    total += precoCombo; // preço fixo
+                }
+            }
+        }
+
+        // 3. Alimentação (Extras)
+        for (const [id, qtd] of Object.entries(selecao.extras)) {
+            if (qtd > 0) {
+                const extraObj = dadosAPI.extras.find(e => e.id == id);
+                if (extraObj) {
+                    total += parseFloat(extraObj.valor) * qtd;
+                }
+            }
+        }
+
+        return total;
+    }
+
+    // SUBMIT DO FORMULÁRIO (ATUALIZADO)
+    document.getElementById("orcamentoForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!validarTodoFormulario()) {
+            document.getElementById("aviso-erro").scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+        }
+        
+        const btn = document.getElementById("btn-submit");
+        const textoOriginal = btn.innerHTML;
+        btn.innerHTML = "Enviando...";
+        btn.disabled = true;
+
+        // ... (montagem de itensPadrao e objAlimentacao igual ao anterior) ...
+        const itensPadrao = [];
+        document.querySelectorAll(".chk-padrao:checked").forEach((el) => itensPadrao.push(el.value));
+        
+        const objAlimentacao = { combo: null, extras: [] };
+        if (selecao.comboId) {
+            const c = dadosAPI.combos.find((x) => x.id === selecao.comboId);
+            objAlimentacao.combo = {
+              id: c.id,
+              titulo: c.titulo,
+              valor_unitario: c.valor_final,
+              modo: c.modo_cobranca,
+            };
+        }
+        for (const [id, qtd] of Object.entries(selecao.extras)) {
+            if (qtd > 0) {
+              const i = dadosAPI.extras.find((x) => x.id == id);
+              objAlimentacao.extras.push({ id: i.id, nome: i.nome, qtd: qtd, valor: i.valor });
+            }
+        }
+
+        // CALCULA O TOTAL AQUI
+        const valorTotalCalculado = calcularTotalEstimado();
+
+        const formData = {
+            nome: document.getElementById("nome").value,
+            whatsapp: document.getElementById("whatsapp").value,
+            email: document.getElementById("email").value,
+            endereco: document.getElementById("endereco").value,
+            qtd_criancas: document.getElementById("qtd_criancas").value,
+            faixa_etaria: document.getElementById("faixa_etaria").value,
+            modelo_barraca: document.getElementById("modelo_barraca").value,
+            qtd_barracas: Math.ceil(document.getElementById("qtd_criancas").value / 2),
+            cores: document.getElementById("cores").value,
+            tema: document.getElementById("tema").value,
+            itens_padrao: itensPadrao,
+            itens_adicionais: document.getElementById("itens_adicionais").value,
+            data_festa: document.getElementById("data_festa").value,
+            horario: document.getElementById("horario").value,
+            alimentacao: objAlimentacao,
+            alergias: document.getElementById("alergias").value,
+            valor_estimado: valorTotalCalculado // ENVIA O VALOR
+        };
+
+        try {
+            const res = await fetch("/api/orcamento", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            });
+            if (res.ok) {
+                document.getElementById("modal-sucesso").classList.remove("hidden");
+            } else {
+                alert("Erro ao enviar.");
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+            }
+        } catch (err) {
+            alert("Erro de conexão.");
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    });
       function renderizarItensPersonalizacao() {
           const divPersonalizacao = document.getElementById("container-personalizacao");
           divPersonalizacao.innerHTML = "";

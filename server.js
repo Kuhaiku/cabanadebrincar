@@ -205,7 +205,7 @@ app.post("/api/webhook", async (req, res) => {
 });
 
 // =========================================================================
-// --- 5. NOVAS ROTAS: ALIMENTAÇÃO & CARDÁPIOS (O QUE VOCÊ PEDIU) ---
+// --- 5. NOVAS ROTAS: ALIMENTAÇÃO & CARDÁPIOS (CORRIGIDO) ---
 // =========================================================================
 
 // 5.1 GESTÃO DE ALIMENTOS (INSUMOS)
@@ -227,7 +227,7 @@ app.get("/api/alimentos", async (req, res) => {
 app.post("/api/admin/alimentos", checkAuth, async (req, res) => {
   try {
     const { nome, unidade, medida, valor, visivel_site } = req.body;
-    // CORREÇÃO: Adicionado o campo 'ativo' e o valor 1
+    // CORREÇÃO: Adicionado 'ativo' = 1 para que o item apareça nas buscas
     await db.query(
       "INSERT INTO itens_alimentacao (nome, unidade, medida, valor, visivel_site, ativo) VALUES (?, ?, ?, ?, ?, 1)",
       [nome, unidade, medida, valor, visivel_site ? 1 : 0],
@@ -248,6 +248,7 @@ app.delete("/api/admin/alimentos/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
 app.put("/api/admin/alimentos/:id", checkAuth, async (req, res) => {
   try {
     const { nome, unidade, medida, valor, visivel_site } = req.body;
@@ -948,8 +949,5 @@ app.delete("/api/admin/ativos-simulador/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-
-
-
 
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

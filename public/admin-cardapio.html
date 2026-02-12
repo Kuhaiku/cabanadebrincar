@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,19 +8,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap'); 
-        body { font-family: 'Quicksand', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
+
 <body class="bg-slate-50 min-h-screen p-6">
 
     <div class="max-w-7xl mx-auto">
         <header class="flex items-center gap-4 mb-8">
-            <a href="painel.html" class="p-2 bg-white rounded-xl hover:bg-slate-100 transition-colors"><i data-lucide="arrow-left" class="text-slate-600"></i></a>
+            <a href="painel.html" class="p-2 bg-white rounded-xl hover:bg-slate-100 transition-colors"><i
+                    data-lucide="arrow-left" class="text-slate-600"></i></a>
             <div>
                 <h1 class="text-2xl font-bold text-slate-800">Gestão de Cardápios</h1>
                 <p class="text-slate-500 text-sm">Cadastre alimentos, crie combos e gerencie ofertas.</p>
@@ -27,13 +46,17 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
+
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit sticky top-6">
-                <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="package-plus" class="text-pink-500"></i> Novo Pacote</h2>
-                
+                <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="package-plus"
+                        class="text-pink-500"></i> Novo Pacote</h2>
+
                 <form id="formCriar" onsubmit="salvarNovo(event)" class="space-y-4">
-                    <div class="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-xl h-40 flex items-center justify-center hover:border-pink-400 transition-all bg-slate-50 overflow-hidden">
-                        <input type="file" id="new_capa" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImagem(this, 'new_imgPreview')">
+                    <div
+                        class="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-xl h-40 flex items-center justify-center hover:border-pink-400 transition-all bg-slate-50 overflow-hidden">
+                        <input type="file" id="new_capa" accept="image/*"
+                            class="absolute inset-0 opacity-0 cursor-pointer z-10"
+                            onchange="previewImagem(this, 'new_imgPreview')">
                         <img id="new_imgPreview" class="absolute inset-0 w-full h-full object-cover hidden">
                         <div class="text-center text-slate-400">
                             <i data-lucide="image-plus" class="w-8 h-8 mx-auto mb-2"></i>
@@ -41,50 +64,75 @@
                         </div>
                     </div>
 
-                    <input type="text" id="new_titulo" placeholder="Nome do Combo (ex: Festa Pizza)" class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none" required>
-                    <textarea id="new_descricao" placeholder="Descrição comercial..." rows="3" class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-pink-200 outline-none"></textarea>
+                    <input type="text" id="new_titulo" placeholder="Nome do Combo (ex: Festa Pizza)"
+                        class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none"
+                        required>
+                    <textarea id="new_descricao" placeholder="Descrição comercial..." rows="3"
+                        class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-pink-200 outline-none"></textarea>
 
                     <div class="p-4 bg-slate-50 rounded-xl">
                         <label class="block text-xs font-bold text-slate-400 mb-2 uppercase">Regra de Preço</label>
                         <div class="flex gap-2 mb-3">
-                            <button type="button" onclick="setTipoPreco('new', 'soma')" id="new_btnSoma" class="flex-1 py-2 rounded-lg text-xs font-bold bg-pink-500 text-white transition-all">Somar Itens</button>
-                            <button type="button" onclick="setTipoPreco('new', 'fixo')" id="new_btnFixo" class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all">Valor Fixo</button>
+                            <button type="button" onclick="setTipoPreco('new', 'soma')" id="new_btnSoma"
+                                class="flex-1 py-2 rounded-lg text-xs font-bold bg-pink-500 text-white transition-all">Somar
+                                Itens</button>
+                            <button type="button" onclick="setTipoPreco('new', 'fixo')" id="new_btnFixo"
+                                class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all">Valor
+                                Fixo</button>
                         </div>
                         <div id="new_boxPrecoFixo" class="hidden relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">R$</span>
-                            <input type="number" id="new_valorFixo" step="0.01" placeholder="0.00" class="w-full pl-8 p-2 rounded-lg text-sm font-bold border border-slate-200">
+                            <span
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">R$</span>
+                            <input type="number" id="new_valorFixo" step="0.01" placeholder="0.00"
+                                class="w-full pl-8 p-2 rounded-lg text-sm font-bold border border-slate-200">
                         </div>
                         <p id="new_msgSoma" class="text-xs text-center text-slate-400 mt-2">Total Estimado: R$ 0,00</p>
                     </div>
 
                     <div class="border-t border-slate-100 pt-4">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Itens: <span id="new_contador" class="text-pink-500">0</span></h3>
-                        <div id="new_listaItens" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar bg-slate-50 p-2 rounded-lg min-h-[100px]">
-                            <p class="text-xs text-slate-300 text-center py-8">Clique nos alimentos ao lado para adicionar.</p>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Itens: <span id="new_contador"
+                                class="text-pink-500">0</span></h3>
+                        <div id="new_listaItens"
+                            class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar bg-slate-50 p-2 rounded-lg min-h-[100px]">
+                            <p class="text-xs text-slate-300 text-center py-8">Clique nos alimentos ao lado para
+                                adicionar.</p>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition-all shadow-lg flex justify-center items-center gap-2">
+                    <button type="submit"
+                        class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition-all shadow-lg flex justify-center items-center gap-2">
                         <i data-lucide="save" class="w-4 h-4"></i> Criar Cardápio
                     </button>
                 </form>
             </div>
 
             <div class="lg:col-span-8 space-y-8">
-                
+
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="chef-hat" class="text-pink-500"></i> Cadastrar Alimento / Insumo</h3>
-                    
-                    <form onsubmit="cadastrarAlimento(event)" class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end bg-slate-50 p-4 rounded-xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="tituloFormAlimento" class="font-bold text-slate-700 flex items-center gap-2">
+                            <i data-lucide="chef-hat" class="text-pink-500"></i> Cadastrar Alimento
+                        </h3>
+                        <button id="btnCancelarEdicao" onclick="resetFormAlimento()"
+                            class="hidden text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1 rounded-lg transition-colors">Cancelar
+                            Edição</button>
+                    </div>
+
+                    <form onsubmit="salvarAlimento(event)"
+                        class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end bg-slate-50 p-4 rounded-xl">
+                        <input type="hidden" id="cad_id">
                         <div class="md:col-span-2">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Nome</label>
-                            <input type="text" id="cad_nome" placeholder="Ex: Mini Pizza" class="w-full p-2 rounded border border-slate-200 text-sm" required>
+                            <input type="text" id="cad_nome" placeholder="Ex: Mini Pizza"
+                                class="w-full p-2 rounded border border-slate-200 text-sm" required>
                         </div>
                         <div class="md:col-span-1">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Medida</label>
                             <div class="flex">
-                                <input type="number" id="cad_medida" placeholder="1" class="w-1/2 p-2 rounded-l border border-slate-200 text-sm" required>
-                                <select id="cad_unidade" class="w-1/2 p-2 rounded-r border border-y border-r border-slate-200 text-sm bg-white text-xs px-0 text-center">
+                                <input type="number" id="cad_medida" placeholder="1"
+                                    class="w-1/2 p-2 rounded-l border border-slate-200 text-sm" required>
+                                <select id="cad_unidade"
+                                    class="w-1/2 p-2 rounded-r border border-y border-r border-slate-200 text-sm bg-white text-xs px-0 text-center">
                                     <option value="un">un</option>
                                     <option value="g">g</option>
                                     <option value="kg">kg</option>
@@ -96,73 +144,110 @@
                         </div>
                         <div class="md:col-span-1">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Valor (R$)</label>
-                            <input type="number" id="cad_valor" step="0.01" placeholder="0.00" class="w-full p-2 rounded border border-slate-200 text-sm" required>
+                            <input type="number" id="cad_valor" step="0.01" placeholder="0.00"
+                                class="w-full p-2 rounded border border-slate-200 text-sm" required>
                         </div>
                         <div class="md:col-span-1 flex flex-col items-center justify-center pb-2">
-                             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Visível?</label>
-                             <div class="relative inline-block w-10 align-middle select-none">
-                                <input type="checkbox" id="cad_visivel" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 checked:right-0 checked:border-green-500 transition-all"/>
-                                <label for="cad_visivel" class="block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer checked:bg-green-500"></label>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Visível?</label>
+                            <div class="relative inline-block w-10 align-middle select-none">
+                                <input type="checkbox" id="cad_visivel"
+                                    class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 checked:right-0 checked:border-green-500 transition-all" />
+                                <label for="cad_visivel"
+                                    class="block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer checked:bg-green-500"></label>
                             </div>
                         </div>
                         <div class="md:col-span-1">
-                            <button type="submit" class="w-full bg-slate-800 text-white font-bold py-2 rounded hover:bg-slate-900 transition-all text-sm">Salvar</button>
+                            <button type="submit" id="btnSalvarAlimento"
+                                class="w-full bg-slate-800 text-white font-bold py-2 rounded hover:bg-slate-900 transition-all text-sm">Salvar</button>
                         </div>
                     </form>
                 </div>
 
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
-                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="shopping-basket" class="text-orange-500"></i> Estoque de Alimentos</h3>
-                    <input type="text" id="buscaItem" placeholder="Buscar ingrediente..." class="w-full p-2 mb-4 bg-slate-50 rounded-lg text-sm border-none outline-none" onkeyup="filtrarItens()">
-                    
-                    <div id="gridItens" class="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                        </div>
+                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="shopping-basket"
+                            class="text-orange-500"></i> Estoque de Alimentos</h3>
+                    <input type="text" id="buscaItem" placeholder="Buscar ingrediente..."
+                        class="w-full p-2 mb-4 bg-slate-50 rounded-lg text-sm border-none outline-none"
+                        onkeyup="filtrarItens()">
+
+                    <div id="gridItens"
+                        class="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                    </div>
                 </div>
 
                 <div>
-                    <h3 class="font-bold text-slate-700 mb-4 text-xl flex items-center gap-2"><i data-lucide="layout-grid" class="text-green-500"></i> Cardápios Salvos</h3>
+                    <h3 class="font-bold text-slate-700 mb-4 text-xl flex items-center gap-2"><i
+                            data-lucide="layout-grid" class="text-green-500"></i> Cardápios Salvos</h3>
                     <div id="gridCardapios" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modalEditar" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div id="modalEditar"
+        class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
                 <h2 class="text-xl font-bold text-slate-800">Editar Cardápio</h2>
-                <button onclick="fecharModal()" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="fecharModal()" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="x"
+                        class="w-5 h-5"></i></button>
             </div>
             <form id="formEditar" onsubmit="salvarEdicao(event)" class="p-6 space-y-6">
                 <input type="hidden" id="edit_id">
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-4">
-                        <div class="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-xl h-40 flex items-center justify-center hover:border-pink-400 transition-all bg-slate-50 overflow-hidden">
-                            <input type="file" id="edit_capa" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImagem(this, 'edit_imgPreview')">
+                        <div
+                            class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <span class="text-sm font-bold text-slate-600">Pacote Visível?</span>
+                            <div class="relative inline-block w-12 align-middle select-none">
+                                <input type="checkbox" id="edit_ativo"
+                                    class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 checked:right-0 checked:border-green-500 transition-all" />
+                                <label for="edit_ativo"
+                                    class="block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer checked:bg-green-500"></label>
+                            </div>
+                        </div>
+
+                        <div
+                            class="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-xl h-32 flex items-center justify-center hover:border-pink-400 transition-all bg-slate-50 overflow-hidden">
+                            <input type="file" id="edit_capa" accept="image/*"
+                                class="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                onchange="previewImagem(this, 'edit_imgPreview')">
                             <img id="edit_imgPreview" class="absolute inset-0 w-full h-full object-cover">
                         </div>
-                        <input type="text" id="edit_titulo" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm" required>
-                        <textarea id="edit_descricao" rows="3" class="w-full p-3 bg-slate-50 rounded-xl text-sm"></textarea>
+                        <input type="text" id="edit_titulo" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm"
+                            required>
+                        <textarea id="edit_descricao" rows="3"
+                            class="w-full p-3 bg-slate-50 rounded-xl text-sm"></textarea>
                     </div>
+
                     <div class="space-y-4">
                         <div class="p-4 bg-slate-50 rounded-xl">
                             <div class="flex gap-2 mb-3">
-                                <button type="button" onclick="setTipoPreco('edit', 'soma')" id="edit_btnSoma" class="flex-1 py-1 rounded text-xs font-bold border transition-all">Somar</button>
-                                <button type="button" onclick="setTipoPreco('edit', 'fixo')" id="edit_btnFixo" class="flex-1 py-1 rounded text-xs font-bold border transition-all">Fixo</button>
+                                <button type="button" onclick="setTipoPreco('edit', 'soma')" id="edit_btnSoma"
+                                    class="flex-1 py-1 rounded text-xs font-bold border transition-all">Somar</button>
+                                <button type="button" onclick="setTipoPreco('edit', 'fixo')" id="edit_btnFixo"
+                                    class="flex-1 py-1 rounded text-xs font-bold border transition-all">Fixo</button>
                             </div>
-                            <input type="number" id="edit_valorFixo" class="w-full p-2 rounded border text-sm hidden" placeholder="Valor Fixo">
+                            <input type="number" id="edit_valorFixo" class="w-full p-2 rounded border text-sm hidden"
+                                placeholder="Valor Fixo">
                             <p id="edit_msgSoma" class="text-xs text-center text-slate-500 mt-2">Soma auto.</p>
                         </div>
                         <div>
                             <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Itens</h3>
-                            <div id="edit_listaItens" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar bg-slate-50 p-2 rounded-lg"></div>
+                            <div id="edit_listaItens"
+                                class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar bg-slate-50 p-2 rounded-lg">
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="flex gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="excluirCardapio()" class="px-6 py-3 rounded-xl text-red-500 font-bold hover:bg-red-50 transition-all">Excluir</button>
-                    <button type="submit" class="flex-1 bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200">Salvar Alterações</button>
+                    <button type="button" onclick="excluirCardapio()"
+                        class="px-6 py-3 rounded-xl text-red-500 font-bold hover:bg-red-50 transition-all">Excluir</button>
+                    <button type="submit"
+                        class="flex-1 bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200">Salvar
+                        Alterações</button>
                 </div>
             </form>
         </div>
@@ -178,7 +263,7 @@
             new: { itens: [], tipo: 'soma' },
             edit: { itens: [], tipo: 'soma', id: null }
         };
-        let targetMode = 'new'; 
+        let targetMode = 'new';
 
         async function init() {
             lucide.createIcons();
@@ -187,9 +272,10 @@
             setTipoPreco('new', 'soma');
         }
 
-        // --- ALIMENTOS ---
-        async function cadastrarAlimento(e) {
+        // --- ALIMENTOS (CRIAR E EDITAR) ---
+        async function salvarAlimento(e) {
             e.preventDefault();
+            const id = document.getElementById('cad_id').value;
             const payload = {
                 nome: document.getElementById('cad_nome').value,
                 medida: document.getElementById('cad_medida').value,
@@ -197,22 +283,59 @@
                 valor: document.getElementById('cad_valor').value,
                 visivel_site: document.getElementById('cad_visivel').checked
             };
+
             try {
-                await fetch('/api/admin/alimentos', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN }, body: JSON.stringify(payload) });
-                e.target.reset();
+                const url = id ? `/api/admin/alimentos/${id}` : '/api/admin/alimentos';
+                const method = id ? 'PUT' : 'POST';
+
+                await fetch(url, { method: method, headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN }, body: JSON.stringify(payload) });
+
+                resetFormAlimento();
                 carregarItens();
-            } catch(err) { alert('Erro ao salvar'); }
+            } catch (err) { alert('Erro ao salvar'); }
         }
 
-        // FUNÇÃO DELETAR ALIMENTO (NOVA)
+        function editarAlimento(e, id) {
+            e.stopPropagation();
+            const item = todosItens.find(i => i.id == id);
+            if (!item) return;
+
+            document.getElementById('cad_id').value = item.id;
+            document.getElementById('cad_nome').value = item.nome;
+            document.getElementById('cad_medida').value = item.medida;
+            document.getElementById('cad_unidade').value = item.unidade;
+            document.getElementById('cad_valor').value = item.valor;
+            document.getElementById('cad_visivel').checked = !!item.visivel_site; // Checkbox
+
+            // UI Update
+            document.getElementById('btnSalvarAlimento').innerText = 'Atualizar';
+            document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+            document.getElementById('tituloFormAlimento').innerHTML = '<i data-lucide="edit" class="text-pink-500"></i> Editar Alimento';
+
+            // Scroll to form
+            document.getElementById('tituloFormAlimento').scrollIntoView({ behavior: "smooth" });
+        }
+
+        function resetFormAlimento() {
+            document.getElementById('cad_id').value = '';
+            document.getElementById('cad_nome').value = '';
+            document.getElementById('cad_medida').value = '';
+            document.getElementById('cad_valor').value = '';
+            document.getElementById('cad_visivel').checked = false;
+
+            document.getElementById('btnSalvarAlimento').innerText = 'Salvar';
+            document.getElementById('btnCancelarEdicao').classList.add('hidden');
+            document.getElementById('tituloFormAlimento').innerHTML = '<i data-lucide="chef-hat" class="text-pink-500"></i> Cadastrar Alimento';
+            lucide.createIcons();
+        }
+
         async function deletarAlimento(e, id) {
-            e.stopPropagation(); // Impede que o clique ative o "adicionarItem"
-            if(!confirm("Tem certeza que deseja excluir este alimento do estoque?")) return;
-            
+            e.stopPropagation();
+            if (!confirm("Tem certeza que deseja excluir este alimento do estoque?")) return;
             try {
                 await fetch(`/api/admin/alimentos/${id}`, { method: 'DELETE', headers: { 'x-admin-password': ADMIN_TOKEN } });
-                carregarItens(); // Atualiza a lista
-            } catch(err) { alert('Erro ao deletar'); }
+                carregarItens();
+            } catch (err) { alert('Erro ao deletar'); }
         }
 
         async function carregarItens() {
@@ -224,24 +347,20 @@
             } catch (e) { console.error(e); }
         }
 
-        // --- CARDÁPIOS ---
-        async function carregarCardapios() {
-            try {
-                const res = await fetch('/api/cardapios?admin=true');
-                cardapios = await res.json();
-                renderizarCardapios();
-            } catch (e) { console.error(e); }
-        }
-
-        // --- RENDERS ---
+        // --- RENDERIZAR ITENS ---
         function renderizarItensDisponiveis(lista) {
             const grid = document.getElementById('gridItens');
             grid.innerHTML = lista.map(item => `
                 <div class="bg-white p-2 rounded-lg border border-slate-100 hover:border-pink-300 hover:shadow-md transition-all group select-none relative">
                     
-                    <button onclick="deletarAlimento(event, '${item.id}')" class="absolute top-1 right-1 text-slate-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" title="Excluir Alimento">
-                        <i data-lucide="trash-2" class="w-3 h-3"></i>
-                    </button>
+                    <div class="absolute top-1 right-1 flex gap-1 z-20">
+                        <button onclick="editarAlimento(event, '${item.id}')" class="bg-white/80 rounded p-1 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Editar">
+                            <i data-lucide="pencil" class="w-3 h-3"></i>
+                        </button>
+                        <button onclick="deletarAlimento(event, '${item.id}')" class="bg-white/80 rounded p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Excluir">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                        </button>
+                    </div>
 
                     <div onclick="adicionarItem('${item.id}')" class="cursor-pointer">
                         <div class="flex justify-between items-center mb-1 mt-2">
@@ -255,9 +374,17 @@
             lucide.createIcons();
         }
 
+        async function carregarCardapios() {
+            try {
+                const res = await fetch('/api/cardapios?admin=true');
+                cardapios = await res.json();
+                renderizarCardapios();
+            } catch (e) { console.error(e); }
+        }
+
         function renderizarCardapios() {
             const grid = document.getElementById('gridCardapios');
-            if(!grid) return; 
+            if (!grid) return;
             grid.innerHTML = cardapios.map(c => `
                 <div class="bg-white p-3 rounded-xl border border-slate-100 flex gap-3 items-center hover:shadow-lg transition-all group cursor-pointer relative" onclick="abrirModalEdicao(${c.id})">
                     <img src="${c.url_capa || 'https://via.placeholder.com/150'}" class="w-16 h-16 rounded-lg object-cover bg-slate-100">
@@ -274,7 +401,7 @@
             lucide.createIcons();
         }
 
-        // --- LÓGICA DE ITENS NOS PACOTES ---
+        // --- LÓGICA DE ITENS NOS PACOTES (MANTIDA) ---
         function adicionarItem(id) {
             const itemDb = todosItens.find(i => i.id == id);
             if (!itemDb) return;
@@ -299,7 +426,7 @@
             const lista = state[mode].itens;
             container.innerHTML = lista.map(i => `
                 <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-100 text-xs">
-                    <span class="font-bold text-slate-600 truncate flex-1">${i.descricao}</span>
+                    <span class="font-bold text-slate-600 truncate flex-1">${i.descricao || i.nome}</span>
                     <div class="flex items-center gap-2 ml-2">
                         <button type="button" onclick="removerItem('${mode}', ${i.id})" class="text-slate-400 hover:text-red-500 px-1 font-bold">-</button>
                         <span class="w-4 text-center font-bold">${i.quantidade}</span>
@@ -345,17 +472,23 @@
             renderizarItensDisponiveis(filtrados);
         }
 
-        // --- MODAL ---
+        // --- MODAL PACOTES (COM VISIBILIDADE) ---
         function abrirModalEdicao(id) {
             const c = cardapios.find(x => x.id === id);
             if (!c) return;
             state.edit.id = c.id;
             state.edit.tipo = c.tipo_preco;
             state.edit.itens = c.itens.map(i => ({ id: i.id, descricao: i.nome, valor: i.valor, quantidade: i.quantidade }));
+
             document.getElementById('edit_id').value = c.id;
             document.getElementById('edit_titulo').value = c.titulo;
             document.getElementById('edit_descricao').value = c.descricao;
-            document.getElementById('edit_imgPreview').src = c.url_capa || '';
+            document.getElementById('edit_ativo').checked = !!c.ativo; // Carrega estado
+
+            const img = document.getElementById('edit_imgPreview');
+            img.src = c.url_capa || '';
+            img.classList.remove('hidden');
+
             document.getElementById('edit_valorFixo').value = c.preco_fixo;
             setTipoPreco('edit', c.tipo_preco);
             atualizarListaVisual('edit');
@@ -368,7 +501,6 @@
             targetMode = 'new';
         }
 
-        // --- SALVAR ---
         async function salvarNovo(e) {
             e.preventDefault();
             await enviarDados('POST', '/api/admin/cardapios', {
@@ -391,6 +523,7 @@
                 tipo_preco: state.edit.tipo,
                 preco_fixo: document.getElementById('edit_valorFixo').value || 0,
                 itens_json: JSON.stringify(state.edit.itens),
+                ativo: document.getElementById('edit_ativo').checked ? 1 : 0, // Envia estado
                 capa: document.getElementById('edit_capa').files[0]
             });
             window.location.reload();
@@ -408,7 +541,7 @@
         }
 
         async function excluirCardapio() {
-            if(!confirm("Tem certeza?")) return;
+            if (!confirm("Tem certeza?")) return;
             const id = state.edit.id;
             await fetch(`/api/admin/cardapios/${id}`, { method: 'DELETE', headers: { 'x-admin-password': ADMIN_TOKEN } });
             window.location.reload();
@@ -417,4 +550,5 @@
         init();
     </script>
 </body>
+
 </html>

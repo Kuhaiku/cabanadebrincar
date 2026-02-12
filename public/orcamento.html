@@ -574,7 +574,7 @@
       </div>
     </div>
 
-    <div id="modal-detalhes-combo" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-brand-dark/60 backdrop-blur-sm" onclick="fecharDetalhesCombo()">
+<div id="modal-detalhes-combo" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-brand-dark/60 backdrop-blur-sm" onclick="fecharDetalhesCombo()">
     <div class="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl animate-zoom" onclick="event.stopPropagation()">
         <div class="relative h-48">
             <img id="combo-detalhe-img" src="" class="w-full h-full object-cover">
@@ -584,9 +584,14 @@
         </div>
         <div class="p-6">
             <h3 id="combo-detalhe-titulo" class="font-display text-2xl font-bold text-brand-dark mb-2"></h3>
+            
+            <p id="combo-detalhe-desc" class="text-slate-500 text-sm mb-4"></p>
+            
             <div class="bg-brand-soft p-4 rounded-2xl mb-4">
-                <p id="combo-detalhe-desc" class="text-slate-600 text-sm leading-relaxed"></p>
+                <h4 class="text-xs font-bold text-brand-pink uppercase mb-2">Itens Inclusos:</h4>
+                <ul id="combo-detalhe-lista" class="space-y-1"></ul>
             </div>
+
             <button onclick="fecharDetalhesCombo()" class="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">
                 Fechar
             </button>
@@ -607,7 +612,7 @@
 
       
 
-      function abrirDetalhesCombo(id) {
+function abrirDetalhesCombo(id) {
     const combo = dadosAPI.combos.find(c => c.id === id);
     if (!combo) return;
 
@@ -615,12 +620,25 @@
     document.getElementById("combo-detalhe-titulo").innerText = combo.titulo;
     document.getElementById("combo-detalhe-desc").innerText = combo.descricao;
     
+    // GERA A LISTA DE ITENS
+    const lista = document.getElementById("combo-detalhe-lista");
+    if (combo.itens && combo.itens.length > 0) {
+        lista.innerHTML = combo.itens.map(i => `
+            <li class="text-sm text-slate-600 flex justify-between">
+                <span>${i.nome}</span>
+                <span class="font-bold text-brand-pink/70">x${i.quantidade}</span>
+            </li>
+        `).join('');
+        lista.parentElement.classList.remove('hidden');
+    } else {
+        lista.parentElement.classList.add('hidden');
+    }
+
     const modal = document.getElementById("modal-detalhes-combo");
     modal.classList.remove("hidden");
     document.body.style.overflow = "hidden";
     lucide.createIcons();
 }
-
 function fecharDetalhesCombo() {
     document.getElementById("modal-detalhes-combo").classList.add("hidden");
     document.body.style.overflow = "";

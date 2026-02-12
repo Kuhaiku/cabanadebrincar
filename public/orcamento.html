@@ -289,8 +289,9 @@
               class="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10"
               id="container-personalizacao"
             >
-              <span class="text-xs text-slate-300 italic"
-                >Carregando itens...</span
+              <span
+                class="text-xs text-slate-300 italic col-span-2 text-center py-4"
+                >Selecione um modelo acima para ver os itens disponíveis.</span
               >
             </div>
           </section>
@@ -574,30 +575,52 @@
       </div>
     </div>
 
-<div id="modal-detalhes-combo" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-brand-dark/60 backdrop-blur-sm" onclick="fecharDetalhesCombo()">
-    <div class="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl animate-zoom" onclick="event.stopPropagation()">
+    <div
+      id="modal-detalhes-combo"
+      class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-brand-dark/60 backdrop-blur-sm"
+      onclick="fecharDetalhesCombo()"
+    >
+      <div
+        class="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl animate-zoom"
+        onclick="event.stopPropagation()"
+      >
         <div class="relative h-48">
-            <img id="combo-detalhe-img" src="" class="w-full h-full object-cover">
-            <button onclick="fecharDetalhesCombo()" class="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full text-brand-dark hover:text-brand-pink transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+          <img
+            id="combo-detalhe-img"
+            src=""
+            class="w-full h-full object-cover"
+          />
+          <button
+            onclick="fecharDetalhesCombo()"
+            class="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full text-brand-dark hover:text-brand-pink transition-colors"
+          >
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
         <div class="p-6">
-            <h3 id="combo-detalhe-titulo" class="font-display text-2xl font-bold text-brand-dark mb-2"></h3>
-            
-            <p id="combo-detalhe-desc" class="text-slate-500 text-sm mb-4"></p>
-            
-            <div class="bg-brand-soft p-4 rounded-2xl mb-4">
-                <h4 class="text-xs font-bold text-brand-pink uppercase mb-2">Itens Inclusos:</h4>
-                <ul id="combo-detalhe-lista" class="space-y-1"></ul>
-            </div>
+          <h3
+            id="combo-detalhe-titulo"
+            class="font-display text-2xl font-bold text-brand-dark mb-2"
+          ></h3>
 
-            <button onclick="fecharDetalhesCombo()" class="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">
-                Fechar
-            </button>
+          <p id="combo-detalhe-desc" class="text-slate-500 text-sm mb-4"></p>
+
+          <div class="bg-brand-soft p-4 rounded-2xl mb-4 hidden">
+            <h4 class="text-xs font-bold text-brand-pink uppercase mb-2">
+              Itens Inclusos:
+            </h4>
+            <ul id="combo-detalhe-lista" class="space-y-1"></ul>
+          </div>
+
+          <button
+            onclick="fecharDetalhesCombo()"
+            class="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
+          >
+            Fechar
+          </button>
         </div>
+      </div>
     </div>
-</div>
 
     <script>
       lucide.createIcons();
@@ -607,53 +630,58 @@
       // --- ESTADO GLOBAL ---
       let ativosAtuais = [];
       let imagensCarregadas = {};
-      let dadosAPI = { modelos: [], combos: [], extras: [] };
+      let dadosAPI = { modelos: [], combos: [], extras: [], itensPadrao: [] };
       let selecao = { modeloId: null, comboId: null, extras: {} };
 
-      
+      // CARREGAR LOGO PADRÃO
+      const logoPadrao = new Image();
+      logoPadrao.src = "assets/logo.png";
+      logoPadrao.onload = () => {
+        if (!selecao.modeloId) atualizarSimulador();
+      };
 
-function abrirDetalhesCombo(id) {
-    const combo = dadosAPI.combos.find(c => c.id === id);
-    if (!combo) return;
+      // --- FUNÇÕES MODAIS ---
+      function abrirDetalhesCombo(id) {
+        const combo = dadosAPI.combos.find((c) => c.id === id);
+        if (!combo) return;
 
-    document.getElementById("combo-detalhe-img").src = combo.url_capa || "assets/logo.png";
-    document.getElementById("combo-detalhe-titulo").innerText = combo.titulo;
-    document.getElementById("combo-detalhe-desc").innerText = combo.descricao;
-    
-    // GERA A LISTA DE ITENS
-    const lista = document.getElementById("combo-detalhe-lista");
-    if (combo.itens && combo.itens.length > 0) {
-        lista.innerHTML = combo.itens.map(i => `
-            <li class="text-sm text-slate-600 flex justify-between">
-                <span>${i.nome}</span>
-                <span class="font-bold text-brand-pink/70">x${i.quantidade}</span>
-            </li>
-        `).join('');
-        lista.parentElement.classList.remove('hidden');
-    } else {
-        lista.parentElement.classList.add('hidden');
-    }
+        document.getElementById("combo-detalhe-img").src =
+          combo.url_capa || "assets/logo.png";
+        document.getElementById("combo-detalhe-titulo").innerText =
+          combo.titulo;
+        document.getElementById("combo-detalhe-desc").innerText =
+          combo.descricao;
 
-    const modal = document.getElementById("modal-detalhes-combo");
-    modal.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-    lucide.createIcons();
-}
-function fecharDetalhesCombo() {
-    document.getElementById("modal-detalhes-combo").classList.add("hidden");
-    document.body.style.overflow = "";
-}
+        const lista = document.getElementById("combo-detalhe-lista");
+        if (combo.itens && combo.itens.length > 0) {
+          lista.innerHTML = combo.itens
+            .map(
+              (i) => `
+                <li class="text-sm text-slate-600 flex justify-between">
+                    <span>${i.nome}</span>
+                    <span class="font-bold text-brand-pink/70">x${i.quantidade}</span>
+                </li>
+            `,
+            )
+            .join("");
+          lista.parentElement.classList.remove("hidden");
+        } else {
+          lista.parentElement.classList.add("hidden");
+        }
 
-// Adicione também ao listener de Escape que você já tem:
-document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-        fecharZoom();
-        fecharDetalhesCombo();
-    }
-});
+        const modal = document.getElementById("modal-detalhes-combo");
+        modal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+        lucide.createIcons();
+      }
 
-      // --- FUNÇÕES VISUALIZADOR (MANTIDAS) ---
-      
+      function fecharDetalhesCombo() {
+        document.getElementById("modal-detalhes-combo").classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+
+      // --- FUNÇÕES VISUALIZADOR ---
+
       async function carregarImagem(url) {
         if (imagensCarregadas[url]) return imagensCarregadas[url];
         return new Promise((resolve) => {
@@ -671,7 +699,16 @@ document.addEventListener("keydown", function (event) {
       async function aoMudarModelo() {
         const select = document.getElementById("modelo_barraca");
         const modeloNome = select.value;
-        if (!modeloNome) return;
+
+        // Se nenhum modelo selecionado (limpar)
+        if (!modeloNome) {
+          selecao.modeloId = null;
+          ativosAtuais = [];
+          document.getElementById("container-personalizacao").innerHTML =
+            '<span class="text-xs text-slate-300 italic col-span-2 text-center py-4">Selecione um modelo acima para ver os itens disponíveis.</span>';
+          atualizarSimulador();
+          return;
+        }
 
         const mod = dadosAPI.modelos.find((m) => m.descricao === modeloNome);
         if (mod) selecao.modeloId = mod.id;
@@ -682,10 +719,14 @@ document.addEventListener("keydown", function (event) {
             `/api/simulador/ativos/${encodeURIComponent(modeloNome)}`,
           );
           ativosAtuais = await res.json();
+
           const promises = ativosAtuais.map((a) =>
             carregarImagem(a.url_cloudinary),
           );
           await Promise.all(promises);
+
+          // Renderizar apenas itens que existem visualmente para este modelo
+          renderizarItensPersonalizacao();
         } catch (e) {
           console.error("Erro ao carregar ativos:", e);
         } finally {
@@ -694,9 +735,62 @@ document.addEventListener("keydown", function (event) {
         }
       }
 
+      function renderizarItensPersonalizacao() {
+        const divPersonalizacao = document.getElementById(
+          "container-personalizacao",
+        );
+        divPersonalizacao.innerHTML = "";
+
+        // Identifica quais itens têm representação visual (ID na lista de ativos)
+        const idsVisuais = ativosAtuais
+          .filter((a) => a.categoria_ativo === "item" && a.item_id)
+          .map((a) => a.item_id);
+
+        // Filtra os itens padrão que possuem correspondência visual
+        const itensParaMostrar = dadosAPI.itensPadrao.filter((item) =>
+          idsVisuais.includes(item.id),
+        );
+
+        if (itensParaMostrar.length === 0) {
+          divPersonalizacao.innerHTML =
+            '<span class="text-xs text-slate-300 italic col-span-2 text-center py-4">Este modelo já vem completo ou não possui itens adicionais visuais.</span>';
+          return;
+        }
+
+        itensParaMostrar.forEach((item) => {
+          divPersonalizacao.innerHTML += `
+                <label class="item-card flex items-center gap-3 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-pink/30 transition-colors">
+                    <input type="checkbox" value="${item.descricao}" data-id="${item.id}" checked onchange="atualizarSimulador()" class="chk-padrao custom-checkbox w-5 h-5 text-brand-pink">
+                    <span class="text-sm font-bold text-slate-600">${item.descricao}</span>
+                </label>`;
+        });
+
+        lucide.createIcons();
+      }
+
       async function atualizarSimulador() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (ativosAtuais.length === 0) return;
+
+        // Se vazio, desenhar Logo
+        if (ativosAtuais.length === 0) {
+          if (logoPadrao.complete && logoPadrao.naturalWidth !== 0) {
+            const scale =
+              Math.min(
+                canvas.width / logoPadrao.width,
+                canvas.height / logoPadrao.height,
+              ) * 0.5;
+            const w = logoPadrao.width * scale;
+            const h = logoPadrao.height * scale;
+            ctx.drawImage(
+              logoPadrao,
+              (canvas.width - w) / 2,
+              (canvas.height - h) / 2,
+              w,
+              h,
+            );
+          }
+          return;
+        }
 
         const checkboxes = document.querySelectorAll(".chk-padrao:checked");
         const idsSelecionados = Array.from(checkboxes).map((cb) =>
@@ -735,106 +829,98 @@ document.addEventListener("keydown", function (event) {
       }
 
       // --- CARREGAMENTO DE DADOS ---
-     async function carregarDadosAPI() {
-  try {
-    // 1. Itens Básicos e Barracas
-    const res1 = await fetch("/api/itens-disponiveis");
-    const itens = await res1.json();
+      async function carregarDadosAPI() {
+        try {
+          // 1. Itens Básicos e Barracas
+          const res1 = await fetch("/api/itens-disponiveis");
+          const itens = await res1.json();
 
-    // 2. Cardápios
-    const res2 = await fetch("/api/cardapios");
-    dadosAPI.combos = await res2.json();
+          // SALVA OS ITENS PADRÃO NA MEMÓRIA, MAS NÃO RENDERIZA AINDA
+          dadosAPI.itensPadrao = itens.filter((i) => i.categoria === "padrao");
 
-    // 3. Extras de Comida
-    const res3 = await fetch("/api/alimentos?publico=true");
-    dadosAPI.extras = await res3.json();
+          // 2. Cardápios
+          const res2 = await fetch("/api/cardapios");
+          dadosAPI.combos = await res2.json();
 
-    // Renderizar Barracas (SEM PREÇO)
-    const selModelo = document.getElementById("modelo_barraca");
-    selModelo.innerHTML = '<option value="">Selecione...</option>';
-    const tendas = itens.filter((i) => i.categoria === "tendas");
-    dadosAPI.modelos = tendas;
-    tendas.forEach((t) => {
-      const opt = document.createElement("option");
-      opt.value = t.descricao;
-      opt.textContent = `${t.descricao}`;
-      selModelo.appendChild(opt);
-    });
+          // 3. Extras de Comida
+          const res3 = await fetch("/api/alimentos?publico=true");
+          dadosAPI.extras = await res3.json();
 
-    // Renderizar Personalização
-    const divPersonalizacao = document.getElementById("container-personalizacao");
-    divPersonalizacao.innerHTML = "";
-    itens
-      .filter((i) => i.categoria === "padrao")
-      .forEach((item) => {
-        divPersonalizacao.innerHTML += `
-            <label class="item-card flex items-center gap-3 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-pink/30 transition-colors">
-                <input type="checkbox" value="${item.descricao}" data-id="${item.id}" checked onchange="atualizarSimulador()" class="chk-padrao custom-checkbox w-5 h-5 text-brand-pink">
-                <span class="text-sm font-bold text-slate-600">${item.descricao}</span>
-            </label>`;
-      });
+          // Renderizar Barracas
+          const selModelo = document.getElementById("modelo_barraca");
+          selModelo.innerHTML = '<option value="">Selecione...</option>';
+          const tendas = itens.filter((i) => i.categoria === "tendas");
+          dadosAPI.modelos = tendas;
+          tendas.forEach((t) => {
+            const opt = document.createElement("option");
+            opt.value = t.descricao;
+            opt.textContent = `${t.descricao}`;
+            selModelo.appendChild(opt);
+          });
 
-    // Renderizar COMBOS com botão "Ver detalhes"
-    const divCombos = document.getElementById("gridCombos");
-    if (dadosAPI.combos.length === 0) {
-      divCombos.innerHTML = '<span class="text-xs text-slate-300 italic">Nenhum pacote disponível.</span>';
-    } else {
-      divCombos.innerHTML = dadosAPI.combos
-        .map((c) => {
-          return `
-           <div class="card-combo cursor-pointer rounded-xl overflow-hidden relative group bg-white border-2 border-slate-100" onclick="selecionarCombo(this, ${c.id})">
-              <div class="absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 border-slate-300 bg-white flex items-center justify-center check-icon transition-colors">
-                  <div class="w-3 h-3 bg-brand-pink rounded-full opacity-0 transition-opacity"></div>
-              </div>
-              <div class="flex h-28">
-                  <img src="${c.url_capa || "assets/logo.png"}" class="w-24 h-full object-cover bg-slate-100">
-                  <div class="p-3 flex-1 flex flex-col justify-between">
-                      <div>
-                          <h4 class="font-bold text-slate-700 text-sm leading-tight">${c.titulo}</h4>
-                          <p class="text-[10px] text-slate-400 mt-1 line-clamp-2">${c.descricao}</p>
+          // O CONTAINER DE PERSONALIZAÇÃO JÁ INICIA COM MENSAGEM (ver HTML inicial)
+
+          // Renderizar COMBOS
+          const divCombos = document.getElementById("gridCombos");
+          if (dadosAPI.combos.length === 0) {
+            divCombos.innerHTML =
+              '<span class="text-xs text-slate-300 italic">Nenhum pacote disponível.</span>';
+          } else {
+            divCombos.innerHTML = dadosAPI.combos
+              .map((c) => {
+                return `
+               <div class="card-combo cursor-pointer rounded-xl overflow-hidden relative group bg-white border-2 border-slate-100" onclick="selecionarCombo(this, ${c.id})">
+                  <div class="absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 border-slate-300 bg-white flex items-center justify-center check-icon transition-colors">
+                      <div class="w-3 h-3 bg-brand-pink rounded-full opacity-0 transition-opacity"></div>
+                  </div>
+                  <div class="flex h-28">
+                      <img src="${c.url_capa || "assets/logo.png"}" class="w-24 h-full object-cover bg-slate-100">
+                      <div class="p-3 flex-1 flex flex-col justify-between">
+                          <div>
+                              <h4 class="font-bold text-slate-700 text-sm leading-tight">${c.titulo}</h4>
+                              <p class="text-[10px] text-slate-400 mt-1 line-clamp-2">${c.descricao}</p>
+                          </div>
+                          <button type="button" onclick="event.stopPropagation(); abrirDetalhesCombo(${c.id})" class="text-[10px] font-bold text-brand-pink flex items-center gap-1 hover:underline">
+                              <i data-lucide="info" class="w-3 h-3"></i> Ver detalhes
+                          </button>
                       </div>
-                      <button type="button" onclick="event.stopPropagation(); abrirDetalhesCombo(${c.id})" class="text-[10px] font-bold text-brand-pink flex items-center gap-1 hover:underline">
-                          <i data-lucide="info" class="w-3 h-3"></i> Ver detalhes
-                      </button>
+                  </div>
+               </div>
+               `;
+              })
+              .join("");
+          }
+
+          // Renderizar EXTRAS
+          const divExtras = document.getElementById("listaExtrasComida");
+          const areaExtras = document.getElementById("areaExtrasComida");
+          if (dadosAPI.extras.length > 0) {
+            areaExtras.classList.remove("hidden");
+            divExtras.innerHTML = dadosAPI.extras
+              .map(
+                (e) => `
+              <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <div class="flex-1">
+                      <p class="text-xs font-bold text-slate-700">${e.nome}</p>
+                      <p class="text-[10px] text-slate-400">${e.medida}${e.unidade}</p>
+                  </div>
+                  <div class="flex items-center gap-2 bg-white rounded-lg border border-slate-100 px-1">
+                      <button type="button" onclick="alterarExtra(${e.id}, -1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">-</button>
+                      <span id="qtd_extra_${e.id}" class="text-xs font-bold text-slate-600 w-3 text-center">0</span>
+                      <button type="button" onclick="alterarExtra(${e.id}, 1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">+</button>
                   </div>
               </div>
-           </div>
-           `;
-        })
-        .join("");
-    }
+            `,
+              )
+              .join("");
+          }
 
-    // Renderizar EXTRAS (SEM PREÇO)
-    const divExtras = document.getElementById("listaExtrasComida");
-    const areaExtras = document.getElementById("areaExtrasComida");
-    if (dadosAPI.extras.length > 0) {
-      areaExtras.classList.remove("hidden");
-      divExtras.innerHTML = dadosAPI.extras
-        .map(
-          (e) => `
-          <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100">
-              <div class="flex-1">
-                  <p class="text-xs font-bold text-slate-700">${e.nome}</p>
-                  <p class="text-[10px] text-slate-400">${e.medida}${e.unidade}</p>
-              </div>
-              <div class="flex items-center gap-2 bg-white rounded-lg border border-slate-100 px-1">
-                  <button type="button" onclick="alterarExtra(${e.id}, -1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">-</button>
-                  <span id="qtd_extra_${e.id}" class="text-xs font-bold text-slate-600 w-3 text-center">0</span>
-                  <button type="button" onclick="alterarExtra(${e.id}, 1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">+</button>
-              </div>
-          </div>
-        `,
-        )
-        .join("");
-    }
-
-    // Atualiza os ícones do Lucide (importante para o ícone de 'info' novo)
-    lucide.createIcons();
-
-  } catch (e) {
-    console.error("Erro API", e);
-  }
-}
+          lucide.createIcons();
+          atualizarSimulador(); // Desenha a logo inicial
+        } catch (e) {
+          console.error("Erro API", e);
+        }
+      }
       // --- LÓGICA DE INTERAÇÃO ---
 
       function selecionarCombo(el, id) {
@@ -883,7 +969,10 @@ document.addEventListener("keydown", function (event) {
         document.body.style.overflow = "";
       }
       document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") fecharZoom();
+        if (event.key === "Escape") {
+          fecharZoom();
+          fecharDetalhesCombo();
+        }
       });
 
       // --- VALIDAÇÃO E SUBMIT ---
@@ -899,8 +988,8 @@ document.addEventListener("keydown", function (event) {
         { id: "horario", nome: "Horário" },
         { id: "qtd_criancas", nome: "Pessoas" },
         { id: "faixa_etaria", nome: "Idade" },
-        { id: "itens_adicionais", nome: "Observações" }, // Agora obrigatório
-        { id: "alergias", nome: "Alergias" }, // Agora obrigatório
+        { id: "itens_adicionais", nome: "Observações" },
+        { id: "alergias", nome: "Alergias" },
       ];
 
       function validarTodoFormulario() {
@@ -962,7 +1051,7 @@ document.addEventListener("keydown", function (event) {
             .querySelectorAll(".chk-padrao:checked")
             .forEach((el) => itensPadrao.push(el.value));
 
-          // Montar Objeto Alimentação (Envio com valores ocultos para o Admin processar)
+          // Montar Objeto Alimentação
           const objAlimentacao = { combo: null, extras: [] };
           if (selecao.comboId) {
             const c = dadosAPI.combos.find((x) => x.id === selecao.comboId);

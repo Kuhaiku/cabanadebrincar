@@ -3,610 +3,700 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Financeiro Detalhado | Cabana de Brincar</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>"
-    />
+    <title>Pedidos | Painel Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap");
       body {
         font-family: "Quicksand", sans-serif;
       }
     </style>
   </head>
   <body class="bg-slate-50 min-h-screen p-6">
-    <div
-      class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4"
-    >
-      <div>
-        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+    <div class="max-w-7xl mx-auto">
+      <header class="flex justify-between items-center mb-8">
+        <div class="flex items-center gap-4">
           <a
             href="painel.html"
-            class="text-slate-400 hover:text-pink-500 transition-colors"
-            ><i data-lucide="arrow-left"></i
+            class="p-2 bg-white rounded-xl hover:bg-slate-100 transition-colors"
+            ><i data-lucide="arrow-left" class="text-slate-600"></i
           ></a>
-          Financeiro
-        </h1>
-      </div>
-
-      <div
-        class="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center gap-2"
-      >
-        <div class="flex items-center gap-1 px-2">
-          <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
-          <span class="text-xs font-bold text-slate-500 uppercase"
-            >Período:</span
-          >
+          <h1 class="text-2xl font-bold text-slate-800">
+            Pedidos & Orçamentos
+          </h1>
         </div>
-        <input
-          type="date"
-          id="filtro-inicio"
-          class="border border-slate-200 rounded-lg px-2 py-1 text-sm text-slate-600 focus:outline-pink-500"
-        />
-        <span class="text-slate-300">até</span>
-        <input
-          type="date"
-          id="filtro-fim"
-          class="border border-slate-200 rounded-lg px-2 py-1 text-sm text-slate-600 focus:outline-pink-500"
-        />
         <button
-          onclick="aplicarFiltros()"
-          class="bg-slate-800 text-white p-1.5 rounded-lg hover:bg-slate-700 transition"
-          title="Filtrar"
+          onclick="carregarDados()"
+          class="bg-white text-slate-600 px-4 py-2 rounded-lg font-bold hover:bg-slate-100 flex items-center gap-2"
         >
-          <i data-lucide="search" class="w-4 h-4"></i>
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+        </button>
+      </header>
+
+      <div class="flex gap-4 mb-6 overflow-x-auto pb-2">
+        <button
+          onclick="filtrar('todos')"
+          class="bg-white px-4 py-2 rounded-full text-sm font-bold text-slate-600 shadow-sm hover:shadow-md border border-slate-100"
+        >
+          Todos
         </button>
         <button
-          onclick="limparFiltros()"
-          class="bg-slate-100 text-slate-500 p-1.5 rounded-lg hover:bg-slate-200 transition"
-          title="Limpar"
+          onclick="filtrar('pendente')"
+          class="bg-yellow-100 px-4 py-2 rounded-full text-sm font-bold text-yellow-700 hover:bg-yellow-200"
         >
-          <i data-lucide="x" class="w-4 h-4"></i>
+          Pendentes
+        </button>
+        <button
+          onclick="filtrar('aprovado')"
+          class="bg-blue-100 px-4 py-2 rounded-full text-sm font-bold text-blue-700 hover:bg-blue-200"
+        >
+          Aprovados
+        </button>
+        <button
+          onclick="filtrar('concluido')"
+          class="bg-green-100 px-4 py-2 rounded-full text-sm font-bold text-green-700 hover:bg-green-200"
+        >
+          Concluídos
         </button>
       </div>
 
-      <button
-        onclick="abrirModalDespesaGeral()"
-        class="bg-slate-800 text-white px-4 py-2 rounded-xl font-bold hover:bg-slate-700 transition flex items-center gap-2 shadow-lg shadow-slate-200"
-      >
-        <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Lançamento
-      </button>
-    </div>
-
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <p class="text-slate-500 text-sm font-bold mb-1">Total Entradas</p>
-        <h3 class="text-3xl font-bold text-green-600" id="card-receitas">
-          R$ 0,00
-        </h3>
-      </div>
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <p class="text-slate-500 text-sm font-bold mb-1">Total Saídas</p>
-        <h3 class="text-3xl font-bold text-red-500" id="card-despesas">
-          R$ 0,00
-        </h3>
-      </div>
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <p class="text-slate-500 text-sm font-bold mb-1">Balanço Líquido</p>
-        <h3 class="text-3xl font-bold text-slate-800" id="card-lucro">
-          R$ 0,00
-        </h3>
-      </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div
-        class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[600px]"
+        id="gridPedidos"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        <div
-          class="p-5 border-b border-slate-100 bg-green-50/30 flex justify-between items-center"
-        >
-          <h3 class="font-bold text-slate-700 flex items-center gap-2">
-            <i data-lucide="party-popper" class="w-5 h-5 text-green-600"></i>
-            Festas Realizadas
-          </h3>
-          <span class="text-xs text-slate-400"
-            >Clique na festa para gerenciar</span
-          >
+        <div class="col-span-full text-center py-20 text-slate-400">
+          <i
+            data-lucide="loader-2"
+            class="w-8 h-8 animate-spin mx-auto mb-4"
+          ></i>
+          Carregando pedidos...
         </div>
-        <div
-          class="overflow-y-auto flex-1 p-2 space-y-2"
-          id="lista-festas"
-        ></div>
-      </div>
-
-      <div
-        class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[600px]"
-      >
-        <div class="p-5 border-b border-slate-100 bg-slate-50">
-          <h3 class="font-bold text-slate-700 flex items-center gap-2">
-            <i
-              data-lucide="arrow-left-right"
-              class="w-5 h-5 text-slate-600"
-            ></i>
-            Outras Movimentações
-          </h3>
-        </div>
-        <div
-          class="overflow-y-auto flex-1 p-2 space-y-2"
-          id="lista-gerais"
-        ></div>
       </div>
     </div>
 
     <div
-      id="modal-festa"
-      class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4"
+      id="modalDetalhes"
+      class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm"
     >
       <div
-        class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
       >
         <div
-          class="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center"
+          class="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10"
         >
-          <div>
-            <h2 class="text-xl font-bold text-slate-800" id="modal-festa-nome">
-              Festa
-            </h2>
-            <p class="text-sm text-slate-500" id="modal-festa-data">
-              00/00/0000
-            </p>
-          </div>
+          <h2 class="text-xl font-bold text-slate-800">Detalhes do Pedido</h2>
           <button
-            onclick="fecharModalFesta()"
-            class="text-slate-400 hover:text-slate-600"
+            onclick="fecharModal()"
+            class="p-2 hover:bg-slate-100 rounded-full"
           >
-            <i data-lucide="x"></i>
+            <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
 
-        <div class="p-6 overflow-y-auto">
-          <div class="bg-green-50 p-4 rounded-xl border border-green-100 mb-6">
-            <label class="block text-xs font-bold text-green-700 uppercase mb-2"
-              >Receita Total da Festa</label
+        <div id="conteudoModal" class="p-6 space-y-6"></div>
+
+        <div class="p-6 bg-slate-50 border-t border-slate-200">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+              <i data-lucide="dollar-sign" class="text-green-500 w-5 h-5"></i>
+              Financeiro
+            </h3>
+            <button
+              onclick="aplicarSugestaoCalculo()"
+              class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold hover:bg-blue-200 transition-colors flex items-center gap-1"
+              title="Recalcular com base nos itens e tabela de preços"
             >
-            <div class="flex gap-2">
-              <input
-                type="number"
-                id="modal-festa-valor"
-                step="0.01"
-                class="flex-1 p-2 border border-green-200 rounded-lg text-lg font-bold text-green-700 focus:outline-green-500"
-              />
-              <button
-                onclick="atualizarValorFesta()"
-                class="bg-green-600 text-white px-4 rounded-lg font-bold hover:bg-green-700 transition"
+              <i data-lucide="calculator" class="w-3 h-3"></i> Recalcular Auto
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="text-xs font-bold text-slate-500 uppercase"
+                >Valor Base (Pacote + Alim)</label
               >
-                Salvar
-              </button>
+              <div class="relative">
+                <span
+                  class="absolute left-3 top-2 text-slate-400 font-bold text-sm"
+                  >R$</span
+                >
+                <input
+                  type="number"
+                  step="0.01"
+                  id="fin_valor_final"
+                  class="w-full pl-10 p-2 rounded border border-slate-300 font-mono font-bold text-slate-700"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-500 uppercase"
+                >Extras (Frete/Adic.)</label
+              >
+              <div class="relative">
+                <span
+                  class="absolute left-3 top-2 text-slate-400 font-bold text-sm"
+                  >R$</span
+                >
+                <input
+                  type="number"
+                  step="0.01"
+                  id="fin_valor_extras"
+                  class="w-full pl-10 p-2 rounded border border-slate-300 font-mono font-bold text-slate-700"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div class="col-span-full">
+              <label class="text-xs font-bold text-slate-500 uppercase"
+                >Descrição dos Extras</label
+              >
+              <input
+                type="text"
+                id="fin_desc_extras"
+                class="w-full p-2 rounded border border-slate-300"
+                placeholder="Ex: Frete + Lembrancinhas"
+              />
             </div>
           </div>
 
-          <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2">
-            <i data-lucide="shopping-bag" class="w-4 h-4"></i> Custos
-            específicos desta festa
-          </h3>
+          <div class="flex justify-between items-center mb-4 text-sm px-1">
+            <span class="text-slate-500">Total Geral:</span>
+            <span class="text-xl font-bold text-green-600" id="displayTotal"
+              >R$ 0,00</span
+            >
+          </div>
 
-          <div class="space-y-2 mb-6" id="modal-lista-custos"></div>
+          <div class="flex gap-2">
+            <button
+              onclick="salvarFinanceiroEGerarLinks()"
+              class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg shadow-sm transition-all flex justify-center items-center gap-2"
+            >
+              <i data-lucide="link" class="w-4 h-4"></i> Salvar & Gerar Links
+            </button>
+            <button
+              onclick="copiarResumo()"
+              class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg shadow-sm transition-all flex justify-center items-center gap-2"
+            >
+              <i data-lucide="copy" class="w-4 h-4"></i> Copiar Resumo
+            </button>
+          </div>
 
-          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <p class="text-xs font-bold text-slate-400 uppercase mb-2">
-              Adicionar Custo (Uber, Ajudante, etc)
-            </p>
-            <form onsubmit="adicionarCustoFesta(event)" class="flex gap-2">
-              <input
-                type="text"
-                id="novo-custo-desc"
-                placeholder="Descrição"
-                required
-                class="flex-grow p-2 border rounded-lg text-sm"
-              />
-              <input
-                type="number"
-                id="novo-custo-valor"
-                placeholder="Valor"
-                step="0.01"
-                required
-                class="w-24 p-2 border rounded-lg text-sm"
-              />
-              <button
-                type="submit"
-                class="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600"
+          <div
+            id="areaLinks"
+            class="hidden mt-4 bg-white p-3 rounded border border-green-200 text-sm space-y-2"
+          >
+            <p class="font-bold text-green-700">Links Gerados:</p>
+            <div
+              class="flex justify-between items-center bg-slate-50 p-2 rounded"
+            >
+              <span
+                >Sinal (40%): <strong id="val_reserva">R$ 0,00</strong></span
               >
-                <i data-lucide="plus"></i>
-              </button>
-            </form>
+              <a
+                id="link_reserva"
+                href="#"
+                target="_blank"
+                class="text-blue-500 hover:underline"
+                >Abrir</a
+              >
+            </div>
+            <div
+              class="flex justify-between items-center bg-slate-50 p-2 rounded"
+            >
+              <span
+                >Restante (60%):
+                <strong id="val_restante">R$ 0,00</strong></span
+              >
+              <a
+                id="link_restante"
+                href="#"
+                target="_blank"
+                class="text-blue-500 hover:underline"
+                >Abrir</a
+              >
+            </div>
+            <div
+              class="flex justify-between items-center bg-slate-50 p-2 rounded"
+            >
+              <span
+                >Total à Vista (5% Off):
+                <strong id="val_integral">R$ 0,00</strong></span
+              >
+              <a
+                id="link_integral"
+                href="#"
+                target="_blank"
+                class="text-blue-500 hover:underline"
+                >Abrir</a
+              >
+            </div>
           </div>
         </div>
 
-        <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <div
+          class="p-6 border-t border-slate-100 flex gap-3 justify-end bg-white sticky bottom-0"
+        >
           <button
-            onclick="fecharModalFesta()"
-            class="px-6 py-2 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300"
+            onclick="acaoPedido('excluir')"
+            class="px-4 py-2 text-red-500 font-bold hover:bg-red-50 rounded-lg"
           >
-            Fechar
+            Excluir Pedido
+          </button>
+          <button
+            onclick="acaoPedido('aprovar')"
+            id="btnAprovar"
+            class="px-6 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 shadow-lg shadow-blue-200"
+          >
+            Confirmar Agendamento
+          </button>
+          <button
+            onclick="acaoPedido('concluir')"
+            id="btnConcluir"
+            class="px-6 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 shadow-lg shadow-green-200 hidden"
+          >
+            Concluir Festa
           </button>
         </div>
-      </div>
-    </div>
-
-    <div
-      id="modal-geral"
-      class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4"
-    >
-      <div class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
-        <h3 class="font-bold text-lg mb-4 text-slate-800">
-          Novo Lançamento Geral
-        </h3>
-        <form onsubmit="salvarDespesaGeral(event)" class="space-y-3">
-          <input
-            type="text"
-            id="geral-titulo"
-            placeholder="Descrição (ex: Conta de Luz, Venda Extra)"
-            required
-            class="w-full p-3 border rounded-xl text-sm"
-          />
-
-          <select
-            id="geral-tipo"
-            class="w-full p-3 border rounded-xl text-sm bg-white font-bold text-slate-600"
-          >
-            <option value="saida">🔴 Saída (Despesa)</option>
-            <option value="entrada">🟢 Entrada (Receita)</option>
-          </select>
-
-          <input
-            type="number"
-            id="geral-valor"
-            step="0.01"
-            placeholder="Valor (R$)"
-            required
-            class="w-full p-3 border rounded-xl text-sm"
-          />
-
-          <div class="flex gap-2 mt-4">
-            <button
-              type="button"
-              onclick="
-                document.getElementById('modal-geral').classList.add('hidden')
-              "
-              class="flex-1 p-3 rounded-xl border font-bold text-slate-500 hover:bg-slate-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="flex-1 p-3 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-900"
-            >
-              Salvar
-            </button>
-          </div>
-        </form>
       </div>
     </div>
 
     <script>
-      const API_URL = "/api";
       const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
       if (!ADMIN_TOKEN) window.location.href = "painel.html";
 
-      let DADOS_ORIGINAIS = { festas: [], gerais: [], custosFestas: [] };
-      let FESTA_SELECIONADA_ID = null;
+      let todosPedidos = [];
+      let tabelaPrecos = [];
+      let pedidoAtual = null;
 
-      function abrirModalDespesaGeral() {
-        document.getElementById("modal-geral").classList.remove("hidden");
-      }
-      function fecharModalFesta() {
-        document.getElementById("modal-festa").classList.add("hidden");
-        FESTA_SELECIONADA_ID = null;
-      }
-
-      async function init() {
-        lucide.createIcons();
-        // CORREÇÃO DATA PADRÃO:
-        // Usa string YYYY-MM-DD local para garantir que o input date mostre o dia certo
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-        const dia = String(hoje.getDate()).padStart(2, "0");
-        const dataHojeString = `${ano}-${mes}-${dia}`;
-
-        // Primeiro dia do mês
-        const dataInicioString = `${ano}-${mes}-01`;
-
-        document.getElementById("filtro-inicio").value = dataInicioString;
-        document.getElementById("filtro-fim").value = dataHojeString;
-
-        await carregarDados();
-      }
-
+      // --- CARREGAMENTO INICIAL ---
       async function carregarDados() {
         try {
-          const res = await fetch(`${API_URL}/admin/financeiro/relatorio`, {
-            headers: { "x-admin-password": ADMIN_TOKEN },
-          });
-          const dados = await res.json();
-          DADOS_ORIGINAIS.festas = dados.faturamento || [];
-          DADOS_ORIGINAIS.gerais = dados.gerais || [];
-          DADOS_ORIGINAIS.custosFestas = dados.festas || [];
-          aplicarFiltros();
+          // Carrega Pedidos e Preços em paralelo
+          const [resPedidos, resPrecos] = await Promise.all([
+            fetch("/api/admin/pedidos", {
+              headers: { "x-admin-password": ADMIN_TOKEN },
+            }),
+            fetch("/api/admin/precos", {
+              headers: { "x-admin-password": ADMIN_TOKEN },
+            }),
+          ]);
+
+          todosPedidos = await resPedidos.json();
+          tabelaPrecos = await resPrecos.json();
+
+          filtrar("todos");
         } catch (e) {
           console.error(e);
-          alert("Erro ao carregar dados.");
+          alert("Erro ao carregar dados. Verifique sua conexão ou login.");
         }
       }
 
-      // --- CORREÇÃO PRINCIPAL NO FILTRO ---
-      function aplicarFiltros() {
-        const strInicio = document.getElementById("filtro-inicio").value;
-        const strFim = document.getElementById("filtro-fim").value;
+      function filtrar(status) {
+        const grid = document.getElementById("gridPedidos");
+        let filtrados = todosPedidos;
 
-        // Ao adicionar 'T00:00:00', forçamos o navegador a tratar como Hora Local e não UTC.
-        const dataInicio = new Date(strInicio + "T00:00:00");
-        const dataFim = new Date(strFim + "T23:59:59.999");
+        if (status === "pendente")
+          filtrados = todosPedidos.filter(
+            (p) => p.status === "pendente" || !p.status,
+          );
+        if (status === "aprovado")
+          filtrados = todosPedidos.filter(
+            (p) => p.status === "aprovado" && p.status_agenda !== "concluido",
+          );
+        if (status === "concluido")
+          filtrados = todosPedidos.filter(
+            (p) => p.status_agenda === "concluido",
+          );
 
-        // Filtragem Festas
-        const festasFiltradas = DADOS_ORIGINAIS.festas.filter((f) => {
-          const d = new Date(f.data_festa);
-          return d >= dataInicio && d <= dataFim;
-        });
+        if (filtrados.length === 0) {
+          grid.innerHTML =
+            '<div class="col-span-full text-center py-20 text-slate-400">Nenhum pedido encontrado.</div>';
+          return;
+        }
 
-        // Filtragem Gerais
-        const geraisFiltradas = DADOS_ORIGINAIS.gerais.filter((g) => {
-          // Se o banco salvou como UTC, o new Date() vai converter para o horário do navegador corretamente.
-          // Como dataInicio/Fim agora abrangem o dia inteiro local, vai casar certinho.
-          const d = new Date(g.data_registro || new Date());
-          return d >= dataInicio && d <= dataFim;
-        });
+        grid.innerHTML = filtrados
+          .map((p) => {
+            const dataFesta = new Date(p.data_festa).toLocaleDateString(
+              "pt-BR",
+            );
+            let statusColor = "bg-yellow-100 text-yellow-700";
+            let statusText = "Pendente";
+            if (p.status === "aprovado") {
+              statusColor = "bg-blue-100 text-blue-700";
+              statusText = "Agendado";
+            }
+            if (p.status_agenda === "concluido") {
+              statusColor = "bg-green-100 text-green-700";
+              statusText = "Concluído";
+            }
 
-        renderizarTelas(festasFiltradas, geraisFiltradas);
-      }
-
-      function limparFiltros() {
-        // Recarrega valores padrão
-        init();
-      }
-
-      function renderizarTelas(festas, gerais) {
-        let totalReceita = 0;
-        let totalDespesas = 0;
-
-        const containerFestas = document.getElementById("lista-festas");
-        containerFestas.innerHTML = "";
-        if (festas.length === 0)
-          containerFestas.innerHTML =
-            '<div class="text-center text-slate-400 mt-10">Nenhuma festa no período.</div>';
-
-        festas.forEach((festa) => {
-          const custosDestaFesta = DADOS_ORIGINAIS.custosFestas
-            .filter((c) => c.orcamento_id === festa.id)
-            .reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
-
-          const receita = parseFloat(festa.valor_final || 0);
-          const lucroFesta = receita - custosDestaFesta;
-
-          totalReceita += receita;
-          totalDespesas += custosDestaFesta;
-
-          containerFestas.innerHTML += `
-                    <div onclick="abrirDetalhesFesta(${festa.id})" class="p-4 rounded-xl border border-slate-100 hover:border-pink-300 hover:shadow-md transition cursor-pointer bg-white group">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h4 class="font-bold text-slate-700 group-hover:text-pink-600 transition">${festa.nome}</h4>
-                                <span class="text-xs text-slate-400 block">${new Date(festa.data_festa).toLocaleDateString("pt-BR")}</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="block font-bold text-green-600 text-lg">+ ${receita.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
-                            </div>
+            return `
+                <div onclick="abrirDetalhes(${p.id})" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-lg">${p.nome}</h3>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${dataFesta} às ${p.horario}</p>
                         </div>
-                        <div class="flex justify-between text-xs border-t border-slate-50 pt-2">
-                            <span class="text-slate-400">Custos extras: <span class="text-red-400 font-bold">- ${custosDestaFesta.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span></span>
-                            <span class="font-bold ${lucroFesta >= 0 ? "text-blue-600" : "text-red-600"}">Lucro: ${lucroFesta.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
-                        </div>
+                        <span class="${statusColor} px-3 py-1 rounded-full text-xs font-bold">${statusText}</span>
                     </div>
-                `;
-        });
-
-        const containerGerais = document.getElementById("lista-gerais");
-        containerGerais.innerHTML = "";
-        if (gerais.length === 0)
-          containerGerais.innerHTML =
-            '<div class="text-center text-slate-400 mt-10">Nenhuma movimentação geral no período.</div>';
-
-        gerais.forEach((item) => {
-          const valor = parseFloat(item.valor);
-          const isEntrada = item.tipo === "entrada";
-
-          if (isEntrada) {
-            totalReceita += valor;
-          } else {
-            totalDespesas += valor;
-          }
-
-          containerGerais.innerHTML += `
-                    <div class="flex justify-between items-center p-3 hover:bg-slate-50 rounded-lg group border-b border-slate-50 last:border-0">
-                        <div class="flex items-center gap-3">
-                            <div class="${isEntrada ? "bg-green-50 text-green-500" : "bg-red-50 text-red-500"} p-2 rounded-lg">
-                                <i data-lucide="${isEntrada ? "arrow-up-circle" : "arrow-down-circle"}" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold text-slate-700 text-sm">${item.titulo}</p>
-                                <p class="text-xs text-slate-400 capitalize">${isEntrada ? "Receita Extra" : "Despesa"}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="font-bold ${isEntrada ? "text-green-600" : "text-red-500"}">
-                                ${isEntrada ? "+" : "-"} ${valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                            </span>
-                            <button onclick="excluirDespesaGeral(${item.id})" class="text-slate-300 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
+                    <div class="space-y-1 text-sm text-slate-600 mb-4">
+                        <p class="flex items-center gap-2"><i data-lucide="tent" class="w-4 h-4 text-pink-400"></i> ${p.modelo_barraca}</p>
+                        <p class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-pink-400"></i> ${p.qtd_criancas} Crianças</p>
                     </div>
-                `;
-        });
-
-        const lucroTotal = totalReceita - totalDespesas;
-
-        document.getElementById("card-receitas").innerText =
-          totalReceita.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          });
-        document.getElementById("card-despesas").innerText =
-          totalDespesas.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          });
-
-        const elLucro = document.getElementById("card-lucro");
-        elLucro.innerText = lucroTotal.toLocaleString("pt-BR", {
-          style: "currency",
-          currency: "BRL",
-        });
-        elLucro.className = `text-3xl font-bold ${lucroTotal >= 0 ? "text-green-600" : "text-red-600"}`;
+                    <div class="pt-4 border-t border-slate-50 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Ver detalhes -></span>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300 group-hover:text-pink-500 transition-colors"></i>
+                    </div>
+                </div>
+            `;
+          })
+          .join("");
         lucide.createIcons();
       }
 
-      // --- MANIPULAÇÃO DE MODAIS E DADOS ---
-
-      function abrirDetalhesFesta(id) {
-        FESTA_SELECIONADA_ID = id;
-        const festa = DADOS_ORIGINAIS.festas.find((f) => f.id === id);
-        if (!festa) return;
-        document.getElementById("modal-festa-nome").innerText = festa.nome;
-        document.getElementById("modal-festa-data").innerText = new Date(
-          festa.data_festa,
-        ).toLocaleDateString("pt-BR");
-        document.getElementById("modal-festa-valor").value = festa.valor_final;
-        atualizarListaCustosFesta(id);
-        document.getElementById("modal-festa").classList.remove("hidden");
+      // --- PARSE SEGURO ---
+      function parseSeguro(dado) {
+        if (!dado) return null;
+        if (typeof dado === "object") return dado;
+        try {
+          return JSON.parse(dado);
+        } catch (e) {
+          return [dado]; // Retorna como array se for string simples
+        }
       }
 
-      function atualizarListaCustosFesta(id) {
-        const lista = DADOS_ORIGINAIS.custosFestas.filter(
-          (c) => c.orcamento_id === id,
+      // --- CALCULADORA INTELIGENTE ---
+      function calcularSugestaoFinanceira(pedido) {
+        let totalBarracas = 0;
+        let totalAlimentacao = 0;
+        let logCalculo = []; // Para debug se precisar
+
+        // 1. Barracas
+        // Procura na tabela de preços pelo nome exato do modelo
+        const itemPreco = tabelaPrecos.find(
+          (tp) =>
+            tp.descricao.toLowerCase() === pedido.modelo_barraca.toLowerCase(),
         );
-        const container = document.getElementById("modal-lista-custos");
-        container.innerHTML = "";
-        if (lista.length === 0)
-          container.innerHTML =
-            '<p class="text-sm text-slate-400 italic">Nenhum custo extra lançado.</p>';
-        lista.forEach((custo) => {
-          container.innerHTML += `
-                    <div class="flex justify-between items-center p-2 bg-slate-50 rounded border border-slate-100">
-                        <span class="text-sm text-slate-600">${custo.descricao}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm font-bold text-red-500">- R$ ${parseFloat(custo.valor).toFixed(2)}</span>
-                            <button onclick="excluirCustoFesta(${custo.id})" class="text-slate-400 hover:text-red-600"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
-                        </div>
+        const valorUnitarioBarraca = itemPreco
+          ? parseFloat(itemPreco.valor)
+          : 0;
+        const qtdBarracas = parseInt(pedido.qtd_barracas) || 0;
+        totalBarracas = valorUnitarioBarraca * qtdBarracas;
+
+        // 2. Alimentação
+        const alim = parseSeguro(pedido.alimentacao);
+        if (alim) {
+          // Novo formato (com Combo e Extras)
+          if (alim.combo) {
+            const valorCombo = parseFloat(alim.combo.valor_unitario) || 0;
+            if (alim.combo.modo === "por_pessoa") {
+              totalAlimentacao +=
+                valorCombo * (parseInt(pedido.qtd_criancas) || 0);
+            } else {
+              totalAlimentacao += valorCombo; // Preço fixo
+            }
+          }
+          if (alim.extras && Array.isArray(alim.extras)) {
+            alim.extras.forEach((ext) => {
+              const valExt = parseFloat(ext.valor) || 0;
+              const qtdExt = parseInt(ext.qtd) || 0;
+              totalAlimentacao += valExt * qtdExt;
+            });
+          }
+        }
+
+        return {
+          totalBase: totalBarracas + totalAlimentacao, // Barraca + Comida entra no "Valor Base"
+          totalExtras: 0, // Extras financeiros (frete) o sistema não adivinha
+        };
+      }
+
+      // --- DETALHES ---
+      function abrirDetalhes(id) {
+        pedidoAtual = todosPedidos.find((p) => p.id === id);
+        if (!pedidoAtual) return;
+
+        // Monta visualização
+        let htmlAlimentacao =
+          '<span class="text-slate-400 italic">Nenhuma.</span>';
+        const alim = parseSeguro(pedidoAtual.alimentacao);
+
+        if (alim) {
+          if (Array.isArray(alim)) {
+            if (alim.length > 0)
+              htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
+          } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
+            let partes = [];
+            if (alim.combo) {
+              const valorCombo = parseFloat(
+                alim.combo.valor_unitario,
+              ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+              partes.push(`
+                            <div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100">
+                                <span class="font-bold text-slate-700 block">${alim.combo.titulo}</span>
+                                <span class="text-xs text-slate-500">${valorCombo} (${alim.combo.modo === "por_pessoa" ? "por pessoa" : "fixo"})</span>
+                            </div>`);
+            }
+            if (alim.extras && alim.extras.length > 0) {
+              partes.push(
+                `<ul class="text-sm text-slate-600 space-y-1">${alim.extras.map((e) => `<li>${e.qtd}x ${e.nome}</li>`).join("")}</ul>`,
+              );
+            }
+            htmlAlimentacao = partes.join("");
+          }
+        }
+
+        const html = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-1">Cliente</h4>
+                        <p><strong>Nome:</strong> ${pedidoAtual.nome}</p>
+                        <p><strong>WhatsApp:</strong> <a href="https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}" target="_blank" class="text-green-600 font-bold">${pedidoAtual.whatsapp}</a></p>
+                        <p><strong>Endereço:</strong> ${pedidoAtual.endereco}</p>
                     </div>
-                `;
-        });
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-1">Evento</h4>
+                        <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
+                        <p><strong>Horário:</strong> ${pedidoAtual.horario}</p>
+                        <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
+                    </div>
+                </div>
+                <div class="border-t border-slate-100 pt-2 text-sm">
+                     <p><strong>Alimentação:</strong></p>
+                     ${htmlAlimentacao}
+                </div>
+                <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2">
+                     <p><strong>Obs:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
+                     <p><strong>Alergias:</strong> <span class="text-red-600 font-bold">${pedidoAtual.alergias || "-"}</span></p>
+                </div>
+            `;
+        document.getElementById("conteudoModal").innerHTML = html;
+
+        // --- LÓGICA FINANCEIRA (PREENCHIMENTO) ---
+        const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
+        const valorSalvoExtra = parseFloat(pedidoAtual.valor_itens_extras) || 0;
+
+        // Se estiver zerado no banco, calcula a sugestão automática
+        if (valorSalvoBase === 0 && valorSalvoExtra === 0) {
+          const sugestao = calcularSugestaoFinanceira(pedidoAtual);
+          document.getElementById("fin_valor_final").value =
+            sugestao.totalBase.toFixed(2);
+          document.getElementById("fin_valor_extras").value =
+            sugestao.totalExtras.toFixed(2);
+        } else {
+          // Se já tem valor salvo, respeita o salvo
+          document.getElementById("fin_valor_final").value =
+            valorSalvoBase.toFixed(2);
+          document.getElementById("fin_valor_extras").value =
+            valorSalvoExtra.toFixed(2);
+        }
+
+        // Descrição
+        document.getElementById("fin_desc_extras").value =
+          pedidoAtual.descricao_itens_extras || "";
+        document.getElementById("areaLinks").classList.add("hidden");
+
+        atualizarTotalVisual(); // Atualiza o texto "Total Geral"
+
+        // Botões de Ação
+        const btnAprovar = document.getElementById("btnAprovar");
+        const btnConcluir = document.getElementById("btnConcluir");
+        if (pedidoAtual.status === "pendente" || !pedidoAtual.status) {
+          btnAprovar.classList.remove("hidden");
+          btnConcluir.classList.add("hidden");
+        } else if (
+          pedidoAtual.status === "aprovado" &&
+          pedidoAtual.status_agenda !== "concluido"
+        ) {
+          btnAprovar.classList.add("hidden");
+          btnConcluir.classList.remove("hidden");
+        } else {
+          btnAprovar.classList.add("hidden");
+          btnConcluir.classList.add("hidden");
+        }
+
+        document.getElementById("modalDetalhes").classList.remove("hidden");
         lucide.createIcons();
       }
 
-      async function adicionarCustoFesta(e) {
-        e.preventDefault();
-        const desc = document.getElementById("novo-custo-desc").value;
-        const val = document.getElementById("novo-custo-valor").value;
-        try {
-          await fetch(
-            `${API_URL}/admin/financeiro/festa/${FESTA_SELECIONADA_ID}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-admin-password": ADMIN_TOKEN,
-              },
-              body: JSON.stringify({ descricao: desc, valor: val }),
-            },
-          );
-          document.getElementById("novo-custo-desc").value = "";
-          document.getElementById("novo-custo-valor").value = "";
-          await carregarDados();
-          atualizarListaCustosFesta(FESTA_SELECIONADA_ID);
-        } catch (err) {
-          alert("Erro ao salvar custo");
-        }
+      // Função manual chamada pelo botão "Recalcular"
+      function aplicarSugestaoCalculo() {
+        if (!pedidoAtual) return;
+        const sugestao = calcularSugestaoFinanceira(pedidoAtual);
+        document.getElementById("fin_valor_final").value =
+          sugestao.totalBase.toFixed(2);
+        // Não zeramos o extra se o usuário já digitou algo, a menos que queira resetar tudo.
+        // Aqui vou manter o extra que está no input ou 0
+        const extraAtual =
+          parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+        if (extraAtual === 0)
+          document.getElementById("fin_valor_extras").value = "0.00";
+
+        atualizarTotalVisual();
+        alert("Valores recalculados com base no pedido original!");
       }
 
-      async function atualizarValorFesta() {
-        const novoValor = document.getElementById("modal-festa-valor").value;
-        try {
-          await fetch(
-            `${API_URL}/admin/financeiro/atualizar-valor/${FESTA_SELECIONADA_ID}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                "x-admin-password": ADMIN_TOKEN,
-              },
-              body: JSON.stringify({ valor_final: novoValor }),
-            },
-          );
-          alert("Valor atualizado com sucesso!");
-          await carregarDados();
-        } catch (err) {
-          alert("Erro ao atualizar valor");
-        }
+      function fecharModal() {
+        document.getElementById("modalDetalhes").classList.add("hidden");
       }
 
-      async function excluirCustoFesta(idCusto) {
-        if (!confirm("Remover este custo?")) return;
-        await fetch(`${API_URL}/admin/financeiro/festa/${idCusto}`, {
-          method: "DELETE",
-          headers: { "x-admin-password": ADMIN_TOKEN },
-        });
-        await carregarDados();
-        atualizarListaCustosFesta(FESTA_SELECIONADA_ID);
+      // Atualiza o texto visual do total quando digita
+      document
+        .getElementById("fin_valor_final")
+        .addEventListener("input", atualizarTotalVisual);
+      document
+        .getElementById("fin_valor_extras")
+        .addEventListener("input", atualizarTotalVisual);
+
+      function atualizarTotalVisual() {
+        const vFinal =
+          parseFloat(document.getElementById("fin_valor_final").value) || 0;
+        const vExtras =
+          parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+        document.getElementById("displayTotal").innerText = (
+          vFinal + vExtras
+        ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
       }
 
-      async function salvarDespesaGeral(e) {
-        e.preventDefault();
-        const titulo = document.getElementById("geral-titulo").value;
-        const tipo = document.getElementById("geral-tipo").value;
-        const valor = parseFloat(document.getElementById("geral-valor").value);
+      // --- SALVAR E GERAR LINKS ---
+      async function salvarFinanceiroEGerarLinks() {
+        if (!pedidoAtual) return;
+
+        const vFinal =
+          parseFloat(document.getElementById("fin_valor_final").value) || 0;
+        const vExtras =
+          parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+        const descExtras = document.getElementById("fin_desc_extras").value;
+        const vTotal = vFinal + vExtras;
+
+        if (vTotal <= 0) return alert("Insira um valor final válido.");
 
         try {
-          const res = await fetch(`${API_URL}/admin/financeiro/geral`, {
-            method: "POST",
+          // 1. Salva no Banco
+          await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
+            method: "PUT",
             headers: {
               "Content-Type": "application/json",
               "x-admin-password": ADMIN_TOKEN,
             },
-            body: JSON.stringify({ titulo, tipo, valor }),
+            body: JSON.stringify({
+              valor_final: vFinal,
+              valor_itens_extras: vExtras,
+              descricao_itens_extras: descExtras,
+            }),
           });
 
-          const data = await res.json();
-          if (res.ok) {
-            document.getElementById("modal-geral").classList.add("hidden");
-            e.target.reset();
-            carregarDados();
-          } else {
-            console.error("Erro do servidor:", data);
-            alert("Erro ao salvar: " + (data.details || data.error));
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Erro de conexão.");
+          // Atualiza memória local
+          pedidoAtual.valor_final = vFinal;
+          pedidoAtual.valor_itens_extras = vExtras;
+          pedidoAtual.descricao_itens_extras = descExtras;
+
+          // 2. Gera Links
+          const res = await fetch(
+            `/api/admin/gerar-links-mp/${pedidoAtual.id}`,
+            {
+              method: "POST",
+              headers: { "x-admin-password": ADMIN_TOKEN },
+            },
+          );
+          const links = await res.json();
+
+          // Exibe Links
+          document.getElementById("val_reserva").innerText =
+            `R$ ${links.reserva}`;
+          document.getElementById("link_reserva").href = links.linkReserva;
+
+          document.getElementById("val_restante").innerText =
+            `R$ ${links.restante}`;
+          document.getElementById("link_restante").href = links.linkRestante;
+
+          document.getElementById("val_integral").innerText =
+            `R$ ${links.integral}`;
+          document.getElementById("link_integral").href = links.linkIntegral;
+
+          document.getElementById("areaLinks").classList.remove("hidden");
+        } catch (e) {
+          console.error(e);
+          alert("Erro ao salvar ou gerar links. Verifique o console.");
         }
       }
 
-      async function excluirDespesaGeral(id) {
-        if (!confirm("Excluir esta movimentação?")) return;
+      function copiarResumo() {
+        if (!pedidoAtual) return;
+        const vFinal =
+          parseFloat(document.getElementById("fin_valor_final").value) || 0;
+        const vExtras =
+          parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+        const vTotal = vFinal + vExtras;
+
+        const linkReserva = document.getElementById("link_reserva").href;
+        const linkIntegral = document.getElementById("link_integral").href;
+
+        if (linkReserva === "#" || linkReserva === "")
+          return alert("Gere os links primeiro!");
+
+        const texto = `
+Olá, ${pedidoAtual.nome}! ⛺
+Aqui está o resumo do seu orçamento para a *Cabana de Brincar*:
+
+📅 Data: ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}
+⏰ Horário: ${pedidoAtual.horario}
+⛺ Modelo: ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas} barracas)
+👥 Convidados: ${pedidoAtual.qtd_criancas} crianças
+
+💰 *Resumo Financeiro:*
+Valor Pacote: R$ ${vFinal.toFixed(2)}
+Extras/Frete: R$ ${vExtras.toFixed(2)}
+*TOTAL: R$ ${vTotal.toFixed(2)}*
+
+---
+*Opções de Pagamento:*
+
+1️⃣ **Sinal de Reserva (40%):** R$ ${(vTotal * 0.4).toFixed(2)}
+🔗 Link: ${linkReserva}
+_(O restante de R$ ${(vTotal * 0.6).toFixed(2)} deve ser pago até a data da festa)_
+
+2️⃣ **À Vista (5% de Desconto):** R$ ${(vTotal * 0.95).toFixed(2)}
+🔗 Link: ${linkIntegral}
+---
+
+Qualquer dúvida, é só chamar! ✨
+`.trim();
+
+        navigator.clipboard.writeText(texto).then(() => alert("Copiado!"));
+      }
+
+      async function acaoPedido(acao) {
+        if (!pedidoAtual) return;
+        if (!confirm(`Tem certeza que deseja ${acao} este pedido?`)) return;
+
+        let url = "";
+        let method = "PUT";
+
+        if (acao === "aprovar")
+          url = `/api/admin/agenda/aprovar/${pedidoAtual.id}`;
+        if (acao === "concluir")
+          url = `/api/admin/agenda/concluir/${pedidoAtual.id}`;
+        if (acao === "excluir") {
+          url = `/api/admin/pedidos/${pedidoAtual.id}`;
+          method = "DELETE";
+        }
+
         try {
-          await fetch(`${API_URL}/admin/financeiro/geral/${id}`, {
-            method: "DELETE",
+          await fetch(url, {
+            method: method,
             headers: { "x-admin-password": ADMIN_TOKEN },
           });
+          fecharModal();
           carregarDados();
-        } catch (err) {
-          alert("Erro ao excluir.");
+        } catch (e) {
+          alert("Erro na ação");
         }
       }
 
-      init();
+      carregarDados(); // Inicia tudo
     </script>
   </body>
 </html>

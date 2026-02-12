@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pedido Confirmado! | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Nunito", "sans-serif"], display: ["Fredoka", "sans-serif"] },
+            colors: { brand: { pink: "#FF6B95", dark: "#2D2A4A", soft: "#FFF5F8", accent: "#FFD9E3", purple: "#8B5CF6" } },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-brand-soft min-h-screen font-sans text-slate-600">
+    <div class="max-w-2xl mx-auto p-6">
+      
+      <div class="text-center mb-8 pt-8 animate-bounce">
+        <div class="w-20 h-20 bg-green-400 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-200">
+          <i data-lucide="check" class="w-10 h-10"></i>
+        </div>
+        <h1 class="font-display text-3xl font-bold text-brand-dark">Pedido Recebido!</h1>
+        <p class="text-brand-pink font-bold">Agora é com a gente ✨</p>
+      </div>
+
+      <div class="bg-white rounded-[2rem] shadow-xl p-6 border-4 border-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-brand-accent/30 rounded-full -mr-16 -mt-16 z-0"></div>
+        
+        <div class="relative z-10">
+          <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+             <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Protocolo Local</p>
+                <p class="font-mono text-lg font-bold text-brand-dark" id="protocolo_id">#---</p>
+             </div>
+             <div class="text-right">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data do Pedido</p>
+                <p class="font-bold text-brand-pink" id="data_registro">--/--/--</p>
+             </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="bg-brand-soft p-4 rounded-xl">
+               <h3 class="font-bold text-brand-dark flex items-center gap-2 mb-2">
+                 <i data-lucide="calendar" class="w-4 h-4 text-brand-pink"></i> Dados da Festa
+               </h3>
+               <p id="resumo_festa" class="text-sm leading-relaxed"></p>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl">
+               <h3 class="font-bold text-brand-dark flex items-center gap-2 mb-2">
+                 <i data-lucide="tent" class="w-4 h-4 text-brand-pink"></i> Detalhes
+               </h3>
+               <p id="resumo_detalhes" class="text-sm leading-relaxed"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 space-y-4">
+        <button id="btn-whatsapp" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 group transform hover:scale-[1.02]">
+           <i data-lucide="message-circle" class="w-6 h-6"></i>
+           <span>Apressar meu Orçamento 🥰</span>
+        </button>
+        <p class="text-center text-xs text-slate-400">Mande um "Oi" para vermos seu pedido mais rápido!</p>
+
+        <a href="index.html" class="block text-center text-brand-pink font-bold hover:underline py-2">
+          Voltar para o Início
+        </a>
+      </div>
+
+    </div>
+
+    <script>
+      lucide.createIcons();
+
+      // Carrega dados
+      const urlParams = new URLSearchParams(window.location.search);
+      const idPedido = urlParams.get('id');
+      
+      const historico = JSON.parse(localStorage.getItem("cabana_historico") || "[]");
+      let pedido = null;
+
+      if(idPedido) {
+         pedido = historico.find(p => p._id == idPedido);
+      } else {
+         pedido = historico[0]; // Pega o último se não tiver ID
+      }
+
+      if(!pedido) {
+         alert("Nenhum pedido encontrado.");
+         window.location.href = "index.html";
+      }
+
+      // Preenche Tela
+      document.getElementById("protocolo_id").innerText = "#" + pedido._id.toString().slice(-6);
+      document.getElementById("data_registro").innerText = new Date(pedido._data_criacao).toLocaleDateString("pt-BR");
+
+      document.getElementById("resumo_festa").innerHTML = `
+        <strong>Cliente:</strong> ${pedido.nome}<br>
+        <strong>Data:</strong> ${new Date(pedido.data_festa).toLocaleDateString("pt-BR")} às ${pedido.horario}<br>
+        <strong>Local:</strong> ${pedido.endereco}
+      `;
+
+      let itensTexto = "";
+      if(pedido.itens_padrao && pedido.itens_padrao.length) itensTexto = pedido.itens_padrao.join(", ");
+      
+      document.getElementById("resumo_detalhes").innerHTML = `
+        <strong>Modelo:</strong> ${pedido.modelo_barraca}<br>
+        <strong>Tema:</strong> ${pedido.tema} | <strong>Cores:</strong> ${pedido.cores}<br>
+        <strong>Convidados:</strong> ${pedido.qtd_criancas} crianças<br>
+        <span class="text-xs text-slate-500 mt-1 block">${itensTexto}</span>
+      `;
+
+      // Configura WhatsApp
+      const saudacao = `Oiê! Sou ${pedido.nome.split(" ")[0]} 👋\nAcabei de fazer o pedido *#${pedido._id.toString().slice(-6)}* no site (Tema: ${pedido.tema}) e queria saber se podem dar uma olhadinha com carinho? 🥰`;
+      const linkZap = `https://wa.me/5522992082292?text=${encodeURIComponent(saudacao)}`; // TROQUE PELO SEU NÚMERO
+      
+      document.getElementById("btn-whatsapp").onclick = () => window.open(linkZap, '_blank');
+
+    </script>
+  </body>
+</html>

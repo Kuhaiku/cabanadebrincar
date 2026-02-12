@@ -612,38 +612,70 @@
               headers: { "x-admin-password": ADMIN_TOKEN },
             },
           );
-          const links = await res.json();
+       // --- PREPARAÇÃO DOS DADOS PARA O TEXTO ---
+          
+          // 1. Formata Itens Padrão
+          const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
+          const textoItens = Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0 
+            ? itensPadraoArr.join(", ") 
+            : "Itens padrão do modelo";
 
-          document.getElementById("link_reserva").href = links.linkReserva;
-          document.getElementById("link_integral").href = links.linkIntegral;
+          // 2. Formata Alimentação
+          const alimObj = parseSeguro(pedidoAtual.alimentacao);
+          let textoComida = "Nenhuma contratada";
+          if (alimObj) {
+            let partesComida = [];
+            // Combo
+            if (alimObj.combo) {
+                partesComida.push(`🥪 *Pacote:* ${alimObj.combo.titulo}`);
+            }
+            // Extras
+            if (alimObj.extras && alimObj.extras.length > 0) {
+                const listaExtras = alimObj.extras.map(e => `${e.qtd}x ${e.nome}`).join(", ");
+                partesComida.push(`➕ *Extras:* ${listaExtras}`);
+            }
+            if (partesComida.length > 0) textoComida = partesComida.join("\n");
+          }
 
-          // 3. Copiar
+          // --- TEXTO FINAL COMPLETO ---
           const texto = `
 Olá, ${pedidoAtual.nome}! ⛺
-Aqui está o resumo do seu orçamento para a *Cabana de Brincar*:
+Recebemos seu pedido na *Cabana de Brincar*! Confira todos os detalhes registrados:
 
-📅 Data: ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}
-⏰ Horário: ${pedidoAtual.horario}
-⛺ Modelo: ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas} barracas)
-👥 Convidados: ${pedidoAtual.qtd_criancas} crianças
+📍 *Local & Data:*
+Endereço: ${pedidoAtual.endereco}
+Data: ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")} às ${pedidoAtual.horario}
 
-💰 *Resumo Financeiro:*
-Valor Pacote: R$ ${vFinal.toFixed(2)}
-Extras/Frete: R$ ${vExtras.toFixed(2)}
-*TOTAL: R$ ${vTotal.toFixed(2)}*
+🎨 *Estilo da Festa:*
+Modelo: ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas} cabanas)
+Tema: ${pedidoAtual.tema}
+Cores: ${pedidoAtual.cores}
+
+👥 *Participantes:*
+Qtd: ${pedidoAtual.qtd_criancas} crianças
+Faixa Etária: ${pedidoAtual.faixa_etaria}
+
+⛺ *Itens da Cabana:*
+${textoItens}
+
+🌭 *Alimentação:*
+${textoComida}
+
+⚠️ *Atenção:*
+Obs: ${pedidoAtual.itens_adicionais || "Nenhuma"}
+Alergias: ${pedidoAtual.alergias || "Nenhuma"}
 
 ---
-*Opções de Pagamento:*
+*Links para Pagamento:*
 
-1️⃣ **Sinal de Reserva (40%):** R$ ${(vTotal * 0.4).toFixed(2)}
-🔗 Link: ${links.linkReserva}
-_(O restante deve ser pago até a data da festa)_
+1️⃣ **Sinal de Reserva (40%):**
+🔗 ${links.linkReserva}
 
-2️⃣ **À Vista (5% de Desconto):** R$ ${(vTotal * 0.95).toFixed(2)}
-🔗 Link: ${links.linkIntegral}
+2️⃣ **Valor Total à Vista (5% Off):**
+🔗 ${links.linkIntegral}
 ---
 
-Qualquer dúvida, é só chamar! ✨
+Por favor, confira se os dados estão corretos. Qualquer dúvida, é só chamar! ✨
 `.trim();
 
           await navigator.clipboard.writeText(texto);

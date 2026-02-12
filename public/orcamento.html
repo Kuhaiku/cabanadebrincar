@@ -37,564 +37,236 @@
       };
     </script>
     <style>
-      body {
-        -webkit-tap-highlight-color: transparent;
-      }
+      body { -webkit-tap-highlight-color: transparent; }
       .clean-input {
-        width: 100%;
-        background-color: #f8fafc;
-        border: 2px solid #f1f5f9;
-        border-radius: 1rem;
-        padding: 0.8rem 1rem;
-        font-weight: 600;
-        color: #475569;
-        transition: all 0.2s;
-        outline: none;
+        width: 100%; background-color: #f8fafc; border: 2px solid #f1f5f9;
+        border-radius: 1rem; padding: 0.8rem 1rem; font-weight: 600;
+        color: #475569; transition: all 0.2s; outline: none;
       }
       .clean-input:focus {
-        background-color: #ffffff;
-        border-color: #ff6b95;
+        background-color: #ffffff; border-color: #ff6b95;
         box-shadow: 0 0 0 4px rgba(255, 107, 149, 0.1);
       }
-      .clean-input.error {
-        border-color: #ef4444;
-        background-color: #fff1f2;
-        animation: shake 0.3s ease-in-out;
-      }
-      @keyframes shake {
-        0%,
-        100% {
-          transform: translateX(0);
-        }
-        25% {
-          transform: translateX(-2px);
-        }
-        75% {
-          transform: translateX(2px);
-        }
-      }
+      .clean-input.error { border-color: #ef4444; background-color: #fff1f2; animation: shake 0.3s ease-in-out; }
+      @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
       .custom-checkbox {
-        appearance: none;
-        background-color: #fff;
-        border: 2px solid #cbd5e1;
-        border-radius: 0.5rem;
-        display: inline-block;
-        position: relative;
-        cursor: pointer;
-        transition: all 0.2s;
+        appearance: none; background-color: #fff; border: 2px solid #cbd5e1;
+        border-radius: 0.5rem; display: inline-block; position: relative; cursor: pointer; transition: all 0.2s;
       }
       .custom-checkbox:checked {
-        background-color: #ff6b95;
-        border-color: #ff6b95;
+        background-color: #ff6b95; border-color: #ff6b95;
         background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
       }
-      .item-card:has(input:checked) {
-        border-color: #ff6b95;
-        background-color: #fff5f8;
-      }
-      /* Estilos para Cardápio */
-      .card-combo {
-        transition: all 0.3s ease;
-        border: 2px solid #f1f5f9;
-      }
-      .card-combo:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-      }
-      .card-combo.selected {
-        border-color: #ff6b95;
-        background-color: #fff5f8;
-      }
-
-      @keyframes zoomIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-      .animate-zoom {
-        animation: zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
+      .item-card:has(input:checked) { border-color: #ff6b95; background-color: #fff5f8; }
+      .card-combo { transition: all 0.3s ease; border: 2px solid #f1f5f9; }
+      .card-combo:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05); }
+      .card-combo.selected { border-color: #ff6b95; background-color: #fff5f8; }
+      @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+      .animate-zoom { animation: zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
   </head>
   <body class="font-sans text-slate-600 bg-white antialiased pb-20">
-    <header
-      class="py-3 bg-white border-b border-slate-50 sticky top-0 z-[60] shadow-sm lg:shadow-none lg:static"
-    >
+    <header class="py-3 bg-white border-b border-slate-50 sticky top-0 z-[60] shadow-sm lg:shadow-none lg:static">
       <div class="container mx-auto px-6 flex items-center justify-between">
-        <a
-          href="index.html"
-          class="flex items-center gap-3 group hover:opacity-90 transition-opacity"
-        >
-          <img
-            src="assets/logo.png"
-            alt="Logo Cabana"
-            class="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
-          />
-          <div
-            class="text-xl font-display font-bold text-brand-pink tracking-wide leading-tight"
-          >
+        <a href="index.html" class="flex items-center gap-3 group hover:opacity-90 transition-opacity">
+          <img src="assets/logo.png" alt="Logo Cabana" class="h-10 w-auto object-contain group-hover:scale-105 transition-transform" />
+          <div class="text-xl font-display font-bold text-brand-pink tracking-wide leading-tight">
             Cabana<span class="text-brand-dark">.Brincar</span>
           </div>
         </a>
         <div class="flex items-center gap-4">
-          <a
-            href="index.html"
-            class="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-xs font-bold hover:bg-slate-200 hover:text-brand-dark transition-colors"
-          >
-            <i data-lucide="arrow-left" class="w-4 h-4"></i
-            ><span class="hidden sm:inline">Voltar</span>
+          <a href="index.html" class="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-xs font-bold hover:bg-slate-200 hover:text-brand-dark transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i><span class="hidden sm:inline">Voltar</span>
           </a>
         </div>
       </div>
     </header>
 
     <main class="container mx-auto lg:px-4 lg:py-8">
-      <form
-        id="orcamentoForm"
-        class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
-        novalidate
-      >
-        <div
-          id="visualizador-wrapper"
-          class="lg:col-span-5 sticky top-[60px] lg:top-24 z-50 bg-white/95 backdrop-blur-xl lg:bg-transparent lg:backdrop-blur-none border-b border-slate-100 lg:border-0 shadow-sm lg:shadow-none transition-all duration-300"
-        >
-          <div
-            onclick="abrirZoom()"
-            class="relative mx-auto w-full p-2 lg:p-8 lg:bg-brand-soft lg:rounded-[2.5rem] lg:border lg:border-brand-accent/30 flex flex-col items-center justify-center cursor-zoom-in group select-none"
-          >
-            <div
-              id="canvas-loader"
-              class="absolute inset-0 flex items-center justify-center bg-white/50 z-10 hidden rounded-[2.5rem]"
-            >
+      <form id="orcamentoForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" novalidate>
+        <div id="visualizador-wrapper" class="lg:col-span-5 sticky top-[60px] lg:top-24 z-50 bg-white/95 backdrop-blur-xl lg:bg-transparent lg:backdrop-blur-none border-b border-slate-100 lg:border-0 shadow-sm lg:shadow-none transition-all duration-300">
+          <div onclick="abrirZoom()" class="relative mx-auto w-full p-2 lg:p-8 lg:bg-brand-soft lg:rounded-[2.5rem] lg:border lg:border-brand-accent/30 flex flex-col items-center justify-center cursor-zoom-in group select-none">
+            <div id="canvas-loader" class="absolute inset-0 flex items-center justify-center bg-white/50 z-10 hidden rounded-[2.5rem]">
               <div class="flex flex-col items-center gap-2">
-                <i
-                  data-lucide="loader-2"
-                  class="animate-spin text-brand-pink w-8 h-8"
-                ></i>
-                <span class="text-xs font-bold text-slate-500"
-                  >Montando...</span
-                >
+                <i data-lucide="loader-2" class="animate-spin text-brand-pink w-8 h-8"></i>
+                <span class="text-xs font-bold text-slate-500">Montando...</span>
               </div>
             </div>
-            <canvas
-              id="simuladorCanvas"
-              width="1080"
-              height="1080"
-              class="h-48 sm:h-64 lg:h-[500px] w-auto object-contain drop-shadow-xl rounded-xl lg:rounded-2xl bg-white/50 lg:bg-white transition-transform group-hover:scale-[1.02] duration-500"
-            ></canvas>
+            <canvas id="simuladorCanvas" width="1080" height="1080" class="h-48 sm:h-64 lg:h-[500px] w-auto object-contain drop-shadow-xl rounded-xl lg:rounded-2xl bg-white/50 lg:bg-white transition-transform group-hover:scale-[1.02] duration-500"></canvas>
           </div>
-          <p
-            class="lg:hidden text-center text-[10px] text-slate-400 font-bold uppercase pb-3 tracking-wide pt-1"
-          >
-            👆 Sua cabana personalizada
-          </p>
+          <p class="lg:hidden text-center text-[10px] text-slate-400 font-bold uppercase pb-3 tracking-wide pt-1">👆 Sua cabana personalizada</p>
         </div>
 
         <div class="lg:col-span-7 space-y-8 px-4 lg:px-0 mt-2 lg:mt-0">
           <div class="text-center lg:text-left mb-4">
-            <h1
-              class="font-display text-2xl lg:text-4xl font-bold text-brand-dark"
-            >
-              Vamos Criar!
-            </h1>
-            <p class="text-slate-500 text-sm">
-              Preencha os dados para montar sua festa dos sonhos.
-            </p>
+            <h1 class="font-display text-2xl lg:text-4xl font-bold text-brand-dark">Vamos Criar!</h1>
+            <p class="text-slate-500 text-sm">Preencha os dados para montar sua festa dos sonhos.</p>
           </div>
 
-          <section
-            class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden"
-          >
-            <div
-              class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"
-            ></div>
-            <h2
-              class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10"
-            >
-              <span
-                class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200"
-                >1</span
-              >
+          <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"></div>
+            <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10">
+              <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">1</span>
               Escolha o Estilo
             </h2>
             <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label
-                  class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block pl-1"
-                  >Modelo da Barraca *</label
-                >
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block pl-1">Modelo da Barraca *</label>
                 <div class="relative">
-                  <select
-                    id="modelo_barraca"
-                    onchange="aoMudarModelo()"
-                    class="clean-input appearance-none cursor-pointer bg-white"
-                    required
-                  >
+                  <select id="modelo_barraca" onchange="aoMudarModelo()" class="clean-input appearance-none cursor-pointer bg-white" required>
                     <option value="">Selecione...</option>
                   </select>
-                  <i
-                    data-lucide="chevron-down"
-                    class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"
-                  ></i>
+                  <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"></i>
                 </div>
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Tema Desejado *</label
-                ><input
-                  type="text"
-                  id="tema"
-                  placeholder="Ex: Harry Potter"
-                  class="clean-input"
-                  required
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Tema Desejado *</label>
+                <input type="text" id="tema" placeholder="Ex: Harry Potter" class="clean-input" required />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Cores de Preferência *</label
-                ><input
-                  type="text"
-                  id="cores"
-                  placeholder="Ex: Azul e Prata"
-                  class="clean-input"
-                  required
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Cores de Preferência *</label>
+                <input type="text" id="cores" placeholder="Ex: Azul e Prata" class="clean-input" required />
               </div>
             </div>
           </section>
 
-          <section
-            class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden"
-          >
-            <div
-              class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"
-            ></div>
-            <h2
-              class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10"
-            >
-              <span
-                class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200"
-                >2</span
-              >
+          <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"></div>
+            <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10">
+              <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">2</span>
               Itens da Cabana
             </h2>
-            <div
-              class="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10"
-              id="container-personalizacao"
-            >
-              <span class="text-xs text-slate-300 italic col-span-2 text-center py-4"
-                >Selecione um modelo acima para ver os itens disponíveis.</span
-              >
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10" id="container-personalizacao">
+              <span class="text-xs text-slate-300 italic col-span-2 text-center py-4">Selecione um modelo acima para ver os itens disponíveis.</span>
             </div>
           </section>
 
-          <section
-            class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden"
-          >
-            <div
-              class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"
-            ></div>
-            <h2
-              class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10"
-            >
-              <span
-                class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200"
-                >3</span
-              >
+          <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-brand-soft rounded-bl-[2rem] -mr-4 -mt-4 z-0"></div>
+            <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2 relative z-10">
+              <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">3</span>
               Alimentação (Opcional)
             </h2>
-
             <div class="relative z-10 mb-6">
-              <p class="text-xs text-slate-400 font-bold uppercase mb-3 ml-1">
-                Pacotes Promocionais
-              </p>
-              <div
-                id="gridCombos"
-                class="grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
-                <span class="text-xs text-slate-300 italic"
-                  >Carregando cardápios...</span
-                >
+              <p class="text-xs text-slate-400 font-bold uppercase mb-3 ml-1">Pacotes Promocionais</p>
+              <div id="gridCombos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <span class="text-xs text-slate-300 italic">Carregando cardápios...</span>
               </div>
             </div>
-
-            <div
-              id="areaExtrasComida"
-              class="relative z-10 hidden border-t border-slate-100 pt-6"
-            >
-              <p class="text-xs text-slate-400 font-bold uppercase mb-3 ml-1">
-                Itens Avulsos (Adicione se quiser)
-              </p>
-              <div
-                id="listaExtrasComida"
-                class="grid grid-cols-1 sm:grid-cols-2 gap-3"
-              ></div>
+            <div id="areaExtrasComida" class="relative z-10 hidden border-t border-slate-100 pt-6">
+              <p class="text-xs text-slate-400 font-bold uppercase mb-3 ml-1">Itens Avulsos (Adicione se quiser)</p>
+              <div id="listaExtrasComida" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </div>
           </section>
 
-          <section
-            class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden"
-          >
-            <h2
-              class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2"
-            >
-              <span
-                class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200"
-                >4</span
-              >
+          <section class="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+            <h2 class="font-display text-lg font-bold text-brand-dark mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center text-xs shadow-md shadow-pink-200">4</span>
               Dados Finais
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="md:col-span-2">
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Nome Completo *</label
-                >
-                <input
-                  type="text"
-                  id="nome"
-                  required
-                  placeholder="Seu nome"
-                  class="clean-input"
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Nome Completo *</label>
+                <input type="text" id="nome" required placeholder="Seu nome" class="clean-input" />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >WhatsApp *</label
-                >
-                <input
-                  type="tel"
-                  id="whatsapp"
-                  required
-                  placeholder="(DDD) 99999-9999"
-                  class="clean-input"
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">WhatsApp *</label>
+                <input type="tel" id="whatsapp" required placeholder="(DDD) 99999-9999" class="clean-input" />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1"
-                  >E-mail *</label
-                >
-                <input
-                  type="email"
-                  id="email"
-                  required
-                  placeholder="Para confirmação"
-                  class="clean-input border-brand-pink/20 focus:border-brand-pink"
-                />
+                <label class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1">E-mail *</label>
+                <input type="email" id="email" required placeholder="Para confirmação" class="clean-input border-brand-pink/20 focus:border-brand-pink" />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Endereço da Festa *</label
-                >
-                <input
-                  type="text"
-                  id="endereco"
-                  required
-                  placeholder="Rua, Número e Bairro"
-                  class="clean-input"
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Endereço da Festa *</label>
+                <input type="text" id="endereco" required placeholder="Rua, Número e Bairro" class="clean-input" />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Data da Festa *</label
-                >
-                <input
-                  type="date"
-                  id="data_festa"
-                  required
-                  class="clean-input text-slate-600"
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Data da Festa *</label>
+                <input type="date" id="data_festa" required class="clean-input text-slate-600" />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Horário *</label
-                >
-                <input
-                  type="time"
-                  id="horario"
-                  required
-                  class="clean-input text-slate-600"
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Horário *</label>
+                <input type="time" id="horario" required class="clean-input text-slate-600" />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Qtd. Crianças *</label
-                >
-                <input
-                  type="number"
-                  id="qtd_criancas"
-                  required
-                  min="1"
-                  placeholder="Ex: 3"
-                  class="clean-input"
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Qtd. Crianças *</label>
+                <input type="number" id="qtd_criancas" required min="1" placeholder="Ex: 3" class="clean-input" />
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1"
-                  >Faixa Etária *</label
-                >
-                <input
-                  type="text"
-                  id="faixa_etaria"
-                  required
-                  placeholder="Ex: 10 anos"
-                  class="clean-input"
-                />
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Faixa Etária *</label>
+                <input type="text" id="faixa_etaria" required placeholder="Ex: 10 anos" class="clean-input" />
               </div>
             </div>
-
             <div class="space-y-4 mt-4">
               <div>
-                <label
-                  class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1"
-                  >Observações / Extras *</label
-                >
-                <textarea
-                  id="itens_adicionais"
-                  rows="2"
-                  required
-                  class="clean-input resize-none border-brand-pink/30"
-                  placeholder="Detalhes adicionais importantes..."
-                ></textarea>
+                <label class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1">Observações / Extras *</label>
+                <textarea id="itens_adicionais" rows="2" required class="clean-input resize-none border-brand-pink/30" placeholder="Detalhes adicionais importantes..."></textarea>
               </div>
               <div>
-                <label
-                  class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1"
-                  >Alergias / Restrições *</label
-                >
-                <textarea
-                  id="alergias"
-                  rows="2"
-                  required
-                  class="clean-input resize-none border-brand-pink/30 bg-brand-soft/20"
-                  placeholder="Caso não tenha, escreva 'Não'"
-                ></textarea>
+                <label class="block text-[10px] font-bold text-brand-pink uppercase mb-1 ml-1">Alergias / Restrições *</label>
+                <textarea id="alergias" rows="2" required class="clean-input resize-none border-brand-pink/30 bg-brand-soft/20" placeholder="Caso não tenha, escreva 'Não'"></textarea>
               </div>
             </div>
           </section>
 
           <div class="pt-6 pb-24">
-            <div
-              id="aviso-erro"
-              class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-bold text-center animate-pulse"
-            >
+            <div id="aviso-erro" class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-bold text-center animate-pulse">
               <i data-lucide="alert-triangle" class="inline w-4 h-4 mr-1"></i>
-              Ops! Faltam preencher:
-              <span id="campos-faltantes" class="font-normal"></span>
+              Ops! Faltam preencher: <span id="campos-faltantes" class="font-normal"></span>
             </div>
-
-            <button
-              type="submit"
-              id="btn-submit"
-              class="w-full bg-brand-pink text-white font-display font-bold text-xl py-5 rounded-2xl shadow-xl shadow-pink-200 hover:bg-pink-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
-            >
+            <button type="submit" id="btn-submit" class="w-full bg-brand-pink text-white font-display font-bold text-xl py-5 rounded-2xl shadow-xl shadow-pink-200 hover:bg-pink-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 relative overflow-hidden group">
               <span class="relative z-10 flex items-center gap-3">
-                <i
-                  data-lucide="send"
-                  class="w-6 h-6 text-white transition-colors"
-                ></i>
+                <i data-lucide="send" class="w-6 h-6 text-white transition-colors"></i>
                 Solicitar Orçamento Grátis
               </span>
             </button>
-            <p
-              class="text-center text-xs text-slate-400 mt-4 flex items-center justify-center gap-1"
-            >
-              <i data-lucide="lock" class="w-3 h-3"></i> Seus dados estão 100%
-              seguros.
+            <p class="text-center text-xs text-slate-400 mt-4 flex items-center justify-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3"></i> Seus dados estão 100% seguros.
             </p>
           </div>
         </div>
       </form>
     </main>
 
-    <div
-      id="modal-sucesso"
-      class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/95 backdrop-blur-xl"
-    >
-      <div class="text-center max-w-sm animate-zoom">
-        <div
-          class="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm animate-bounce"
-        >
-          <i data-lucide="check" class="w-10 h-10"></i>
+    <button onclick="abrirHistorico()" class="fixed bottom-6 left-6 z-50 bg-white text-brand-pink p-4 rounded-full shadow-xl hover:scale-110 transition-transform border-2 border-brand-pink/20 group">
+        <i data-lucide="history" class="w-6 h-6"></i>
+        <span class="absolute left-14 bg-brand-dark text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Meus Pedidos</span>
+    </button>
+
+    <div id="modal-historico" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onclick="fecharHistorico()">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-brand-dark text-lg">Meus Pedidos Antigos</h3>
+                <button onclick="fecharHistorico()"><i data-lucide="x" class="text-slate-400"></i></button>
+            </div>
+            <div id="lista-historico" class="space-y-2 max-h-[60vh] overflow-y-auto">
+                <p class="text-center text-slate-400 text-sm py-8">Nenhum pedido salvo neste dispositivo.</p>
+            </div>
         </div>
-        <h2 class="font-display text-3xl font-bold text-brand-dark mb-2">
-          Pedido Enviado!
-        </h2>
-        <p class="text-slate-500 mb-8 leading-relaxed">
-          Recebemos sua configuração mágica.<br />Logo entraremos em contato.
-        </p>
-        <button
-          onclick="location.reload()"
-          class="bg-brand-pink text-white font-bold py-4 px-12 rounded-full shadow-xl hover:bg-pink-600 transition-colors"
-        >
-          Voltar ao Início
-        </button>
-      </div>
     </div>
 
-    <div
-      id="modal-zoom"
-      class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-brand-dark/90 backdrop-blur-md p-4 transition-opacity duration-300"
-      onclick="fecharZoom()"
-    >
-      <div
-        class="relative max-w-4xl w-full transform transition-all scale-100"
-        onclick="event.stopPropagation()"
-      >
-        <button
-          onclick="fecharZoom()"
-          class="absolute -top-12 right-0 text-white hover:text-brand-pink transition-colors p-2"
-        >
-          <i data-lucide="x" class="w-8 h-8"></i>
-        </button>
-        <img
-          id="img-zoom-preview"
-          src=""
-          class="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl border-4 border-white/20 bg-white"
-        />
-        <p
-          class="text-center text-white/50 text-sm mt-4 font-bold uppercase tracking-widest"
-        >
-          Sua Cabana Personalizada
-        </p>
+    <div id="modal-zoom" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-brand-dark/90 backdrop-blur-md p-4 transition-opacity duration-300" onclick="fecharZoom()">
+      <div class="relative max-w-4xl w-full transform transition-all scale-100" onclick="event.stopPropagation()">
+        <button onclick="fecharZoom()" class="absolute -top-12 right-0 text-white hover:text-brand-pink transition-colors p-2"><i data-lucide="x" class="w-8 h-8"></i></button>
+        <img id="img-zoom-preview" src="" class="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl border-4 border-white/20 bg-white" />
+        <p class="text-center text-white/50 text-sm mt-4 font-bold uppercase tracking-widest">Sua Cabana Personalizada</p>
       </div>
     </div>
-
     <div id="modal-detalhes-combo" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 bg-brand-dark/60 backdrop-blur-sm" onclick="fecharDetalhesCombo()">
         <div class="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl animate-zoom" onclick="event.stopPropagation()">
             <div class="relative h-48">
                 <img id="combo-detalhe-img" src="" class="w-full h-full object-cover">
-                <button onclick="fecharDetalhesCombo()" class="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full text-brand-dark hover:text-brand-pink transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button onclick="fecharDetalhesCombo()" class="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full text-brand-dark hover:text-brand-pink transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="p-6">
                 <h3 id="combo-detalhe-titulo" class="font-display text-2xl font-bold text-brand-dark mb-2"></h3>
-                
                 <p id="combo-detalhe-desc" class="text-slate-500 text-sm mb-4"></p>
-                
                 <div class="bg-brand-soft p-4 rounded-2xl mb-4 hidden">
                     <h4 class="text-xs font-bold text-brand-pink uppercase mb-2">Itens Inclusos:</h4>
                     <ul id="combo-detalhe-lista" class="space-y-1"></ul>
                 </div>
-
-                <button onclick="fecharDetalhesCombo()" class="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">
-                    Fechar
-                </button>
+                <button onclick="fecharDetalhesCombo()" class="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">Fechar</button>
             </div>
         </div>
     </div>
@@ -610,56 +282,64 @@
       let dadosAPI = { modelos: [], combos: [], extras: [], itensPadrao: [] };
       let selecao = { modeloId: null, comboId: null, extras: {} };
 
-      // CARREGAR LOGO PADRÃO
       const logoPadrao = new Image();
       logoPadrao.src = "assets/logo.png";
       logoPadrao.onload = () => { if (!selecao.modeloId) atualizarSimulador(); };
 
-      // --- FUNÇÕES MODAIS ---
+      // --- FUNÇÕES DE HISTÓRICO (NOVO) ---
+      function abrirHistorico() {
+          const lista = document.getElementById("lista-historico");
+          const historico = JSON.parse(localStorage.getItem("cabana_historico") || "[]");
+          
+          if(historico.length === 0) {
+              lista.innerHTML = '<p class="text-center text-slate-400 text-sm py-8">Nenhum pedido salvo neste dispositivo.</p>';
+          } else {
+              lista.innerHTML = historico.reverse().map(p => `
+                  <div onclick="window.location.href='comprovante.html?id=${p._id}'" class="p-3 bg-slate-50 hover:bg-brand-soft rounded-xl cursor-pointer transition-colors border border-slate-100 group">
+                      <div class="flex justify-between items-center mb-1">
+                          <span class="font-bold text-brand-dark text-sm">${p.modelo_barraca}</span>
+                          <span class="text-[10px] text-slate-400">${new Date(p._data_criacao).toLocaleDateString()}</span>
+                      </div>
+                      <p class="text-xs text-slate-500 truncate">Tema: ${p.tema}</p>
+                      <p class="text-xs text-brand-pink font-bold group-hover:underline mt-1">Ver Comprovante →</p>
+                  </div>
+              `).join("");
+          }
+          document.getElementById("modal-historico").classList.remove("hidden");
+      }
+      function fecharHistorico() { document.getElementById("modal-historico").classList.add("hidden"); }
+
+      // --- FUNÇÕES MODAIS (Mantidas) ---
       function abrirDetalhesCombo(id) {
         const combo = dadosAPI.combos.find(c => c.id === id);
         if (!combo) return;
-
         document.getElementById("combo-detalhe-img").src = combo.url_capa || "assets/logo.png";
         document.getElementById("combo-detalhe-titulo").innerText = combo.titulo;
         document.getElementById("combo-detalhe-desc").innerText = combo.descricao;
-        
         const lista = document.getElementById("combo-detalhe-lista");
         if (combo.itens && combo.itens.length > 0) {
-            lista.innerHTML = combo.itens.map(i => `
-                <li class="text-sm text-slate-600 flex justify-between">
-                    <span>${i.nome}</span>
-                    <span class="font-bold text-brand-pink/70">x${i.quantidade}</span>
-                </li>
-            `).join('');
+            lista.innerHTML = combo.itens.map(i => `<li class="text-sm text-slate-600 flex justify-between"><span>${i.nome}</span><span class="font-bold text-brand-pink/70">x${i.quantidade}</span></li>`).join('');
             lista.parentElement.classList.remove('hidden');
-        } else {
-            lista.parentElement.classList.add('hidden');
-        }
-
-        const modal = document.getElementById("modal-detalhes-combo");
-        modal.classList.remove("hidden");
+        } else { lista.parentElement.classList.add('hidden'); }
+        document.getElementById("modal-detalhes-combo").classList.remove("hidden");
         document.body.style.overflow = "hidden";
         lucide.createIcons();
       }
-
-      function fecharDetalhesCombo() {
-          document.getElementById("modal-detalhes-combo").classList.add("hidden");
-          document.body.style.overflow = "";
+      function fecharDetalhesCombo() { document.getElementById("modal-detalhes-combo").classList.add("hidden"); document.body.style.overflow = ""; }
+      function abrirZoom() {
+        const modal = document.getElementById("modal-zoom");
+        document.getElementById("img-zoom-preview").src = canvas.toDataURL("image/png");
+        modal.classList.remove("hidden"); modal.classList.add("animate-fade-in");
+        document.body.style.overflow = "hidden";
       }
+      function fecharZoom() { document.getElementById("modal-zoom").classList.add("hidden"); document.body.style.overflow = ""; }
 
       // --- FUNÇÕES VISUALIZADOR ---
-      
       async function carregarImagem(url) {
         if (imagensCarregadas[url]) return imagensCarregadas[url];
         return new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = "Anonymous";
-          img.src = url;
-          img.onload = () => {
-            imagensCarregadas[url] = img;
-            resolve(img);
-          };
+          const img = new Image(); img.crossOrigin = "Anonymous"; img.src = url;
+          img.onload = () => { imagensCarregadas[url] = img; resolve(img); };
           img.onerror = () => resolve(null);
         });
       }
@@ -667,191 +347,39 @@
       async function aoMudarModelo() {
         const select = document.getElementById("modelo_barraca");
         const modeloNome = select.value;
-
-        // Se nenhum modelo selecionado (limpar)
         if (!modeloNome) {
-            selecao.modeloId = null;
-            ativosAtuais = [];
+            selecao.modeloId = null; ativosAtuais = [];
             document.getElementById("container-personalizacao").innerHTML = '<span class="text-xs text-slate-300 italic col-span-2 text-center py-4">Selecione um modelo acima para ver os itens disponíveis.</span>';
-            atualizarSimulador();
-            return;
+            atualizarSimulador(); return;
         }
-
         const mod = dadosAPI.modelos.find((m) => m.descricao === modeloNome);
         if (mod) selecao.modeloId = mod.id;
-
         document.getElementById("canvas-loader").classList.remove("hidden");
         try {
-          const res = await fetch(
-            `/api/simulador/ativos/${encodeURIComponent(modeloNome)}`,
-          );
+          const res = await fetch(`/api/simulador/ativos/${encodeURIComponent(modeloNome)}`);
           ativosAtuais = await res.json();
-          
-          const promises = ativosAtuais.map((a) =>
-            carregarImagem(a.url_cloudinary),
-          );
-          await Promise.all(promises);
-
-          // Renderizar apenas itens que existem visualmente para este modelo
+          await Promise.all(ativosAtuais.map((a) => carregarImagem(a.url_cloudinary)));
           renderizarItensPersonalizacao();
-
-        } catch (e) {
-          console.error("Erro ao carregar ativos:", e);
-        } finally {
+        } catch (e) { console.error("Erro ao carregar ativos:", e); } finally {
           document.getElementById("canvas-loader").classList.add("hidden");
           atualizarSimulador();
         }
       }
-      // FUNÇÃO DE CÁLCULO DE PREÇO (NOVA)
-    function calcularTotalEstimado() {
-        let total = 0;
 
-        // 1. Barracas
-        const modeloNome = document.getElementById("modelo_barraca").value;
-        const qtdCriancas = parseInt(document.getElementById("qtd_criancas").value) || 0;
-        const qtdBarracas = Math.ceil(qtdCriancas / 2);
-
-        const modeloObj = dadosAPI.modelos.find(m => m.descricao === modeloNome);
-        if (modeloObj) {
-            total += parseFloat(modeloObj.valor) * qtdBarracas;
-        }
-
-        // 2. Alimentação (Combo)
-        if (selecao.comboId) {
-            const comboObj = dadosAPI.combos.find(c => c.id === selecao.comboId);
-            if (comboObj) {
-                const precoCombo = parseFloat(comboObj.valor_final); // valor vindo da API cardapios
-                if (comboObj.modo_cobranca === 'por_pessoa') {
-                    total += precoCombo * qtdCriancas;
-                } else {
-                    total += precoCombo; // preço fixo
-                }
-            }
-        }
-
-        // 3. Alimentação (Extras)
-        for (const [id, qtd] of Object.entries(selecao.extras)) {
-            if (qtd > 0) {
-                const extraObj = dadosAPI.extras.find(e => e.id == id);
-                if (extraObj) {
-                    total += parseFloat(extraObj.valor) * qtd;
-                }
-            }
-        }
-
-        return total;
-    }
-
-    // SUBMIT DO FORMULÁRIO (ATUALIZADO)
-    document.getElementById("orcamentoForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (!validarTodoFormulario()) {
-            document.getElementById("aviso-erro").scrollIntoView({ behavior: "smooth", block: "center" });
-            return;
-        }
-        
-        const btn = document.getElementById("btn-submit");
-        const textoOriginal = btn.innerHTML;
-        btn.innerHTML = "Enviando...";
-        btn.disabled = true;
-
-        // ... (montagem de itensPadrao e objAlimentacao igual ao anterior) ...
-        const itensPadrao = [];
-        document.querySelectorAll(".chk-padrao:checked").forEach((el) => itensPadrao.push(el.value));
-        
-        const objAlimentacao = { combo: null, extras: [] };
-        if (selecao.comboId) {
-            const c = dadosAPI.combos.find((x) => x.id === selecao.comboId);
-            objAlimentacao.combo = {
-              id: c.id,
-              titulo: c.titulo,
-              valor_unitario: c.valor_final,
-              modo: c.modo_cobranca,
-            };
-        }
-        for (const [id, qtd] of Object.entries(selecao.extras)) {
-            if (qtd > 0) {
-              const i = dadosAPI.extras.find((x) => x.id == id);
-              objAlimentacao.extras.push({ id: i.id, nome: i.nome, qtd: qtd, valor: i.valor });
-            }
-        }
-
-        // CALCULA O TOTAL AQUI
-        const valorTotalCalculado = calcularTotalEstimado();
-
-        const formData = {
-            nome: document.getElementById("nome").value,
-            whatsapp: document.getElementById("whatsapp").value,
-            email: document.getElementById("email").value,
-            endereco: document.getElementById("endereco").value,
-            qtd_criancas: document.getElementById("qtd_criancas").value,
-            faixa_etaria: document.getElementById("faixa_etaria").value,
-            modelo_barraca: document.getElementById("modelo_barraca").value,
-            qtd_barracas: Math.ceil(document.getElementById("qtd_criancas").value / 2),
-            cores: document.getElementById("cores").value,
-            tema: document.getElementById("tema").value,
-            itens_padrao: itensPadrao,
-            itens_adicionais: document.getElementById("itens_adicionais").value,
-            data_festa: document.getElementById("data_festa").value,
-            horario: document.getElementById("horario").value,
-            alimentacao: objAlimentacao,
-            alergias: document.getElementById("alergias").value,
-            valor_estimado: valorTotalCalculado // ENVIA O VALOR
-        };
-
-        try {
-            const res = await fetch("/api/orcamento", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-            if (res.ok) {
-                document.getElementById("modal-sucesso").classList.remove("hidden");
-            } else {
-                alert("Erro ao enviar.");
-                btn.disabled = false;
-                btn.innerHTML = textoOriginal;
-            }
-        } catch (err) {
-            alert("Erro de conexão.");
-            btn.disabled = false;
-            btn.innerHTML = textoOriginal;
-        }
-    });
       function renderizarItensPersonalizacao() {
           const divPersonalizacao = document.getElementById("container-personalizacao");
           divPersonalizacao.innerHTML = "";
-
-          // 1. Identifica quais itens comuns têm representação visual (ID na lista de ativos)
-          const idsVisuais = ativosAtuais
-            .filter(a => a.categoria_ativo === 'item' && a.item_id)
-            .map(a => a.item_id);
-
-          // 2. Verifica se o modelo tem ativo de "base_luz" (iluminação)
+          const idsVisuais = ativosAtuais.filter(a => a.categoria_ativo === 'item' && a.item_id).map(a => a.item_id);
           const temBaseLuz = ativosAtuais.some(a => a.categoria_ativo === 'base_luz');
-
-          // 3. Filtra os itens padrão (Tabela de Preços)
           const itensParaMostrar = dadosAPI.itensPadrao.filter(item => {
-              // Regra A: O item tem um ativo visual explicitamente cadastrado para este modelo?
               if (idsVisuais.includes(item.id)) return true;
-
-              // Regra B: O item é de iluminação (Fio de Fada, LED, Luz) e o modelo suporta luz?
-              // Isso permite que "Fio de Fada" apareça mesmo sem item_id direto, pois ele ativa a 'base_luz'
               const nome = item.descricao.toLowerCase();
-              const ehIluminacao = nome.includes('luz') || nome.includes('led') || nome.includes('fio');
-              
-              if (ehIluminacao && temBaseLuz) return true;
-
-              return false;
+              return (nome.includes('luz') || nome.includes('led') || nome.includes('fio')) && temBaseLuz;
           });
-          
-          // Se não sobrou nada, exibe aviso
           if(itensParaMostrar.length === 0) {
              divPersonalizacao.innerHTML = '<span class="text-xs text-slate-300 italic col-span-2 text-center py-4">Este modelo já vem completo ou não possui itens adicionais visuais.</span>';
              return;
           }
-
-          // Renderiza os checkboxes
           itensParaMostrar.forEach((item) => {
             divPersonalizacao.innerHTML += `
                 <label class="item-card flex items-center gap-3 cursor-pointer bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-pink/30 transition-colors">
@@ -859,104 +387,61 @@
                     <span class="text-sm font-bold text-slate-600">${item.descricao}</span>
                 </label>`;
           });
-          
           lucide.createIcons();
       }
 
       async function atualizarSimulador() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Se vazio, desenhar Logo
         if (ativosAtuais.length === 0) {
             if(logoPadrao.complete && logoPadrao.naturalWidth !== 0){
                 const scale = Math.min(canvas.width / logoPadrao.width, canvas.height / logoPadrao.height) * 0.5;
-                const w = logoPadrao.width * scale;
-                const h = logoPadrao.height * scale;
+                const w = logoPadrao.width * scale; const h = logoPadrao.height * scale;
                 ctx.drawImage(logoPadrao, (canvas.width - w)/2, (canvas.height - h)/2, w, h);
             }
             return;
         }
-
         const checkboxes = document.querySelectorAll(".chk-padrao:checked");
-        const idsSelecionados = Array.from(checkboxes).map((cb) =>
-          parseInt(cb.dataset.id),
-        );
-        const nomesSelecionados = Array.from(checkboxes).map((cb) =>
-          cb.value.toLowerCase(),
-        );
-        
-        // Verifica se algum checkbox de luz foi marcado
-        const temLuz = nomesSelecionados.some(
-          (n) => n.includes("luz") || n.includes("led") || n.includes("fio"),
-        );
-
+        const idsSelecionados = Array.from(checkboxes).map((cb) => parseInt(cb.dataset.id));
+        const nomesSelecionados = Array.from(checkboxes).map((cb) => cb.value.toLowerCase());
+        const temLuz = nomesSelecionados.some((n) => n.includes("luz") || n.includes("led") || n.includes("fio"));
         let camadas = [];
         const base = ativosAtuais.find((a) => a.categoria_ativo === "base");
         if (base) camadas.push(base);
-
-        // Se marcou luz, adiciona a camada base_luz
         if (temLuz) {
-          const luz = ativosAtuais.find(
-            (a) => a.categoria_ativo === "base_luz",
-          );
+          const luz = ativosAtuais.find((a) => a.categoria_ativo === "base_luz");
           if (luz) camadas.push(luz);
         }
-
-        // Adiciona itens visuais normais
-        const itens = ativosAtuais.filter(
-          (a) =>
-            a.categoria_ativo === "item" && idsSelecionados.includes(a.item_id),
-        );
-
+        const itens = ativosAtuais.filter((a) => a.categoria_ativo === "item" && idsSelecionados.includes(a.item_id));
         itens.sort((a, b) => a.camada_z - b.camada_z);
         camadas = [...camadas, ...itens];
-
         for (const c of camadas) {
           const img = await carregarImagem(c.url_cloudinary);
           if (img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
       }
 
-      // --- CARREGAMENTO DE DADOS ---
-     async function carregarDadosAPI() {
-      try {
-        // 1. Itens Básicos e Barracas
-        const res1 = await fetch("/api/itens-disponiveis");
-        const itens = await res1.json();
+      // --- CARREGAMENTO API ---
+      async function carregarDadosAPI() {
+        try {
+          const [res1, res2, res3] = await Promise.all([
+             fetch("/api/itens-disponiveis"), fetch("/api/cardapios"), fetch("/api/alimentos?publico=true")
+          ]);
+          dadosAPI.itensPadrao = (await res1.json()).filter((i) => i.categoria === "padrao");
+          dadosAPI.combos = await res2.json();
+          dadosAPI.extras = await res3.json();
 
-        // SALVA OS ITENS PADRÃO NA MEMÓRIA, MAS NÃO RENDERIZA AINDA
-        dadosAPI.itensPadrao = itens.filter((i) => i.categoria === "padrao");
+          const selModelo = document.getElementById("modelo_barraca");
+          selModelo.innerHTML = '<option value="">Selecione...</option>';
+          dadosAPI.modelos = (await (await fetch("/api/itens-disponiveis")).json()).filter(i => i.categoria === "tendas");
+          dadosAPI.modelos.forEach(t => {
+             const opt = document.createElement("option"); opt.value = t.descricao; opt.textContent = t.descricao;
+             selModelo.appendChild(opt);
+          });
 
-        // 2. Cardápios
-        const res2 = await fetch("/api/cardapios");
-        dadosAPI.combos = await res2.json();
-
-        // 3. Extras de Comida
-        const res3 = await fetch("/api/alimentos?publico=true");
-        dadosAPI.extras = await res3.json();
-
-        // Renderizar Barracas
-        const selModelo = document.getElementById("modelo_barraca");
-        selModelo.innerHTML = '<option value="">Selecione...</option>';
-        const tendas = itens.filter((i) => i.categoria === "tendas");
-        dadosAPI.modelos = tendas;
-        tendas.forEach((t) => {
-          const opt = document.createElement("option");
-          opt.value = t.descricao;
-          opt.textContent = `${t.descricao}`;
-          selModelo.appendChild(opt);
-        });
-
-        // O CONTAINER DE PERSONALIZAÇÃO JÁ INICIA COM MENSAGEM (ver HTML inicial)
-
-        // Renderizar COMBOS
-        const divCombos = document.getElementById("gridCombos");
-        if (dadosAPI.combos.length === 0) {
-          divCombos.innerHTML = '<span class="text-xs text-slate-300 italic">Nenhum pacote disponível.</span>';
-        } else {
-          divCombos.innerHTML = dadosAPI.combos
-            .map((c) => {
-              return `
+          const divCombos = document.getElementById("gridCombos");
+          if (dadosAPI.combos.length === 0) divCombos.innerHTML = '<span class="text-xs text-slate-300 italic">Nenhum pacote disponível.</span>';
+          else {
+            divCombos.innerHTML = dadosAPI.combos.map(c => `
                <div class="card-combo cursor-pointer rounded-xl overflow-hidden relative group bg-white border-2 border-slate-100" onclick="selecionarCombo(this, ${c.id})">
                   <div class="absolute top-2 right-2 z-10 w-6 h-6 rounded-full border-2 border-slate-300 bg-white flex items-center justify-center check-icon transition-colors">
                       <div class="w-3 h-3 bg-brand-pink rounded-full opacity-0 transition-opacity"></div>
@@ -964,247 +449,137 @@
                   <div class="flex h-28">
                       <img src="${c.url_capa || "assets/logo.png"}" class="w-24 h-full object-cover bg-slate-100">
                       <div class="p-3 flex-1 flex flex-col justify-between">
-                          <div>
-                              <h4 class="font-bold text-slate-700 text-sm leading-tight">${c.titulo}</h4>
-                              <p class="text-[10px] text-slate-400 mt-1 line-clamp-2">${c.descricao}</p>
-                          </div>
-                          <button type="button" onclick="event.stopPropagation(); abrirDetalhesCombo(${c.id})" class="text-[10px] font-bold text-brand-pink flex items-center gap-1 hover:underline">
-                              <i data-lucide="info" class="w-3 h-3"></i> Ver detalhes
-                          </button>
+                          <div><h4 class="font-bold text-slate-700 text-sm leading-tight">${c.titulo}</h4><p class="text-[10px] text-slate-400 mt-1 line-clamp-2">${c.descricao}</p></div>
+                          <button type="button" onclick="event.stopPropagation(); abrirDetalhesCombo(${c.id})" class="text-[10px] font-bold text-brand-pink flex items-center gap-1 hover:underline"><i data-lucide="info" class="w-3 h-3"></i> Ver detalhes</button>
                       </div>
                   </div>
-               </div>
-               `;
-            })
-            .join("");
-        }
-
-        // Renderizar EXTRAS
-        const divExtras = document.getElementById("listaExtrasComida");
-        const areaExtras = document.getElementById("areaExtrasComida");
-        if (dadosAPI.extras.length > 0) {
-          areaExtras.classList.remove("hidden");
-          divExtras.innerHTML = dadosAPI.extras
-            .map(
-              (e) => `
+               </div>`).join("");
+          }
+          const divExtras = document.getElementById("listaExtrasComida");
+          if (dadosAPI.extras.length > 0) {
+            document.getElementById("areaExtrasComida").classList.remove("hidden");
+            divExtras.innerHTML = dadosAPI.extras.map(e => `
               <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div class="flex-1">
-                      <p class="text-xs font-bold text-slate-700">${e.nome}</p>
-                      <p class="text-[10px] text-slate-400">${e.medida}${e.unidade}</p>
-                  </div>
+                  <div class="flex-1"><p class="text-xs font-bold text-slate-700">${e.nome}</p><p class="text-[10px] text-slate-400">${e.medida}${e.unidade}</p></div>
                   <div class="flex items-center gap-2 bg-white rounded-lg border border-slate-100 px-1">
                       <button type="button" onclick="alterarExtra(${e.id}, -1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">-</button>
                       <span id="qtd_extra_${e.id}" class="text-xs font-bold text-slate-600 w-3 text-center">0</span>
                       <button type="button" onclick="alterarExtra(${e.id}, 1)" class="text-slate-400 hover:text-brand-pink font-bold px-2">+</button>
                   </div>
-              </div>
-            `,
-            )
-            .join("");
-        }
-
-        lucide.createIcons();
-        atualizarSimulador(); // Desenha a logo inicial
-
-      } catch (e) {
-        console.error("Erro API", e);
+              </div>`).join("");
+          }
+          lucide.createIcons(); atualizarSimulador();
+        } catch (e) { console.error("Erro API", e); }
       }
-    }
-      // --- LÓGICA DE INTERAÇÃO ---
 
       function selecionarCombo(el, id) {
         if (selecao.comboId === id) {
-          selecao.comboId = null; // Desmarca
-          el.classList.remove("selected");
-          el.querySelector(".check-icon").classList.remove("border-brand-pink");
-          el.querySelector(".bg-brand-pink").classList.add("opacity-0");
+          selecao.comboId = null; el.classList.remove("selected");
+          el.querySelector(".check-icon").classList.remove("border-brand-pink"); el.querySelector(".bg-brand-pink").classList.add("opacity-0");
         } else {
-          // Limpa outros
-          document.querySelectorAll(".card-combo").forEach((c) => {
-            c.classList.remove("selected");
-            c.querySelector(".check-icon").classList.remove(
-              "border-brand-pink",
-            );
-            c.querySelector(".bg-brand-pink").classList.add("opacity-0");
+          document.querySelectorAll(".card-combo").forEach(c => {
+            c.classList.remove("selected"); c.querySelector(".check-icon").classList.remove("border-brand-pink"); c.querySelector(".bg-brand-pink").classList.add("opacity-0");
           });
-          // Marca atual
-          selecao.comboId = id;
-          el.classList.add("selected");
-          el.querySelector(".check-icon").classList.add("border-brand-pink");
-          el.querySelector(".bg-brand-pink").classList.remove("opacity-0");
+          selecao.comboId = id; el.classList.add("selected");
+          el.querySelector(".check-icon").classList.add("border-brand-pink"); el.querySelector(".bg-brand-pink").classList.remove("opacity-0");
         }
       }
-
       function alterarExtra(id, delta) {
-        const atual = selecao.extras[id] || 0;
-        const novo = atual + delta;
-        if (novo >= 0) {
-          selecao.extras[id] = novo;
-          document.getElementById(`qtd_extra_${id}`).innerText = novo;
-        }
+        const atual = selecao.extras[id] || 0; const novo = atual + delta;
+        if (novo >= 0) { selecao.extras[id] = novo; document.getElementById(`qtd_extra_${id}`).innerText = novo; }
       }
 
-      // --- MODAL ZOOM ---
-      function abrirZoom() {
-        const modal = document.getElementById("modal-zoom");
-        const img = document.getElementById("img-zoom-preview");
-        img.src = canvas.toDataURL("image/png");
-        modal.classList.remove("hidden");
-        modal.classList.add("animate-fade-in");
-        document.body.style.overflow = "hidden";
-      }
-      function fecharZoom() {
-        document.getElementById("modal-zoom").classList.add("hidden");
-        document.body.style.overflow = "";
-      }
-      document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") {
-            fecharZoom();
-            fecharDetalhesCombo();
-        }
-      });
+      function calcularTotalEstimado() {
+        let total = 0;
+        const modeloNome = document.getElementById("modelo_barraca").value;
+        const qtdCriancas = parseInt(document.getElementById("qtd_criancas").value) || 0;
+        const qtdBarracas = Math.ceil(qtdCriancas / 2);
 
-      // --- VALIDAÇÃO E SUBMIT ---
+        const modeloObj = dadosAPI.modelos.find(m => m.descricao === modeloNome);
+        if (modeloObj) total += parseFloat(modeloObj.valor) * qtdBarracas;
+
+        if (selecao.comboId) {
+            const comboObj = dadosAPI.combos.find(c => c.id === selecao.comboId);
+            if (comboObj) {
+                const precoCombo = parseFloat(comboObj.valor_final);
+                total += comboObj.modo_cobranca === 'por_pessoa' ? precoCombo * qtdCriancas : precoCombo;
+            }
+        }
+        for (const [id, qtd] of Object.entries(selecao.extras)) {
+            if (qtd > 0) {
+                const extraObj = dadosAPI.extras.find(e => e.id == id);
+                if (extraObj) total += parseFloat(extraObj.valor) * qtd;
+            }
+        }
+        return total;
+      }
+
       const camposObrigatorios = [
-        { id: "modelo_barraca", nome: "Modelo" },
-        { id: "tema", nome: "Tema" },
-        { id: "cores", nome: "Cores" },
-        { id: "nome", nome: "Nome" },
-        { id: "whatsapp", nome: "WhatsApp" },
-        { id: "email", nome: "E-mail" },
-        { id: "endereco", nome: "Endereço" },
-        { id: "data_festa", nome: "Data" },
-        { id: "horario", nome: "Horário" },
-        { id: "qtd_criancas", nome: "Pessoas" },
-        { id: "faixa_etaria", nome: "Idade" },
-        { id: "itens_adicionais", nome: "Observações" },
-        { id: "alergias", nome: "Alergias" },
+        { id: "modelo_barraca", nome: "Modelo" }, { id: "tema", nome: "Tema" }, { id: "cores", nome: "Cores" },
+        { id: "nome", nome: "Nome" }, { id: "whatsapp", nome: "WhatsApp" }, { id: "email", nome: "E-mail" },
+        { id: "endereco", nome: "Endereço" }, { id: "data_festa", nome: "Data" }, { id: "horario", nome: "Horário" },
+        { id: "qtd_criancas", nome: "Pessoas" }, { id: "faixa_etaria", nome: "Idade" },
+        { id: "itens_adicionais", nome: "Observações" }, { id: "alergias", nome: "Alergias" },
       ];
 
       function validarTodoFormulario() {
         let faltantes = [];
-        camposObrigatorios.forEach((campo) => {
-          const el = document.getElementById(campo.id);
-          if (!el.value.trim()) {
-            faltantes.push(campo.nome);
-            el.classList.add("error");
-          } else {
-            el.classList.remove("error");
-          }
-        });
+        camposObrigatorios.forEach(c => { const el = document.getElementById(c.id); if (!el.value.trim()) { faltantes.push(c.nome); el.classList.add("error"); } else el.classList.remove("error"); });
         const aviso = document.getElementById("aviso-erro");
-        if (faltantes.length > 0) {
-          aviso.classList.remove("hidden");
-          document.getElementById("campos-faltantes").innerText =
-            faltantes.join(", ");
-          return false;
-        } else {
-          aviso.classList.add("hidden");
-          return true;
-        }
+        if (faltantes.length > 0) { aviso.classList.remove("hidden"); document.getElementById("campos-faltantes").innerText = faltantes.join(", "); return false; }
+        else { aviso.classList.add("hidden"); return true; }
       }
 
       document.addEventListener("DOMContentLoaded", () => {
-        camposObrigatorios.forEach((campo) => {
-          const el = document.getElementById(campo.id);
-          if (el) {
-            el.addEventListener("blur", () => {
-              if (!el.value.trim()) el.classList.add("error");
-            });
-            el.addEventListener("input", () => {
-              if (el.value.trim()) el.classList.remove("error");
-            });
-          }
-        });
+        camposObrigatorios.forEach(c => { const el = document.getElementById(c.id); if(el){ el.addEventListener("blur", () => { if(!el.value.trim()) el.classList.add("error"); }); el.addEventListener("input", () => { if(el.value.trim()) el.classList.remove("error"); }); }});
         carregarDadosAPI();
       });
 
-      document
-        .getElementById("orcamentoForm")
-        .addEventListener("submit", async (e) => {
+      document.getElementById("orcamentoForm").addEventListener("submit", async (e) => {
           e.preventDefault();
-          if (!validarTodoFormulario()) {
-            document
-              .getElementById("aviso-erro")
-              .scrollIntoView({ behavior: "smooth", block: "center" });
-            return;
-          }
-          const btn = document.getElementById("btn-submit");
-          const textoOriginal = btn.innerHTML;
-          btn.innerHTML = "Enviando...";
-          btn.disabled = true;
+          if (!validarTodoFormulario()) { document.getElementById("aviso-erro").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+          
+          const btn = document.getElementById("btn-submit"); const textoOriginal = btn.innerHTML;
+          btn.innerHTML = "Enviando..."; btn.disabled = true;
 
-          // Montar Itens Padrão
-          const itensPadrao = [];
-          document
-            .querySelectorAll(".chk-padrao:checked")
-            .forEach((el) => itensPadrao.push(el.value));
-
-          // Montar Objeto Alimentação
+          const itensPadrao = []; document.querySelectorAll(".chk-padrao:checked").forEach((el) => itensPadrao.push(el.value));
           const objAlimentacao = { combo: null, extras: [] };
           if (selecao.comboId) {
             const c = dadosAPI.combos.find((x) => x.id === selecao.comboId);
-            objAlimentacao.combo = {
-              id: c.id,
-              titulo: c.titulo,
-              valor_unitario: c.valor_final,
-              modo: c.modo_cobranca,
-            };
+            objAlimentacao.combo = { id: c.id, titulo: c.titulo, valor_unitario: c.valor_final, modo: c.modo_cobranca };
           }
           for (const [id, qtd] of Object.entries(selecao.extras)) {
-            if (qtd > 0) {
-              const i = dadosAPI.extras.find((x) => x.id == id);
-              objAlimentacao.extras.push({
-                id: i.id,
-                nome: i.nome,
-                qtd: qtd,
-                valor: i.valor,
-              });
-            }
+            if (qtd > 0) { const i = dadosAPI.extras.find((x) => x.id == id); objAlimentacao.extras.push({ id: i.id, nome: i.nome, qtd: qtd, valor: i.valor }); }
           }
+          const valorTotalCalculado = calcularTotalEstimado();
 
           const formData = {
-            nome: document.getElementById("nome").value,
-            whatsapp: document.getElementById("whatsapp").value,
-            email: document.getElementById("email").value,
-            endereco: document.getElementById("endereco").value,
-            qtd_criancas: document.getElementById("qtd_criancas").value,
-            faixa_etaria: document.getElementById("faixa_etaria").value,
-            modelo_barraca: document.getElementById("modelo_barraca").value,
-            qtd_barracas: Math.ceil(
-              document.getElementById("qtd_criancas").value / 2,
-            ),
-            cores: document.getElementById("cores").value,
-            tema: document.getElementById("tema").value,
-            itens_padrao: itensPadrao,
-            itens_adicionais: document.getElementById("itens_adicionais").value,
-            data_festa: document.getElementById("data_festa").value,
-            horario: document.getElementById("horario").value,
-            alimentacao: objAlimentacao,
-            alergias: document.getElementById("alergias").value,
+            nome: document.getElementById("nome").value, whatsapp: document.getElementById("whatsapp").value,
+            email: document.getElementById("email").value, endereco: document.getElementById("endereco").value,
+            qtd_criancas: document.getElementById("qtd_criancas").value, faixa_etaria: document.getElementById("faixa_etaria").value,
+            modelo_barraca: document.getElementById("modelo_barraca").value, qtd_barracas: Math.ceil(document.getElementById("qtd_criancas").value / 2),
+            cores: document.getElementById("cores").value, tema: document.getElementById("tema").value,
+            itens_padrao: itensPadrao, itens_adicionais: document.getElementById("itens_adicionais").value,
+            data_festa: document.getElementById("data_festa").value, horario: document.getElementById("horario").value,
+            alimentacao: objAlimentacao, alergias: document.getElementById("alergias").value,
+            valor_estimado: valorTotalCalculado,
+            _id: Date.now(), // ID Local temporário
+            _data_criacao: new Date().toISOString()
           };
 
           try {
-            const res = await fetch("/api/orcamento", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(formData),
-            });
+            const res = await fetch("/api/orcamento", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
             if (res.ok) {
-              document
-                .getElementById("modal-sucesso")
-                .classList.remove("hidden");
-            } else {
-              alert("Erro ao enviar.");
-              btn.disabled = false;
-              btn.innerHTML = textoOriginal;
-            }
-          } catch (err) {
-            alert("Erro de conexão.");
-            btn.disabled = false;
-            btn.innerHTML = textoOriginal;
-          }
-        });
+                // SALVA NO LOCALSTORAGE
+                const historico = JSON.parse(localStorage.getItem("cabana_historico") || "[]");
+                historico.push(formData);
+                localStorage.setItem("cabana_historico", JSON.stringify(historico));
+
+                // REDIRECIONA PARA COMPROVANTE
+                window.location.href = `comprovante.html?id=${formData._id}`;
+            } else { alert("Erro ao enviar."); btn.disabled = false; btn.innerHTML = textoOriginal; }
+          } catch (err) { alert("Erro de conexão."); btn.disabled = false; btn.innerHTML = textoOriginal; }
+      });
     </script>
   </body>
 </html>

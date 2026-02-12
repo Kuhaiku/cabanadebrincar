@@ -227,8 +227,9 @@ app.get("/api/alimentos", async (req, res) => {
 app.post("/api/admin/alimentos", checkAuth, async (req, res) => {
   try {
     const { nome, unidade, medida, valor, visivel_site } = req.body;
+    // CORREÇÃO: Adicionado o campo 'ativo' e o valor 1
     await db.query(
-      "INSERT INTO itens_alimentacao (nome, unidade, medida, valor, visivel_site) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO itens_alimentacao (nome, unidade, medida, valor, visivel_site, ativo) VALUES (?, ?, ?, ?, ?, 1)",
       [nome, unidade, medida, valor, visivel_site ? 1 : 0],
     );
     res.json({ success: true });
@@ -948,34 +949,7 @@ app.delete("/api/admin/ativos-simulador/:id", checkAuth, async (req, res) => {
   }
 });
 
-// Rota para editar Item Avulso (Alimento)
-app.put('/api/alimentos/:id', async (req, res) => {
-    const { id } = req.params;
-    const { nome, medida, unidade, valor, visivel } = req.body;
-    try {
-        await db.query(
-            "UPDATE alimentos SET nome=?, medida=?, unidade=?, valor=?, visivel=? WHERE id=?",
-            [nome, medida, unidade, valor, visivel, id]
-        );
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
-// Rota para editar Pacotes (Cardápios)
-app.put('/api/cardapios/:id', async (req, res) => {
-    const { id } = req.params;
-    const { titulo, descricao, visivel } = req.body;
-    try {
-        await db.query(
-            "UPDATE cardapios SET titulo=?, descricao=?, visivel=? WHERE id=?",
-            [titulo, descricao, visivel, id]
-        );
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+
 
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

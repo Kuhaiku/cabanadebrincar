@@ -665,7 +665,9 @@ _(O restante de R$ ${(vTotal * 0.6).toFixed(2)} deve ser pago até a data da fes
 Qualquer dúvida, é só chamar! ✨
 `.trim();
 
-        navigator.clipboard.writeText(texto).then(() => alert("Copiado!"));
+        navigator.clipboard
+          .writeText(texto)
+          .then(() => alert("Copiado!"));
       }
 
       async function acaoPedido(acao) {

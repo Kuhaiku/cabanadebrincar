@@ -118,7 +118,7 @@
       `;
 
       // Configura WhatsApp
-      const saudacao = `Oiê! Sou ${pedido.nome.split(" ")[0]} 👋\nAcabei de fazer o pedido *#${pedido._id.toString().slice(-6)}* no site (Tema: ${pedido.tema}) e queria saber se podem dar uma olhadinha com carinho? 🥰`;
+      const saudacao = `Oiê! Sou ${pedido.nome.split(" ")[0]} \nAcabei de fazer o pedido *#${pedido._id.toString().slice(-6)}* no site (Tema: ${pedido.tema}) e queria saber se podem dar uma olhadinha com carinho? `;
       const linkZap = `https://wa.me/5522992082292?text=${encodeURIComponent(saudacao)}`; // TROQUE PELO SEU NÚMERO
       
       document.getElementById("btn-whatsapp").onclick = () => window.open(linkZap, '_blank');

@@ -1078,5 +1078,113 @@ app.delete("/api/admin/ativos-simulador/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+// =========================================================================
+// --- 7. SISTEMA DE FEEDBACK E AVALIAÇÕES (NOVO) ---
+// =========================================================================
 
+// 7.1 Gerar Token de Avaliação (Admin)
+// Rota chamada pelo botão "Gerar Link Avaliação" na Agenda
+app.post("/api/admin/gerar-token/:id", checkAuth, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const token = uuidv4(); // Gera um ID único
+
+    // Salva o token no pedido específico
+    await db.query("UPDATE orcamentos SET feedback_token = ? WHERE id = ?", [
+      token,
+      id,
+    ]);
+
+    // Monta a URL completa
+    let domain = process.env.DOMAIN || `localhost:${PORT}`;
+    domain = domain.replace(/\/$/, "");
+    if (!domain.startsWith("http")) domain = `https://${domain}`;
+
+    const link = `${domain}/feedback.html?t=${token}`;
+
+    res.json({ link });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 7.2 Validar Token e Pegar Dados do Cliente (Público)
+// Rota chamada ao abrir a página feedback.html
+app.get("/api/feedback/:token", async (req, res) => {
+  try {
+    const token = req.params.token;
+    // Busca o nome do cliente baseado no token
+    const [rows] = await db.query(
+      "SELECT id, nome FROM orcamentos WHERE feedback_token = ?",
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Link inválido ou expirado" });
+    }
+
+    res.json({ nome: rows[0].nome });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 7.3 Receber a Avaliação (Público)
+// Rota chamada ao enviar o formulário de feedback
+app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
+  try {
+    const token = req.params.token;
+
+    // 1. Validar Token
+    const [rows] = await db.query(
+      "SELECT id, nome FROM orcamentos WHERE feedback_token = ?",
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Token inválido" });
+    }
+
+    const pedido = rows[0];
+    const { nota, texto } = req.body;
+
+    // 2. Salvar Depoimento
+    // 'aprovado' = 0 para que o admin precise aprovar antes de aparecer no site
+    const [r] = await db.query(
+      "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado, data_criacao) VALUES (?, ?, ?, ?, 0, NOW())",
+      [pedido.id, pedido.nome, texto, nota]
+    );
+    const depoimentoId = r.insertId;
+
+    // 3. Upload de Fotos (se houver)
+    if (req.files && req.files.length > 0) {
+      const uploads = req.files.map((file) => {
+        return cloudinary.uploader
+          .upload(file.path, { folder: "cabana/depoimentos_clientes" })
+          .then((up) => {
+            fs.unlinkSync(file.path);
+            return up.secure_url;
+          });
+      });
+
+      const urls = await Promise.all(uploads);
+
+      for (const url of urls) {
+        await db.query(
+          "INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)",
+          [depoimentoId, url]
+        );
+      }
+    }
+
+    // Opcional: Remover o token para o link não ser usado novamente
+    // await db.query("UPDATE orcamentos SET feedback_token = NULL WHERE id = ?", [pedido.id]);
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

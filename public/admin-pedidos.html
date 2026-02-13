@@ -612,6 +612,7 @@
               headers: { "x-admin-password": ADMIN_TOKEN },
             },
           );
+          const links = await res.json();
        // --- PREPARAÇÃO DOS DADOS PARA O TEXTO ---
           
           // 1. Formata Itens Padrão

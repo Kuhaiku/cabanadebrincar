@@ -1,650 +1,672 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pedidos | Painel Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap");
-      body {
-        font-family: "Quicksand", sans-serif;
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão de Pedidos - Cabana de Brincar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+    }
+
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Animação suave para o modal */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
       }
-    </style>
-  </head>
-  <body class="bg-slate-50 min-h-screen p-6">
-    <div class="max-w-7xl mx-auto">
-      <header class="flex justify-between items-center mb-8">
-        <div class="flex items-center gap-4">
-          <a
-            href="painel.html"
-            class="p-2 bg-white rounded-xl hover:bg-slate-100 transition-colors"
-            ><i data-lucide="arrow-left" class="text-slate-600"></i
-          ></a>
-          <h1 class="text-2xl font-bold text-slate-800">
-            Pedidos & Orçamentos
-          </h1>
-        </div>
-        <button
-          onclick="carregarDados()"
-          class="bg-white text-slate-600 px-4 py-2 rounded-lg font-bold hover:bg-slate-100 flex items-center gap-2"
-        >
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
-        </button>
-      </header>
 
-      <div class="flex gap-4 mb-6 overflow-x-auto pb-2">
-        <button
-          onclick="filtrar('todos')"
-          class="bg-white px-4 py-2 rounded-full text-sm font-bold text-slate-600 shadow-sm hover:shadow-md border border-slate-100"
-        >
-          Todos
-        </button>
-        <button
-          onclick="filtrar('pendente')"
-          class="bg-yellow-100 px-4 py-2 rounded-full text-sm font-bold text-yellow-700 hover:bg-yellow-200"
-        >
-          Pendentes
-        </button>
-        <button
-          onclick="filtrar('aprovado')"
-          class="bg-blue-100 px-4 py-2 rounded-full text-sm font-bold text-blue-700 hover:bg-blue-200"
-        >
-          Aprovados
-        </button>
-        <button
-          onclick="filtrar('concluido')"
-          class="bg-green-100 px-4 py-2 rounded-full text-sm font-bold text-green-700 hover:bg-green-200"
-        >
-          Concluídos
-        </button>
-      </div>
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
 
-      <div
-        id="gridPedidos"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        <div class="col-span-full text-center py-20 text-slate-400">
-          <i
-            data-lucide="loader-2"
-            class="w-8 h-8 animate-spin mx-auto mb-4"
-          ></i>
-          Carregando pedidos...
-        </div>
-      </div>
+    .modal-animate {
+      animation: fadeIn 0.2s ease-out forwards;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 min-h-screen flex text-slate-800">
+  <aside class="w-64 bg-white border-r border-slate-200 flex-col hidden md:flex z-20 shadow-sm fixed h-full">
+    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+      <img src="/assets/logo.png" alt="Logo" class="w-8 h-8 rounded-lg" />
+      <span class="font-bold text-lg text-slate-700">Admin</span>
     </div>
+    <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+      <a href="/admin-gerenciador.html"
+        class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="font-medium">Dashboard</span>
+      </a>
+      <a href="/admin-pedidos.html"
+        class="flex items-center gap-3 px-4 py-3 bg-pink-50 text-pink-600 rounded-xl transition-all shadow-sm">
+        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+        <span class="font-bold">Pedidos</span>
+      </a>
+      <a href="/admin-agenda.html"
+        class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+        <i data-lucide="calendar" class="w-5 h-5"></i>
+        <span class="font-medium">Agenda</span>
+      </a>
+      <a href="/admin-financeiro.html"
+        class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+        <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+        <span class="font-medium">Financeiro</span>
+      </a>
+      <div class="pt-4 mt-4 border-t border-slate-100">
+        <p class="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Configurações</p>
+        <a href="/admin-cardapio.html"
+          class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+          <i data-lucide="utensils" class="w-5 h-5"></i>
+          <span class="font-medium">Cardápio</span>
+        </a>
+        <a href="/admin-simulador.html"
+          class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+          <i data-lucide="settings-2" class="w-5 h-5"></i>
+          <span class="font-medium">Preços & Itens</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="flex-1 md:ml-64 p-4 md:p-8 overflow-x-hidden">
+    <div
+      class="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex items-center gap-2">
+        <img src="/assets/logo.png" alt="Logo" class="w-8 h-8 rounded" />
+        <span class="font-bold text-slate-700">Admin Pedidos</span>
+      </div>
+      <button onclick="document.querySelector('aside').classList.toggle('hidden')" class="p-2 text-slate-600">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-800 mb-2">Gestão de Pedidos</h1>
+      <p class="text-slate-500">Visualize, edite e aprove os orçamentos recebidos.</p>
+    </header>
 
     <div
-      id="modalDetalhes"
-      class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-    >
-      <div
-        class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <div
-          class="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10"
-        >
-          <h2 class="text-xl font-bold text-slate-800">Detalhes do Pedido</h2>
-          <button
-            onclick="fecharModal()"
-            class="p-2 hover:bg-slate-100 rounded-full"
-          >
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-        <div id="conteudoModal" class="p-6 space-y-6">
-          </div>
-
-        <div class="p-6 bg-slate-50 border-t border-slate-200">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-slate-700 flex items-center gap-2">
-              <i data-lucide="dollar-sign" class="text-green-500 w-5 h-5"></i>
-              Financeiro (Automático via IDs)
-            </h3>
-            <button
-              onclick="aplicarSugestaoCalculo()"
-              class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold hover:bg-blue-200 transition-colors flex items-center gap-1"
-              title="Forçar recálculo automático usando preços atuais"
-            >
-              <i data-lucide="calculator" class="w-3 h-3"></i> Recalcular
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label class="text-xs font-bold text-slate-500 uppercase"
-                >Valor Pacote + Comida</label
-              >
-              <div class="relative">
-                <span
-                  class="absolute left-3 top-2 text-slate-400 font-bold text-sm"
-                  >R$</span
-                >
-                <input
-                  type="number"
-                  step="0.01"
-                  id="fin_valor_final"
-                  class="w-full pl-10 p-2 rounded border border-slate-300 font-mono font-bold text-slate-700"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div>
-              <label class="text-xs font-bold text-slate-500 uppercase"
-                >Extras (Frete/Adic.)</label
-              >
-              <div class="relative">
-                <span
-                  class="absolute left-3 top-2 text-slate-400 font-bold text-sm"
-                  >R$</span
-                >
-                <input
-                  type="number"
-                  step="0.01"
-                  id="fin_valor_extras"
-                  class="w-full pl-10 p-2 rounded border border-slate-300 font-mono font-bold text-slate-700"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div class="col-span-full">
-              <label class="text-xs font-bold text-slate-500 uppercase"
-                >Descrição dos Extras</label
-              >
-              <input
-                type="text"
-                id="fin_desc_extras"
-                class="w-full p-2 rounded border border-slate-300"
-                placeholder="Ex: Frete + Lembrancinhas"
-              />
-            </div>
-          </div>
-
-          <div class="flex justify-between items-center mb-6 text-sm px-1">
-            <span class="text-slate-500">Total Geral do Evento:</span>
-            <span class="text-2xl font-bold text-green-600" id="displayTotal"
-              >R$ 0,00</span
-            >
-          </div>
-
-          <button
-            onclick="executarFluxoCompleto()"
-            id="btnFluxo"
-            class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]"
-          >
-            <i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i>
-            <span>Salvar, Gerar Links e Copiar</span>
-          </button>
-          <p class="text-center text-xs text-slate-400 mt-2">
-            Salva no banco, cria os links do Mercado Pago e copia o resumo para
-            o WhatsApp.
-          </p>
-
-          <div id="areaLinks" class="hidden">
-            <a id="link_reserva" href="#"></a>
-            <a id="link_integral" href="#"></a>
-          </div>
-        </div>
-
-        <div
-          class="p-6 border-t border-slate-100 flex gap-3 justify-end bg-white sticky bottom-0"
-        >
-          <button
-            onclick="acaoPedido('excluir')"
-            class="px-4 py-2 text-red-500 font-bold hover:bg-red-50 rounded-lg text-sm"
-          >
-            Excluir Pedido
-          </button>
-          <button
-            onclick="acaoPedido('aprovar')"
-            id="btnAprovar"
-            class="px-4 py-2 bg-blue-50 text-blue-700 font-bold rounded-lg hover:bg-blue-100 text-sm"
-          >
-            Marcar como Agendado
-          </button>
-          <button
-            onclick="acaoPedido('concluir')"
-            id="btnConcluir"
-            class="px-4 py-2 bg-green-50 text-green-700 font-bold rounded-lg hover:bg-green-100 text-sm hidden"
-          >
-            Marcar como Concluído
-          </button>
-        </div>
+      class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-2 items-center justify-between">
+      <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+        <button onclick="filtrar('todos')"
+          class="px-4 py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors whitespace-nowrap active-filter"
+          id="filter-todos">Todos</button>
+        <button onclick="filtrar('pendente')"
+          class="px-4 py-2 rounded-full text-sm font-medium bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors whitespace-nowrap"
+          id="filter-pendente">Pendentes</button>
+        <button onclick="filtrar('aprovado')"
+          class="px-4 py-2 rounded-full text-sm font-medium bg-green-50 text-green-600 hover:bg-green-100 transition-colors whitespace-nowrap"
+          id="filter-aprovado">Aprovados</button>
+        <button onclick="filtrar('finalizado')"
+          class="px-4 py-2 rounded-full text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors whitespace-nowrap"
+          id="filter-finalizado">Finalizados</button>
+        <button onclick="filtrar('cancelado')"
+          class="px-4 py-2 rounded-full text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors whitespace-nowrap"
+          id="filter-cancelado">Cancelados</button>
+      </div>
+      <div class="w-full md:w-auto relative">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+        <input type="text" id="searchInput" placeholder="Buscar cliente..." onkeyup="filtrarNome()"
+          class="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 transition-all">
       </div>
     </div>
 
-    <script>
-      const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
-      if (!ADMIN_TOKEN) window.location.href = "painel.html";
+    <div id="listaPedidos" class="grid grid-cols-1 gap-4">
+    </div>
+  </main>
 
-      let todosPedidos = [];
-      let tabelaPrecos = []; // Hardware (Barracas)
-      let listaCardapios = []; // Combos de Comida
-      let listaAlimentos = []; // Itens individuais de Comida
-      let pedidoAtual = null;
+  <div id="modalDetalhes" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="fecharDetalhes()"></div>
+    <div
+      class="absolute inset-y-0 right-0 w-full md:w-[600px] bg-white shadow-2xl transform transition-transform duration-300 flex flex-col modal-animate">
 
-      // --- 1. CARREGAMENTO GERAL ---
-      async function carregarDados() {
-        try {
-          // Carrega TUDO de uma vez para ter referência de preços e IDs
-          const [resPedidos, resPrecos, resCardapios, resAlimentos] =
-            await Promise.all([
-              fetch("/api/admin/pedidos", {
-                headers: { "x-admin-password": ADMIN_TOKEN },
-              }),
-              fetch("/api/admin/precos", {
-                headers: { "x-admin-password": ADMIN_TOKEN },
-              }),
-              fetch("/api/cardapios", {
-                headers: { "x-admin-password": ADMIN_TOKEN },
-              }),
-              fetch("/api/alimentos", {
-                headers: { "x-admin-password": ADMIN_TOKEN },
-              }),
-            ]);
+      <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-white z-10">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800" id="modalTitulo">Detalhes do Pedido</h2>
+          <p class="text-sm text-slate-500" id="modalSubtitulo">ID: #000</p>
+        </div>
+        <button onclick="fecharDetalhes()"
+          class="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
 
-          todosPedidos = await resPedidos.json();
-          tabelaPrecos = await resPrecos.json();
-          listaCardapios = await resCardapios.json();
-          listaAlimentos = await resAlimentos.json();
+      <div class="flex-1 overflow-y-auto p-6 space-y-8 bg-white" id="conteudoModal">
+      </div>
 
-          filtrar("todos");
-        } catch (e) {
-          console.error(e);
-          alert("Erro de conexão. Verifique se o servidor está rodando.");
-        }
+      <div class="bg-slate-50 border-t border-slate-200 p-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-slate-700 flex items-center gap-2">
+            <i data-lucide="dollar-sign" class="text-green-500 w-5 h-5"></i>
+            Financeiro
+          </h3>
+          <button onclick="aplicarSugestaoCalculo()"
+            class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold hover:bg-blue-200 transition-colors flex items-center gap-1">
+            <i data-lucide="calculator" class="w-3 h-3"></i> Recalcular Tudo
+          </button>
+        </div>
+
+        <div class="mb-4 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+          <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Taxas Fixas & Serviços</label>
+          <div id="areaTaxasSistema" class="grid grid-cols-2 gap-2">
+            <p class="text-xs text-slate-400 col-span-2">Carregando taxas...</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor Pacote (R$)</label>
+            <input type="number" id="fin_valor_final"
+              class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono font-medium"
+              onchange="atualizarTotalVisual()">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Outros Extras (R$)</label>
+            <input type="number" id="fin_valor_extras"
+              class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono font-medium"
+              placeholder="0.00" onchange="atualizarTotalVisual()">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Descrição dos Extras</label>
+          <input type="text" id="fin_desc_extras"
+            class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+            placeholder="Ex: Frete adicional bairro X...">
+        </div>
+
+        <div class="flex justify-between items-center mb-6 bg-green-50 p-3 rounded-lg border border-green-100">
+          <span class="text-green-800 font-bold">Total Final:</span>
+          <span id="displayTotal" class="text-xl font-bold text-green-700">R$ 0,00</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <button onclick="atualizarStatus('aprovado')"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
+            <i data-lucide="thumbs-up" class="w-4 h-4"></i> Aprovar Apenas
+          </button>
+          <button onclick="atualizarStatus('finalizado')"
+            class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
+            <i data-lucide="check-square" class="w-4 h-4"></i> Finalizar
+          </button>
+        </div>
+
+        <button id="btnFluxo" onclick="executarFluxoCompleto()"
+          class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]">
+          <i data-lucide="sparkles" class="w-5 h-5 text-yellow-400"></i>
+          <span>Salvar, Gerar Links e Copiar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_TOKEN = localStorage.getItem("adminToken");
+    if (!ADMIN_TOKEN) window.location.href = "/index.html";
+
+    let todosPedidos = [];
+    let tabelaPrecos = [];
+    let listaCardapios = [];
+    let listaAlimentos = [];
+    let taxasSistema = []; // Armazena itens de categoria 'sistema'
+    let pedidoAtual = null;
+
+    // Inicialização
+    window.onload = () => {
+      carregarDados();
+      lucide.createIcons();
+    };
+
+    async function carregarDados() {
+      try {
+        const [resPedidos, resPrecos, resCardapios, resAlimentos, resItens] =
+          await Promise.all([
+            fetch("/api/admin/pedidos", { headers: { "x-admin-password": ADMIN_TOKEN } }),
+            fetch("/api/admin/precos", { headers: { "x-admin-password": ADMIN_TOKEN } }),
+            fetch("/api/cardapios", { headers: { "x-admin-password": ADMIN_TOKEN } }),
+            fetch("/api/alimentos", { headers: { "x-admin-password": ADMIN_TOKEN } }),
+            fetch("/api/itens-disponiveis") // Busca itens para os checkboxes
+          ]);
+
+        todosPedidos = await resPedidos.json();
+        tabelaPrecos = await resPrecos.json();
+        listaCardapios = await resCardapios.json();
+        listaAlimentos = await resAlimentos.json();
+
+        // Filtra apenas taxas de sistema
+        const todosItens = await resItens.json();
+        taxasSistema = todosItens.filter(i => i.categoria === 'sistema');
+
+        filtrar("todos");
+      } catch (e) {
+        console.error(e);
+        alert("Erro de conexão. Verifique o servidor.");
+      }
+    }
+
+    // --- FILTROS E RENDERIZAÇÃO DA LISTA ---
+    function filtrar(status) {
+      document.querySelectorAll(".active-filter").forEach((el) => {
+        el.classList.remove("bg-slate-200", "active-filter");
+        el.classList.add("bg-slate-100");
+      });
+      const btn = document.getElementById(`filter-${status}`);
+      if (btn) {
+        btn.classList.remove("bg-slate-100");
+        btn.classList.add("bg-slate-200", "active-filter");
       }
 
-      function filtrar(status) {
-        const grid = document.getElementById("gridPedidos");
-        let filtrados = todosPedidos;
+      const lista = document.getElementById("listaPedidos");
+      lista.innerHTML = "";
 
-        if (status === "pendente")
-          filtrados = todosPedidos.filter(
-            (p) => p.status === "pendente" || !p.status,
-          );
-        if (status === "aprovado")
-          filtrados = todosPedidos.filter(
-            (p) => p.status === "aprovado" && p.status_agenda !== "concluido",
-          );
-        if (status === "concluido")
-          filtrados = todosPedidos.filter(
-            (p) => p.status_agenda === "concluido",
-          );
+      const filtrados = todosPedidos
+        .filter((p) => status === "todos" || p.status === status)
+        .sort((a, b) => new Date(b.data_criacao) - new Date(a.data_criacao));
 
-        if (filtrados.length === 0) {
-          grid.innerHTML =
-            '<div class="col-span-full text-center py-20 text-slate-400">Nenhum pedido encontrado.</div>';
-          return;
-        }
-
-        grid.innerHTML = filtrados
-          .map((p) => {
-            const dataFesta = new Date(p.data_festa).toLocaleDateString(
-              "pt-BR",
-            );
-            let statusColor = "bg-yellow-100 text-yellow-700";
-            let statusText = "Pendente";
-            if (p.status === "aprovado") {
-              statusColor = "bg-blue-100 text-blue-700";
-              statusText = "Agendado";
-            }
-            if (p.status_agenda === "concluido") {
-              statusColor = "bg-green-100 text-green-700";
-              statusText = "Concluído";
-            }
-
-            return `
-                <div onclick="abrirDetalhes(${p.id})" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-lg">${p.nome}</h3>
-                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${dataFesta} às ${p.horario}</p>
-                        </div>
-                        <span class="${statusColor} px-3 py-1 rounded-full text-xs font-bold">${statusText}</span>
-                    </div>
-                    <div class="space-y-1 text-sm text-slate-600 mb-4">
-                        <p class="flex items-center gap-2"><i data-lucide="tent" class="w-4 h-4 text-pink-400"></i> ${p.modelo_barraca}</p>
-                        <p class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-pink-400"></i> ${p.qtd_criancas} Crianças</p>
-                    </div>
-                    <div class="pt-4 border-t border-slate-50 flex justify-between items-center">
-                        <span class="text-xs text-slate-400">Ver detalhes -></span>
-                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300 group-hover:text-pink-500 transition-colors"></i>
-                    </div>
-                </div>
-            `;
-          })
-          .join("");
-        lucide.createIcons();
+      if (filtrados.length === 0) {
+        lista.innerHTML = `<div class="text-center p-12 text-slate-400">Nenhum pedido encontrado.</div>`;
+        return;
       }
 
-      // --- UTILITÁRIOS ---
-      function parseSeguro(dado) {
-        if (!dado) return null;
-        if (typeof dado === "object") return dado;
-        try {
-          return JSON.parse(dado);
-        } catch (e) {
-          return [dado];
-        }
-      }
-
-      function normalizar(texto) {
-        if (!texto) return "";
-        return texto
-          .toString()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .trim();
-      }
-
-      // --- CALCULADORA POR ID (INTELIGENTE) ---
-      function calcularSugestaoFinanceira(pedido) {
-        let totalBarracas = 0;
-        let totalAlimentacao = 0;
-
-        // 1. Barracas (Hardware)
-        // Lógica: Tenta achar ID direto. Se falhar, normaliza nome.
-        let itemHardware = tabelaPrecos.find(
-          (t) => t.id == pedido.modelo_barraca,
-        );
-        if (!itemHardware) {
-          const nomeModelo = normalizar(pedido.modelo_barraca);
-          itemHardware = tabelaPrecos.find(
-            (t) => normalizar(t.descricao) === nomeModelo,
-          );
-        }
-
-        const valorUnitarioBarraca = itemHardware
-          ? parseFloat(itemHardware.valor)
-          : 0;
-        const qtdBarracas = parseInt(pedido.qtd_barracas) || 0;
-        totalBarracas = valorUnitarioBarraca * qtdBarracas;
-
-        // 2. Alimentação (Combos e Extras via ID)
-        const alim = parseSeguro(pedido.alimentacao);
-        if (alim) {
-          // A) COMBO
-          if (alim.combo && alim.combo.id) {
-            // Busca o preço ATUALIZADO na lista de cardápios pelo ID
-            const cardapioReal = listaCardapios.find(
-              (c) => c.id == alim.combo.id,
-            );
-            if (cardapioReal) {
-              const precoCombo = parseFloat(cardapioReal.valor_final); // valor calculado no backend
-              if (cardapioReal.modo_cobranca === "por_pessoa") {
-                totalAlimentacao +=
-                  precoCombo * (parseInt(pedido.qtd_criancas) || 0);
-              } else {
-                totalAlimentacao += precoCombo; // preço fixo
-              }
-            } else {
-              // Fallback: Se não achar o ID (ex: deletado), usa o valor salvo no JSON do pedido
-              const valorSalvo = parseFloat(alim.combo.valor_unitario) || 0;
-              if (alim.combo.modo === "por_pessoa") {
-                totalAlimentacao +=
-                  valorSalvo * (parseInt(pedido.qtd_criancas) || 0);
-              } else {
-                totalAlimentacao += valorSalvo;
-              }
-            }
-          }
-
-          // B) EXTRAS
-          if (alim.extras && Array.isArray(alim.extras)) {
-            alim.extras.forEach((ext) => {
-              // Busca preço ATUALIZADO na lista de alimentos pelo ID
-              const alimentoReal = listaAlimentos.find((a) => a.id == ext.id);
-              const qtd = parseInt(ext.qtd) || 0;
-              if (alimentoReal) {
-                totalAlimentacao += parseFloat(alimentoReal.valor) * qtd;
-              } else {
-                // Fallback
-                totalAlimentacao += (parseFloat(ext.valor) || 0) * qtd;
-              }
-            });
-          }
-        }
-
-        return {
-          totalBase: totalBarracas + totalAlimentacao,
-          totalExtras: 0,
+      filtrados.forEach((p) => {
+        const dataFesta = new Date(p.data_festa).toLocaleDateString("pt-BR");
+        const statusColors = {
+          pendente: "bg-yellow-100 text-yellow-700",
+          aprovado: "bg-blue-100 text-blue-700",
+          agendado: "bg-purple-100 text-purple-700",
+          finalizado: "bg-green-100 text-green-700",
+          cancelado: "bg-red-100 text-red-700",
         };
-      }
 
-      // --- ABRIR DETALHES ---
-      function abrirDetalhes(id) {
-        pedidoAtual = todosPedidos.find((p) => p.id === id);
-        if (!pedidoAtual) return;
+        const statusPagColors = {
+          pendente: "bg-slate-100 text-slate-500",
+          parcial: "bg-orange-100 text-orange-600",
+          pago: "bg-green-100 text-green-600"
+        };
 
-        // Renderização Visual da Alimentação
-        let htmlAlimentacao =
-          '<span class="text-slate-400 italic">Nenhuma.</span>';
-        const alim = parseSeguro(pedidoAtual.alimentacao);
-        if (alim) {
-          if (Array.isArray(alim) && alim.length > 0) {
-            htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
-          } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
-            let partes = [];
-            if (alim.combo) {
-              // Tenta mostrar nome atualizado se tiver ID
-              const cardapioReal = alim.combo.id
-                ? listaCardapios.find((c) => c.id == alim.combo.id)
-                : null;
-              const nomeCombo = cardapioReal
-                ? cardapioReal.titulo
-                : alim.combo.titulo;
-              const valorCombo = parseFloat(
-                alim.combo.valor_unitario,
-              ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const iconMoney = p.status_pagamento === 'pago' ? 'check-circle' : (p.status_pagamento === 'parcial' ? 'pie-chart' : 'circle');
 
-              partes.push(`
-                            <div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100">
-                                <span class="font-bold text-slate-700 block">${nomeCombo}</span>
-                                <span class="text-xs text-slate-500">${valorCombo} (${alim.combo.modo === "por_pessoa" ? "por pessoa" : "fixo"})</span>
-                            </div>`);
-            }
-            if (alim.extras && alim.extras.length > 0) {
-              partes.push(`<ul class="text-sm text-slate-600 space-y-1">`);
-              alim.extras.forEach((e) => {
-                const itemReal = e.id
-                  ? listaAlimentos.find((a) => a.id == e.id)
-                  : null;
-                const nomeItem = itemReal ? itemReal.nome : e.nome;
-                partes.push(`<li>${e.qtd}x ${nomeItem}</li>`);
-              });
-              partes.push(`</ul>`);
-            }
-            htmlAlimentacao = partes.join("");
-          }
-        }
-
-        const html = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <h4 class="font-bold text-slate-800 mb-1">Cliente</h4>
-                        <p><strong>Nome:</strong> ${pedidoAtual.nome}</p>
-                        <p><strong>WhatsApp:</strong> <a href="https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}" target="_blank" class="text-green-600 font-bold">${pedidoAtual.whatsapp}</a></p>
-                        <p><strong>Endereço:</strong> ${pedidoAtual.endereco}</p>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 mb-1">Evento</h4>
-                        <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
-                        <p><strong>Horário:</strong> ${pedidoAtual.horario}</p>
-                        <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
-                    </div>
+        const card = document.createElement("div");
+        card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group";
+        card.onclick = () => abrirDetalhes(p.id);
+        card.innerHTML = `
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg group-hover:text-pink-600 transition-colors">${p.nome}</h3>
+                    <p class="text-sm text-slate-500 flex items-center gap-1">
+                        <i data-lucide="calendar" class="w-3 h-3"></i> ${dataFesta} às ${p.horario}
+                    </p>
                 </div>
-                <div class="border-t border-slate-100 pt-2 text-sm">
-                     <p><strong>Alimentação:</strong></p>
-                     ${htmlAlimentacao}
+                <div class="flex flex-col items-end gap-1">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase ${statusColors[p.status] || "bg-gray-100"}">
+                        ${p.status}
+                    </span>
+                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 ${statusPagColors[p.status_pagamento] || "bg-gray-100"}">
+                        <i data-lucide="${iconMoney}" class="w-3 h-3"></i> ${p.status_pagamento || 'pendente'}
+                    </span>
                 </div>
-                <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2">
-                     <p><strong>Obs:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
-                     <p><strong>Alergias:</strong> <span class="text-red-600 font-bold">${pedidoAtual.alergias || "-"}</span></p>
+            </div>
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                <div class="text-sm text-slate-600">
+                    <span class="font-medium text-slate-800">${p.modelo_barraca}</span>
+                    <span class="text-slate-400 mx-1">•</span>
+                    ${p.qtd_barracas} un.
                 </div>
-            `;
-        document.getElementById("conteudoModal").innerHTML = html;
+                <i data-lucide="chevron-right" class="text-slate-300"></i>
+            </div>
+          `;
+        lista.appendChild(card);
+      });
+      lucide.createIcons();
+    }
 
-        // --- PREENCHE FINANCEIRO ---
-        const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
-        const valorSalvoExtra = parseFloat(pedidoAtual.valor_itens_extras) || 0;
+    function filtrarNome() {
+      const termo = document.getElementById("searchInput").value.toLowerCase();
+      if (!termo) return filtrar("todos");
 
-        // Se estiver zerado, usa a calculadora baseada em ID
-        if (valorSalvoBase === 0 && valorSalvoExtra === 0) {
-          const sugestao = calcularSugestaoFinanceira(pedidoAtual);
-          document.getElementById("fin_valor_final").value =
-            sugestao.totalBase.toFixed(2);
-          document.getElementById("fin_valor_extras").value =
-            sugestao.totalExtras.toFixed(2);
-        } else {
-          document.getElementById("fin_valor_final").value =
-            valorSalvoBase.toFixed(2);
-          document.getElementById("fin_valor_extras").value =
-            valorSalvoExtra.toFixed(2);
+      const cards = document.querySelectorAll("#listaPedidos > div");
+      cards.forEach(card => {
+        const nome = card.querySelector("h3").innerText.toLowerCase();
+        card.style.display = nome.includes(termo) ? "block" : "none";
+      });
+    }
+
+    // --- DETALHES DO PEDIDO ---
+    function abrirDetalhes(id) {
+      pedidoAtual = todosPedidos.find((p) => p.id === id);
+      if (!pedidoAtual) return;
+
+      // Renderiza HTML do Topo (Cliente, Info, Itens, Comida)
+      document.getElementById("modalTitulo").innerText = pedidoAtual.nome;
+      document.getElementById("modalSubtitulo").innerText = `ID: #${pedidoAtual.id} • Criado em ${new Date(pedidoAtual.data_criacao).toLocaleDateString("pt-BR")}`;
+
+      // Parse seguro
+      const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
+      const alimObj = parseSeguro(pedidoAtual.alimentacao);
+
+      let htmlAlim = `<div class="p-4 bg-slate-50 rounded-lg text-sm text-slate-500 text-center">Nenhuma alimentação contratada</div>`;
+      if (alimObj) {
+        htmlAlim = `<div class="space-y-3">`;
+        if (alimObj.combo) {
+          htmlAlim += `
+                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                        <p class="font-bold text-orange-800 flex items-center gap-2"><i data-lucide="utensils"></i> Combo Selecionado</p>
+                        <p class="text-sm text-orange-700">${alimObj.combo.titulo || "Combo Personalizado"}</p>
+                    </div>`;
         }
-
-        document.getElementById("fin_desc_extras").value =
-          pedidoAtual.descricao_itens_extras || "";
-        atualizarTotalVisual();
-
-        // Botões Status
-        const btnAprovar = document.getElementById("btnAprovar");
-        const btnConcluir = document.getElementById("btnConcluir");
-        if (
-          pedidoAtual.status === "aprovado" &&
-          pedidoAtual.status_agenda !== "concluido"
-        ) {
-          btnAprovar.classList.add("hidden");
-          btnConcluir.classList.remove("hidden");
-        } else {
-          btnAprovar.classList.remove("hidden");
-          btnConcluir.classList.add("hidden");
-        }
-
-        // Reset Botão Mágico
-        const btnFluxo = document.getElementById("btnFluxo");
-        btnFluxo.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i> <span>Salvar, Gerar Links e Copiar</span>`;
-        btnFluxo.className =
-          "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
-        btnFluxo.disabled = false;
-
-        document.getElementById("modalDetalhes").classList.remove("hidden");
-        lucide.createIcons();
-      }
-
-      function fecharModal() {
-        document.getElementById("modalDetalhes").classList.add("hidden");
-      }
-
-      function aplicarSugestaoCalculo() {
-        if (!pedidoAtual) return;
-        const sugestao = calcularSugestaoFinanceira(pedidoAtual);
-        document.getElementById("fin_valor_final").value =
-          sugestao.totalBase.toFixed(2);
-        atualizarTotalVisual();
-        alert("Valores recalculados usando os IDs e preços atuais do sistema!");
-      }
-
-      document
-        .getElementById("fin_valor_final")
-        .addEventListener("input", atualizarTotalVisual);
-      document
-        .getElementById("fin_valor_extras")
-        .addEventListener("input", atualizarTotalVisual);
-
-      function atualizarTotalVisual() {
-        const vFinal =
-          parseFloat(document.getElementById("fin_valor_final").value) || 0;
-        const vExtras =
-          parseFloat(document.getElementById("fin_valor_extras").value) || 0;
-        document.getElementById("displayTotal").innerText = (
-          vFinal + vExtras
-        ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-      }
-
-      // --- BOTÃO MÁGICO (FLUXO COMPLETO) ---
-   // --- BOTÃO MÁGICO (FLUXO COMPLETO - ATUALIZADO) ---
-      async function executarFluxoCompleto() {
-        if (!pedidoAtual) return;
-
-        const btn = document.getElementById("btnFluxo");
-        const conteudoOriginal = btn.innerHTML;
-
-        // UI de Carregamento
-        btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> Processando...`;
-        btn.disabled = true;
-        lucide.createIcons();
-
-        try {
-          const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
-          const vExtras = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
-          const descExtras = document.getElementById("fin_desc_extras").value;
-          const vTotal = vFinal + vExtras;
-
-          if (vTotal <= 0) throw new Error("Valor total inválido.");
-
-          // 1. Salvar no Banco
-          await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "x-admin-password": ADMIN_TOKEN,
-            },
-            body: JSON.stringify({
-              valor_final: vFinal,
-              valor_itens_extras: vExtras,
-              descricao_itens_extras: descExtras,
-            }),
+        if (alimObj.extras && alimObj.extras.length > 0) {
+          htmlAlim += `<div class="bg-white p-3 rounded-lg border border-slate-200"><p class="font-bold text-slate-700 mb-2 text-xs uppercase">Itens Avulsos</p><ul class="space-y-1">`;
+          alimObj.extras.forEach(e => {
+            htmlAlim += `<li class="text-sm text-slate-600 flex justify-between"><span>${e.nome}</span><span class="font-mono bg-slate-100 px-1 rounded text-xs">x${e.qtd}</span></li>`;
           });
+          htmlAlim += `</ul></div>`;
+        }
+        htmlAlim += `</div>`;
+      }
 
-          // Atualiza objeto local
-          pedidoAtual.valor_final = vFinal;
-          pedidoAtual.valor_itens_extras = vExtras;
-          pedidoAtual.descricao_itens_extras = descExtras;
+      document.getElementById("conteudoModal").innerHTML = `
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 text-slate-700">
+                    <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">${pedidoAtual.nome}</p>
+                        <p class="text-sm text-slate-500">${pedidoAtual.email}</p>
+                        <p class="text-sm text-slate-500">${pedidoAtual.telefone}</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-1">Evento</p>
+                        <p class="font-medium text-slate-700">${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
+                        <p class="text-slate-500">${pedidoAtual.horario}</p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-1">Local</p>
+                        <p class="font-medium text-slate-700 break-words">${pedidoAtual.endereco}</p>
+                    </div>
+                </div>
+            </div>
 
-          // 2. Gerar Links (AGORA COM A NOVA LÓGICA DO SERVER)
-          const res = await fetch(
-            `/api/admin/gerar-links-mp/${pedidoAtual.id}`,
-            {
-              method: "POST",
-              headers: { "x-admin-password": ADMIN_TOKEN },
-            },
-          );
-          
-          const links = await res.json();
-          // links agora contém: { linkReserva, reserva (valor), linkRestante, restante (valor), linkIntegral, integral (valor) }
+            <hr class="border-slate-100">
 
-          if (!links.linkReserva || !links.linkIntegral) {
-             throw new Error("Falha ao receber links do servidor.");
+            <div>
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i data-lucide="tent" class="w-4 h-4 text-pink-500"></i> Estrutura
+                </h3>
+                <div class="bg-white border border-slate-200 rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-slate-700">${pedidoAtual.modelo_barraca}</span>
+                        <span class="bg-pink-100 text-pink-700 text-xs font-bold px-2 py-1 rounded-full">${pedidoAtual.qtd_barracas} un</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-1">Tema: <span class="font-medium">${pedidoAtual.tema}</span></p>
+                    <p class="text-sm text-slate-600 mb-3">Público: ${pedidoAtual.qtd_criancas} crianças (${pedidoAtual.faixa_etaria})</p>
+                    
+                    <div class="bg-slate-50 p-3 rounded-lg">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-2">Itens Inclusos</p>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            ${Array.isArray(itensPadraoArr) && itensPadraoArr.length ? itensPadraoArr.join(", ") : "Itens padrão do pacote"}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                 <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i data-lucide="utensils-crossed" class="w-4 h-4 text-orange-500"></i> Alimentação
+                </h3>
+                ${htmlAlim}
+            </div>
+
+            ${pedidoAtual.itens_adicionais ? `
+            <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                <p class="text-xs font-bold text-yellow-700 uppercase mb-1">Observações do Cliente</p>
+                <p class="text-sm text-yellow-800">${pedidoAtual.itens_adicionais}</p>
+            </div>` : ''}
+        `;
+
+      // --- RENDERIZAR CHECKBOXES DE TAXAS (NOVO) ---
+      const divTaxas = document.getElementById("areaTaxasSistema");
+      divTaxas.innerHTML = "";
+
+      if (taxasSistema.length > 0) {
+        taxasSistema.forEach(taxa => {
+          const htmlId = `taxa_${taxa.id}`;
+          const valorNum = parseFloat(taxa.valor);
+          const valorFormatado = valorNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+          // Verifica se essa taxa já está na descrição salva
+          const descSalva = (pedidoAtual.descricao_itens_extras || "").toLowerCase();
+          const isMarcado = descSalva.includes(taxa.descricao.toLowerCase());
+
+          divTaxas.innerHTML += `
+                    <div class="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                        <input type="checkbox" id="${htmlId}" value="${valorNum}" data-nome="${taxa.descricao}" 
+                               onchange="atualizarTotalVisual()" ${isMarcado ? "checked" : ""}
+                               class="w-4 h-4 text-pink-600 rounded border-gray-300 focus:ring-pink-500 cursor-pointer">
+                        <label for="${htmlId}" class="text-sm text-slate-700 cursor-pointer select-none flex-1 flex justify-between">
+                            <span>${taxa.descricao}</span>
+                            <span class="text-xs font-bold text-slate-500">${valorFormatado}</span>
+                        </label>
+                    </div>
+                `;
+        });
+      } else {
+        divTaxas.innerHTML = "<p class='text-xs text-slate-400 col-span-2 italic'>Cadastre itens com categoria 'sistema' em Preços para aparecerem aqui.</p>";
+      }
+
+      // --- PREPARAÇÃO DOS VALORES FINANCEIROS ---
+      const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
+      let valorSalvoExtraTotal = parseFloat(pedidoAtual.valor_itens_extras) || 0;
+
+      // Calcula quanto do extra salvo já está coberto pelos checkboxes marcados
+      let somaTaxasDetectadas = 0;
+      const checkboxes = divTaxas.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        if (cb.checked) somaTaxasDetectadas += parseFloat(cb.value);
+      });
+
+      // O campo manual exibe apenas a diferença (o que foi digitado manualmente antes)
+      let valorManual = valorSalvoExtraTotal - somaTaxasDetectadas;
+      // Ajuste fino para evitar -0.00001
+      if (valorManual < 0.01 && valorManual > -0.01) valorManual = 0;
+
+      document.getElementById("fin_valor_final").value = valorSalvoBase.toFixed(2);
+      document.getElementById("fin_valor_extras").value = valorManual.toFixed(2);
+      document.getElementById("fin_desc_extras").value = pedidoAtual.descricao_itens_extras || "";
+
+      atualizarTotalVisual(); // Atualiza o display do Total Geral
+
+      document.getElementById("modalDetalhes").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function fecharDetalhes() {
+      document.getElementById("modalDetalhes").classList.add("hidden");
+      pedidoAtual = null;
+    }
+
+    // --- CÁLCULO VISUAL DO TOTAL ---
+    function atualizarTotalVisual() {
+      // 1. Valor Base
+      const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
+
+      // 2. Soma Checkboxes
+      let vTaxas = 0;
+      const checkboxes = document.querySelectorAll('#areaTaxasSistema input[type="checkbox"]:checked');
+      checkboxes.forEach(cb => {
+        vTaxas += parseFloat(cb.value);
+      });
+
+      // 3. Soma Input Manual
+      const vManual = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+
+      const totalGeral = vFinal + vTaxas + vManual;
+
+      document.getElementById("displayTotal").innerHTML = `
+            <span class="text-xs text-slate-400 font-normal mr-2 hidden md:inline">
+                (Pacote: ${vFinal.toFixed(0)} + Taxas: ${vTaxas.toFixed(0)} + Extra: ${vManual.toFixed(0)})
+            </span>
+            ${totalGeral.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+        `;
+    }
+
+    // --- ATUALIZA STATUS SIMPLES ---
+    async function atualizarStatus(novoStatus) {
+      if (!pedidoAtual) return;
+      try {
+        await fetch(`/api/admin/pedidos/${pedidoAtual.id}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "x-admin-password": ADMIN_TOKEN },
+          body: JSON.stringify({ status: novoStatus }),
+        });
+        pedidoAtual.status = novoStatus;
+        // Atualiza lista visualmente
+        const card = document.querySelector(`#listaPedidos h3:contains('${pedidoAtual.nome}')`)?.closest('div');
+        carregarDados(); // Recarrega para garantir
+        fecharDetalhes();
+      } catch (e) { console.error(e); }
+    }
+
+    // --- SUGESTÃO DE PREÇO ---
+    function aplicarSugestaoCalculo() {
+      if (!pedidoAtual) return;
+
+      // Lógica simples: busca preço base do modelo
+      const modelo = tabelaPrecos.find(i => i.descricao === pedidoAtual.modelo_barraca);
+      if (modelo) {
+        const precoUnit = parseFloat(modelo.valor);
+        const qtd = parseInt(pedidoAtual.qtd_barracas);
+        const totalSugerido = precoUnit * qtd;
+
+        document.getElementById("fin_valor_final").value = totalSugerido.toFixed(2);
+        atualizarTotalVisual();
+        alert(`Preço base recalculado: ${qtd}x ${modelo.descricao} = R$ ${totalSugerido}`);
+      } else {
+        alert("Modelo não encontrado na tabela de preços.");
+      }
+    }
+
+    // --- FLUXO COMPLETO E INTELIGENTE ---
+    async function executarFluxoCompleto() {
+      if (!pedidoAtual) return;
+
+      const btn = document.getElementById("btnFluxo");
+      const conteudoOriginal = btn.innerHTML;
+
+      btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> Processando...`;
+      btn.disabled = true;
+      lucide.createIcons();
+
+      try {
+        // 1. Captura inputs
+        const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
+        const vManual = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+
+        // 2. Calcula Checkboxes
+        let vTaxas = 0;
+        let nomesTaxas = [];
+        const checkboxes = document.querySelectorAll('#areaTaxasSistema input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => {
+          vTaxas += parseFloat(cb.value);
+          nomesTaxas.push(cb.getAttribute('data-nome'));
+        });
+
+        // 3. Totais Consolidados
+        const vExtrasTotal = vTaxas + vManual;
+        const vTotalGeral = vFinal + vExtrasTotal;
+
+        if (vTotalGeral <= 0) throw new Error("Valor total inválido.");
+
+        // 4. Monta Descrição Inteligente
+        let descUsuario = document.getElementById("fin_desc_extras").value.trim();
+        let descFinal = descUsuario;
+
+        if (nomesTaxas.length > 0) {
+          const taxasString = nomesTaxas.join(", ");
+          // Se a descrição do usuário não contém os nomes das taxas, adiciona
+          if (!descUsuario.toLowerCase().includes(nomesTaxas[0].toLowerCase())) {
+            descFinal = descUsuario ? `${taxasString} + ${descUsuario}` : taxasString;
           }
+        }
 
-          // --- PREPARAÇÃO DO TEXTO ---
-          const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
-          const textoItens = Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0 
-            ? itensPadraoArr.join(", ") 
-            : "Itens padrão do modelo";
+        // 5. Salva no Banco (Envia a SOMA dos extras)
+        await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-password": ADMIN_TOKEN,
+          },
+          body: JSON.stringify({
+            valor_final: vFinal,
+            valor_itens_extras: vExtrasTotal,
+            descricao_itens_extras: descFinal,
+          }),
+        });
 
-          const alimObj = parseSeguro(pedidoAtual.alimentacao);
-          let textoComida = "Nenhuma contratada";
-          
-          if (alimObj) {
-            let partesComida = [];
-            if (alimObj.combo) {
-                let tituloCombo = alimObj.combo.titulo || "Combo";
-                partesComida.push(`🥪 *Pacote:* ${tituloCombo}`);
-            }
-            if (alimObj.extras && Array.isArray(alimObj.extras) && alimObj.extras.length > 0) {
-                const listaExtras = alimObj.extras.map(e => `${e.qtd}x ${e.nome}`).join(", ");
-                partesComida.push(`➕ *Extras:* ${listaExtras}`);
-            }
-            if (partesComida.length > 0) textoComida = partesComida.join("\n");
+        // Atualiza objeto local
+        pedidoAtual.valor_final = vFinal;
+        pedidoAtual.valor_itens_extras = vExtrasTotal;
+        pedidoAtual.descricao_itens_extras = descFinal;
+
+        // 6. Gera Links do Mercado Pago (Backend vai calcular os 50% e 95% baseados no Total Geral)
+        const res = await fetch(
+          `/api/admin/gerar-links-mp/${pedidoAtual.id}`,
+          {
+            method: "POST",
+            headers: { "x-admin-password": ADMIN_TOKEN },
+          },
+        );
+
+        const links = await res.json(); // { linkReserva, reserva, linkRestante, restante, linkIntegral, integral }
+
+        if (!links.linkReserva || !links.linkIntegral) {
+          throw new Error("Falha ao receber links do servidor.");
+        }
+
+        // --- GERA TEXTO WHATSAPP ---
+        const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
+        const textoItens = Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0
+          ? itensPadraoArr.join(", ")
+          : "Itens padrão do modelo";
+
+        const alimObj = parseSeguro(pedidoAtual.alimentacao);
+        let textoComida = "Nenhuma contratada";
+
+        if (alimObj) {
+          let partesComida = [];
+          if (alimObj.combo) {
+            let tituloCombo = alimObj.combo.titulo || "Combo";
+            partesComida.push(`🥪 *Pacote:* ${tituloCombo}`);
           }
+          if (alimObj.extras && Array.isArray(alimObj.extras) && alimObj.extras.length > 0) {
+            const listaExtras = alimObj.extras.map(e => `${e.qtd}x ${e.nome}`).join(", ");
+            partesComida.push(`➕ *Extras:* ${listaExtras}`);
+          }
+          if (partesComida.length > 0) textoComida = partesComida.join("\n");
+        }
 
-          // --- TEXTO FINAL COMPLETO (COM AS NOVAS REGRAS) ---
-     const texto = `
+        // Formatação do resumo financeiro para o cliente
+        const textoExtras = vExtrasTotal !== 0
+          ? `\nTaxas/Extras: R$ ${vExtrasTotal.toFixed(2).replace('.', ',')} (${descFinal})`
+          : '';
+
+        const texto = `
 Olá, ${pedidoAtual.nome}! ⛺✨
 Aqui está o orçamento detalhado da sua *Cabana de Brincar*!
 
@@ -661,9 +683,8 @@ Tema: ${pedidoAtual.tema}
 ${textoComida}
 
 💰 *Resumo Financeiro:*
-Itens e Serviços: R$ ${vFinal.toFixed(2).replace('.', ',')}
-${vExtras !== 0 ? `Extras/Descontos: R$ ${vExtras.toFixed(2).replace('.', ',')} (${descExtras || 'Ajustes'})` : ''}
-*Total Final:* R$ ${vTotal.toFixed(2).replace('.', ',')}
+Pacote Base: R$ ${vFinal.toFixed(2).replace('.', ',')}${textoExtras}
+*Total Final:* R$ ${vTotalGeral.toFixed(2).replace('.', ',')}
 
 ---
 *FORMAS DE PAGAMENTO:*
@@ -677,64 +698,43 @@ O restante (R$ ${links.restante.replace('.', ',')}) pode ser pago até o dia da 
 
 2️⃣ **Valor Total à Vista (5% DE DESCONTO):**
 Pague tudo agora com desconto e fique livre!
-De: ~R$ ${vTotal.toFixed(2).replace('.', ',')}~
+De: ~R$ ${vTotalGeral.toFixed(2).replace('.', ',')}~
 Por: *R$ ${links.integral.replace('.', ',')}*
 🔗 Link Com Desconto: ${links.linkIntegral}
 ---
 
 Fico no aguardo para confirmarmos! Qualquer dúvida é só chamar. 🥰
 `.trim();
-          // Copiar e Feedback
-          await navigator.clipboard.writeText(texto);
 
-          btn.className = "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
-          btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> <span>Copiado! Envie no WhatsApp.</span>`;
-          lucide.createIcons();
+        // Copiar
+        await navigator.clipboard.writeText(texto);
 
-          setTimeout(() => {
-            btn.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
-            btn.innerHTML = conteudoOriginal;
-            btn.disabled = false;
-            lucide.createIcons();
-          }, 4000);
+        // Sucesso
+        btn.className = "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
+        btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> <span>Sucesso! Copiado.</span>`;
+        lucide.createIcons();
 
-        } catch (e) {
-          console.error(e);
-          alert("Erro: " + e.message);
+        setTimeout(() => {
+          btn.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
           btn.innerHTML = conteudoOriginal;
           btn.disabled = false;
           lucide.createIcons();
-        }
+        }, 4000);
+
+      } catch (e) {
+        console.error(e);
+        alert("Erro: " + e.message);
+        btn.innerHTML = conteudoOriginal;
+        btn.disabled = false;
+        lucide.createIcons();
       }
-      async function acaoPedido(acao) {
-        if (!pedidoAtual) return;
-        if (!confirm(`Tem certeza que deseja ${acao} este pedido?`)) return;
+    }
 
-        let url = "";
-        let method = "PUT";
+    function parseSeguro(str) {
+      if (!str) return null;
+      try { return JSON.parse(str); } catch (e) { return str; }
+    }
+  </script>
+</body>
 
-        if (acao === "aprovar")
-          url = `/api/admin/agenda/aprovar/${pedidoAtual.id}`;
-        if (acao === "concluir")
-          url = `/api/admin/agenda/concluir/${pedidoAtual.id}`;
-        if (acao === "excluir") {
-          url = `/api/admin/pedidos/${pedidoAtual.id}`;
-          method = "DELETE";
-        }
-
-        try {
-          await fetch(url, {
-            method: method,
-            headers: { "x-admin-password": ADMIN_TOKEN },
-          });
-          fecharModal();
-          carregarDados();
-        } catch (e) {
-          alert("Erro na ação");
-        }
-      }
-
-      carregarDados();
-    </script>
-  </body>
 </html>

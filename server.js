@@ -616,10 +616,11 @@ app.post("/api/orcamento", async (req, res) => {
 });
 
 // Listar Itens (Não-Alimentação)
+// Listar Itens (Incluindo 'sistema' para as taxas)
 app.get("/api/itens-disponiveis", async (req, res) => {
   try {
     const [rows] = await db.query(
-      "SELECT id, descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'tendas') AND disponivel = TRUE ORDER BY categoria, descricao",
+      "SELECT id, descricao, categoria, valor FROM tabela_precos WHERE categoria IN ('padrao', 'tendas', 'sistema') AND disponivel = TRUE ORDER BY categoria, descricao",
     );
     res.json(rows);
   } catch (e) {

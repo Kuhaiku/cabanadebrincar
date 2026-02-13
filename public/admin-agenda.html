@@ -208,13 +208,14 @@
         });
 
         // Função auxiliar para parsear JSON seguro
-        function safeParse(json) {
+   function safeParse(json) {
             if(!json) return [];
             try { 
-                return (typeof json === 'object') ? json : JSON.parse(json); 
+                const parsed = (typeof json === 'object') ? json : JSON.parse(json); 
+                // A correção é esta linha: verifica se é realmente um Array
+                return Array.isArray(parsed) ? parsed : [];
             } catch { return []; }
         }
-
         function abrirModalAgenda(dados) {
             eventoSelecionado = dados;
             

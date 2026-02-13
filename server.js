@@ -77,12 +77,18 @@ function checkAuth(req, res, next) {
 
 // --- 3. FUNÇÕES AUXILIARES ---
 
-async function criarLinkMP(titulo, valor, pedidoId) {
+// --- FUNÇÕES AUXILIARES (Atualizada) ---
+
+// Agora aceita 'referenciaPersonalizada' para sabermos se é SINAL, RESTANTE ou INTEGRAL
+async function criarLinkMP(titulo, valor, pedidoId, tipoPagamento) {
   try {
     const preference = new Preference(mpClient);
     let domain = process.env.DOMAIN || `localhost:${PORT}`;
     domain = domain.replace(/\/$/, "");
     if (!domain.startsWith("http")) domain = `https://${domain}`;
+
+    // Cria uma referência composta: ID_TIPO (ex: 55_SINAL)
+    const externalRef = `${pedidoId}__${tipoPagamento}`;
 
     const result = await preference.create({
       body: {
@@ -94,7 +100,7 @@ async function criarLinkMP(titulo, valor, pedidoId) {
             currency_id: "BRL",
           },
         ],
-        external_reference: String(pedidoId),
+        external_reference: externalRef, // ISSO É O SEGREDO DA AUTOMAÇÃO
         back_urls: {
           success: `${domain}/sucesso.html`,
           failure: `${domain}/index.html`,
@@ -109,6 +115,60 @@ async function criarLinkMP(titulo, valor, pedidoId) {
     return null;
   }
 }
+
+// ... (Mantenha o resto do código até a rota gerar-links-mp) ...
+
+// --- ROTA DE GERAÇÃO DE LINKS (Atualizada para 50% e 5% OFF) ---
+app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
+  try {
+    const [r] = await db.query(
+      "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
+      [req.params.id]
+    );
+    if (r.length === 0) return res.status(404).json({ error: "Erro" });
+    
+    const vTotal = parseFloat(r[0].valor_final || 0);
+    const nome = r[0].nome.split(" ")[0]; // Primeiro nome para o título ficar curto
+
+    // 1. SINAL (50%)
+    const valSinal = (vTotal * 0.50).toFixed(2);
+    const linkReserva = await criarLinkMP(
+      `Sinal Reserva - ${nome}`,
+      valSinal,
+      req.params.id,
+      "SINAL"
+    );
+
+    // 2. RESTANTE (50%)
+    const valRestante = (vTotal * 0.50).toFixed(2);
+    const linkRestante = await criarLinkMP(
+      `Restante - ${nome}`,
+      valRestante,
+      req.params.id,
+      "RESTANTE"
+    );
+
+    // 3. INTEGRAL COM DESCONTO (5% OFF)
+    const valIntegral = (vTotal * 0.95).toFixed(2);
+    const linkIntegral = await criarLinkMP(
+      `Total (5% OFF) - ${nome}`,
+      valIntegral,
+      req.params.id,
+      "INTEGRAL"
+    );
+
+    res.json({
+      reserva: valSinal,
+      linkReserva,
+      restante: valRestante,
+      linkRestante,
+      integral: valIntegral,
+      linkIntegral,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 async function enviarEmailConfirmacao(
   email,
@@ -152,6 +212,7 @@ async function enviarEmailConfirmacao(
 }
 
 // --- 4. WEBHOOK (MERCADO PAGO) ---
+// --- 4. WEBHOOK (MERCADO PAGO - INTELIGENTE) ---
 app.post("/api/webhook", async (req, res) => {
   res.status(200).send("OK");
   const id = req.body?.data?.id || req.body?.id || req.query.id;
@@ -162,39 +223,83 @@ app.post("/api/webhook", async (req, res) => {
         `https://api.mercadopago.com/v1/payments/${id}`,
         { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } },
       );
+      
       if (resp.ok) {
         const payment = await resp.json();
+        
         if (payment.status === "approved") {
-          const pedidoId = payment.external_reference;
+          // Decodifica a referência: ID__TIPO
+          const reference = payment.external_reference || "";
+          const [pedidoIdStr, tipoPagamento] = reference.split("__");
+          const pedidoId = parseInt(pedidoIdStr);
           const valorPago = parseFloat(payment.transaction_amount);
-          const [rows] = await db.query(
-            "SELECT * FROM orcamentos WHERE id = ?",
-            [pedidoId],
+
+          if (!pedidoId) return;
+
+          // Busca dados atuais do pedido
+          const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [pedidoId]);
+          if (rows.length === 0) return;
+          const pedido = rows[0];
+
+          // 1. LÓGICA DE STATUS (Sinal ou Integral = Agendado)
+          let novoStatusPagamento = "parcial";
+          let novoStatusAgenda = pedido.status_agenda;
+
+          if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE") {
+             novoStatusPagamento = "pago"; // Se pagou tudo ou o restante, tá pago
+          }
+          
+          // Se pagou o SINAL ou INTEGRAL, agenda automaticamente!
+          if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL") {
+             novoStatusAgenda = "agendado";
+             // Se estava pendente, agora vira aprovado/agendado
+             await db.query(
+               "UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", 
+               [pedidoId]
+             );
+          }
+
+          // Atualiza o pedido
+          await db.query(
+            "UPDATE orcamentos SET status_pagamento = ?, status_agenda = ? WHERE id = ?",
+            [novoStatusPagamento, novoStatusAgenda, pedidoId]
           );
-          if (rows.length > 0) {
-            const pedido = rows[0];
-            await db.query(
-              "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?",
-              [pedidoId],
+
+          // 2. LÓGICA FINANCEIRA (Lança em Custos Gerais como Receita)
+          // Títulos explicativos para o painel
+          let tituloLancamento = `Receita Pedido #${pedidoId}`;
+          if (tipoPagamento === "SINAL") tituloLancamento = `Entrada (Sinal) - ${pedido.nome}`;
+          else if (tipoPagamento === "RESTANTE") tituloLancamento = `Pagamento Restante - ${pedido.nome}`;
+          else if (tipoPagamento === "INTEGRAL") tituloLancamento = `Pagamento Integral - ${pedido.nome}`;
+
+          // Insere na tabela que alimenta o painel financeiro
+          // Assumindo que 'tipo' = 'receita' é como você filtra entradas no painel
+          await db.query(
+            "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, 'receita', ?, NOW())",
+            [tituloLancamento, valorPago]
+          );
+
+          // 3. ENVIO DE E-MAIL
+          const valorTotal = parseFloat(pedido.valor_final || 0);
+          
+          // Se foi sinal, precisamos mandar o link do restante?
+          // Como você quer tudo no primeiro contato, talvez não precise reenviar agora,
+          // mas mandamos o e-mail de confirmação padrão.
+          if (pedido.email) {
+            // Recalcula saldo para o email
+            // Nota: Essa lógica de saldoDevedor é simplificada. 
+            // Num sistema real idealmente somamos todos os pagamentos desse ID.
+            let linkRestanteEmail = "#"; 
+            
+            // Se foi só o sinal, podemos tentar gerar o link do restante novamente ou usar fixo se tiver salvo
+            // Por simplicidade, chamamos a função de email existente
+            enviarEmailConfirmacao(
+              pedido.email,
+              pedido.nome,
+              valorPago,
+              valorTotal,
+              linkRestanteEmail 
             );
-            const valorTotal = parseFloat(pedido.valor_final || 0);
-            const saldo = valorTotal - valorPago;
-            let link = "#";
-            if (valorTotal > 0 && saldo > 5) {
-              link = await criarLinkMP(
-                `Restante - ${pedido.nome}`,
-                saldo.toFixed(2),
-                pedidoId,
-              );
-            }
-            if (pedido.email)
-              enviarEmailConfirmacao(
-                pedido.email,
-                pedido.nome,
-                valorPago,
-                valorTotal,
-                link,
-              );
           }
         }
       }

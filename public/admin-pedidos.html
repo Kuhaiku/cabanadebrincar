@@ -566,27 +566,27 @@
       }
 
       // --- BOTÃO MÁGICO (FLUXO COMPLETO) ---
+   // --- BOTÃO MÁGICO (FLUXO COMPLETO - ATUALIZADO) ---
       async function executarFluxoCompleto() {
         if (!pedidoAtual) return;
 
         const btn = document.getElementById("btnFluxo");
         const conteudoOriginal = btn.innerHTML;
 
+        // UI de Carregamento
         btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> Processando...`;
         btn.disabled = true;
         lucide.createIcons();
 
         try {
-          const vFinal =
-            parseFloat(document.getElementById("fin_valor_final").value) || 0;
-          const vExtras =
-            parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+          const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
+          const vExtras = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
           const descExtras = document.getElementById("fin_desc_extras").value;
           const vTotal = vFinal + vExtras;
 
           if (vTotal <= 0) throw new Error("Valor total inválido.");
 
-          // 1. Salvar
+          // 1. Salvar no Banco
           await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
             method: "PUT",
             headers: {
@@ -600,11 +600,12 @@
             }),
           });
 
+          // Atualiza objeto local
           pedidoAtual.valor_final = vFinal;
           pedidoAtual.valor_itens_extras = vExtras;
           pedidoAtual.descricao_itens_extras = descExtras;
 
-          // 2. Gerar Links
+          // 2. Gerar Links (AGORA COM A NOVA LÓGICA DO SERVER)
           const res = await fetch(
             `/api/admin/gerar-links-mp/${pedidoAtual.id}`,
             {
@@ -612,88 +613,90 @@
               headers: { "x-admin-password": ADMIN_TOKEN },
             },
           );
-          const links = await res.json();
-       // --- PREPARAÇÃO DOS DADOS PARA O TEXTO ---
           
-          // 1. Formata Itens Padrão
+          const links = await res.json();
+          // links agora contém: { linkReserva, reserva (valor), linkRestante, restante (valor), linkIntegral, integral (valor) }
+
+          if (!links.linkReserva || !links.linkIntegral) {
+             throw new Error("Falha ao receber links do servidor.");
+          }
+
+          // --- PREPARAÇÃO DO TEXTO ---
           const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
           const textoItens = Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0 
             ? itensPadraoArr.join(", ") 
             : "Itens padrão do modelo";
 
-          // 2. Formata Alimentação
           const alimObj = parseSeguro(pedidoAtual.alimentacao);
           let textoComida = "Nenhuma contratada";
+          
           if (alimObj) {
             let partesComida = [];
-            // Combo
             if (alimObj.combo) {
-                partesComida.push(`🥪 *Pacote:* ${alimObj.combo.titulo}`);
+                let tituloCombo = alimObj.combo.titulo || "Combo";
+                partesComida.push(`🥪 *Pacote:* ${tituloCombo}`);
             }
-            // Extras
-            if (alimObj.extras && alimObj.extras.length > 0) {
+            if (alimObj.extras && Array.isArray(alimObj.extras) && alimObj.extras.length > 0) {
                 const listaExtras = alimObj.extras.map(e => `${e.qtd}x ${e.nome}`).join(", ");
                 partesComida.push(`➕ *Extras:* ${listaExtras}`);
             }
             if (partesComida.length > 0) textoComida = partesComida.join("\n");
           }
 
-          // --- TEXTO FINAL COMPLETO ---
+          // --- TEXTO FINAL COMPLETO (COM AS NOVAS REGRAS) ---
           const texto = `
-Olá, ${pedidoAtual.nome}! ⛺
-Recebemos seu pedido na *Cabana de Brincar*! Confira todos os detalhes registrados:
+Olá, ${pedidoAtual.nome}! ⛺✨
+Aqui está o orçamento detalhado da sua *Cabana de Brincar*!
 
-📍 *Local & Data:*
-Endereço: ${pedidoAtual.endereco}
+🗓️ *Sua Festa:*
 Data: ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")} às ${pedidoAtual.horario}
+Endereço: ${pedidoAtual.endereco}
 
-🎨 *Estilo da Festa:*
-Modelo: ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas} cabanas)
+🎪 *Estrutura:*
+Modelo: ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas} unidades)
+Participantes: ${pedidoAtual.qtd_criancas} crianças
 Tema: ${pedidoAtual.tema}
-Cores: ${pedidoAtual.cores}
 
-👥 *Participantes:*
-Qtd: ${pedidoAtual.qtd_criancas} crianças
-Faixa Etária: ${pedidoAtual.faixa_etaria}
-
-⛺ *Itens da Cabana:*
-${textoItens}
-
-🌭 *Alimentação:*
+🥣 *Alimentação:*
 ${textoComida}
 
-⚠️ *Atenção:*
-Obs: ${pedidoAtual.itens_adicionais || "Nenhuma"}
-Alergias: ${pedidoAtual.alergias || "Nenhuma"}
+💰 *Investimento Total:* R$ ${vTotal.toFixed(2).replace('.', ',')}
+${descExtras ? `(Obs: ${descExtras})` : ''}
 
 ---
-*Links para Pagamento:*
+*FORMAS DE PAGAMENTO:*
+Você pode garantir sua data agora de duas formas:
 
-1️⃣ **Sinal de Reserva (40%):**
-🔗 ${links.linkReserva}
+1️⃣ **Sinal de Reserva (50%):**
+Pague R$ ${links.reserva.replace('.', ',')} agora para reservar a data.
+O restante (R$ ${links.restante.replace('.', ',')}) pode ser pago até o dia da festa.
+🔗 Link Sinal: ${links.linkReserva}
+🔗 Link Restante: ${links.linkRestante}
 
-2️⃣ **Valor Total à Vista (5% Off):**
-🔗 ${links.linkIntegral}
+2️⃣ **Valor Total à Vista (5% DE DESCONTO):**
+Pague tudo agora com desconto e fique livre!
+De: ~R$ ${vTotal.toFixed(2).replace('.', ',')}~
+Por: *R$ ${links.integral.replace('.', ',')}*
+🔗 Link Com Desconto: ${links.linkIntegral}
 ---
 
-Por favor, confira se os dados estão corretos. Qualquer dúvida, é só chamar! ✨
+Fico no aguardo para confirmarmos! Qualquer dúvida é só chamar. 🥰
 `.trim();
 
+          // Copiar e Feedback
           await navigator.clipboard.writeText(texto);
 
-          // Sucesso
-          btn.className =
-            "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
-          btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> <span>Sucesso! Copiado.</span>`;
+          btn.className = "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
+          btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> <span>Copiado! Envie no WhatsApp.</span>`;
           lucide.createIcons();
 
           setTimeout(() => {
-            btn.className =
-              "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
+            btn.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
             btn.innerHTML = conteudoOriginal;
             btn.disabled = false;
             lucide.createIcons();
           }, 4000);
+
         } catch (e) {
           console.error(e);
           alert("Erro: " + e.message);
@@ -702,7 +705,6 @@ Por favor, confira se os dados estão corretos. Qualquer dúvida, é só chamar!
           lucide.createIcons();
         }
       }
-
       async function acaoPedido(acao) {
         if (!pedidoAtual) return;
         if (!confirm(`Tem certeza que deseja ${acao} este pedido?`)) return;

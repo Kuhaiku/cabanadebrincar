@@ -286,6 +286,12 @@
       logoPadrao.src = "assets/logo.png";
       logoPadrao.onload = () => { if (!selecao.modeloId) atualizarSimulador(); };
 
+
+            // Função para validar formato de e-mail
+      function validarEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email.toLowerCase());
+      }
       // --- FUNÇÕES DE HISTÓRICO (NOVO) ---
       function abrirHistorico() {
           const lista = document.getElementById("lista-historico");
@@ -521,15 +527,39 @@
         { id: "qtd_criancas", nome: "Pessoas" }, { id: "faixa_etaria", nome: "Idade" },
         { id: "itens_adicionais", nome: "Observações" }, { id: "alergias", nome: "Alergias" },
       ];
+function validarTodoFormulario() {
+  let faltantes = [];
+  
+  // Validação de campos vazios
+  camposObrigatorios.forEach(c => { 
+    const el = document.getElementById(c.id); 
+    if (!el.value.trim()) { 
+      faltantes.push(c.nome); 
+      el.classList.add("error"); 
+    } else {
+      el.classList.remove("error");
+    }
+  });
 
-      function validarTodoFormulario() {
-        let faltantes = [];
-        camposObrigatorios.forEach(c => { const el = document.getElementById(c.id); if (!el.value.trim()) { faltantes.push(c.nome); el.classList.add("error"); } else el.classList.remove("error"); });
-        const aviso = document.getElementById("aviso-erro");
-        if (faltantes.length > 0) { aviso.classList.remove("hidden"); document.getElementById("campos-faltantes").innerText = faltantes.join(", "); return false; }
-        else { aviso.classList.add("hidden"); return true; }
-      }
+  // Validação específica de E-mail
+  const emailInput = document.getElementById("email");
+  if (emailInput.value.trim() && !validarEmail(emailInput.value)) {
+    if (!faltantes.includes("E-mail")) { // Evita duplicar se já estiver vazio
+        faltantes.push("E-mail (formato inválido)");
+    }
+    emailInput.classList.add("error");
+  }
 
+  const aviso = document.getElementById("aviso-erro");
+  if (faltantes.length > 0) { 
+    aviso.classList.remove("hidden"); 
+    document.getElementById("campos-faltantes").innerText = faltantes.join(", "); 
+    return false; 
+  } else { 
+    aviso.classList.add("hidden"); 
+    return true; 
+  }
+}
       document.addEventListener("DOMContentLoaded", () => {
         camposObrigatorios.forEach(c => { const el = document.getElementById(c.id); if(el){ el.addEventListener("blur", () => { if(!el.value.trim()) el.classList.add("error"); }); el.addEventListener("input", () => { if(el.value.trim()) el.classList.remove("error"); }); }});
         carregarDadosAPI();

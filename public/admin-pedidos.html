@@ -644,7 +644,7 @@
           }
 
           // --- TEXTO FINAL COMPLETO (COM AS NOVAS REGRAS) ---
-          const texto = `
+     const texto = `
 Olá, ${pedidoAtual.nome}! ⛺✨
 Aqui está o orçamento detalhado da sua *Cabana de Brincar*!
 
@@ -660,8 +660,10 @@ Tema: ${pedidoAtual.tema}
 🥣 *Alimentação:*
 ${textoComida}
 
-💰 *Investimento Total:* R$ ${vTotal.toFixed(2).replace('.', ',')}
-${descExtras ? `(Obs: ${descExtras})` : ''}
+💰 *Resumo Financeiro:*
+Itens e Serviços: R$ ${vFinal.toFixed(2).replace('.', ',')}
+${vExtras !== 0 ? `Extras/Descontos: R$ ${vExtras.toFixed(2).replace('.', ',')} (${descExtras || 'Ajustes'})` : ''}
+*Total Final:* R$ ${vTotal.toFixed(2).replace('.', ',')}
 
 ---
 *FORMAS DE PAGAMENTO:*
@@ -682,7 +684,6 @@ Por: *R$ ${links.integral.replace('.', ',')}*
 
 Fico no aguardo para confirmarmos! Qualquer dúvida é só chamar. 🥰
 `.trim();
-
           // Copiar e Feedback
           await navigator.clipboard.writeText(texto);
 

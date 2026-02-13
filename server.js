@@ -119,18 +119,30 @@ async function criarLinkMP(titulo, valor, pedidoId, tipoPagamento) {
 // ... (Mantenha o resto do código até a rota gerar-links-mp) ...
 
 // --- ROTA DE GERAÇÃO DE LINKS (Atualizada para 50% e 5% OFF) ---
+// --- ROTA DE GERAÇÃO DE LINKS (CORRIGIDA: SOMA EXTRAS/FRETE/DESCONTOS) ---
 app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
   try {
+    // 1. Buscamos valor_final (itens) E valor_itens_extras
     const [r] = await db.query(
-      "SELECT valor_final, nome FROM orcamentos WHERE id = ?",
+      "SELECT valor_final, valor_itens_extras, nome FROM orcamentos WHERE id = ?",
       [req.params.id]
     );
     if (r.length === 0) return res.status(404).json({ error: "Erro" });
     
-    const vTotal = parseFloat(r[0].valor_final || 0);
-    const nome = r[0].nome.split(" ")[0]; // Primeiro nome para o título ficar curto
+    const vBase = parseFloat(r[0].valor_final || 0);
+    const vExtras = parseFloat(r[0].valor_itens_extras || 0); // Frete (+) ou Desconto (-)
+    
+    // O TOTAL AGORA É A SOMA DOS DOIS
+    const vTotal = vBase + vExtras;
 
-    // 1. SINAL (50%)
+    // Proteção contra valor zero ou negativo
+    if (vTotal <= 0) {
+        return res.status(400).json({ error: "O valor total do pedido (Itens + Extras) deve ser maior que zero." });
+    }
+
+    const nome = r[0].nome.split(" ")[0];
+
+    // 1. SINAL (50% do TOTAL REAL)
     const valSinal = (vTotal * 0.50).toFixed(2);
     const linkReserva = await criarLinkMP(
       `Sinal Reserva - ${nome}`,
@@ -139,7 +151,7 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
       "SINAL"
     );
 
-    // 2. RESTANTE (50%)
+    // 2. RESTANTE (50% do TOTAL REAL)
     const valRestante = (vTotal * 0.50).toFixed(2);
     const linkRestante = await criarLinkMP(
       `Restante - ${nome}`,
@@ -148,7 +160,7 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
       "RESTANTE"
     );
 
-    // 3. INTEGRAL COM DESCONTO (5% OFF)
+    // 3. INTEGRAL COM DESCONTO (5% OFF sobre o TOTAL REAL)
     const valIntegral = (vTotal * 0.95).toFixed(2);
     const linkIntegral = await criarLinkMP(
       `Total (5% OFF) - ${nome}`,
@@ -166,6 +178,7 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
       linkIntegral,
     });
   } catch (e) {
+    console.error("Erro ao gerar links:", e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -836,6 +849,7 @@ app.delete("/api/admin/precos/:id", checkAuth, async (req, res) => {
 });
 
 // Gerar Links MP Admin
+/*
 app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
   try {
     const [r] = await db.query(
@@ -871,7 +885,7 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-
+*/
 // --- AVALIAÇÕES ---
 app.get("/api/admin/avaliacoes", checkAuth, async (req, res) => {
   try {

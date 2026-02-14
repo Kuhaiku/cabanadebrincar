@@ -1,13 +1,1 @@
-criar um painel de anotações
-lembrar de atualizar o orçamento.html para receber esses cardápios e kits de comidas
-lembrar de atualizar o painel de pedidos para poder receber os novos dados de valores igual o orçamento.htl
-testar o fluxo todo do site novamente e montar um plano de fluxo para isso
-
-
-
-17:39:35	CREATE TABLE IF NOT EXISTS itens_alimentacao (     id INT AUTO_INCREMENT PRIMARY KEY,     nome VARCHAR(255) NOT NULL,     unidade VARCHAR(20) DEFAULT 'un',     medida INT DEFAULT 1,     valor DECIMAL(10,2) NOT NULL,     visivel_site BOOLEAN DEFAULT FALSE,     ativo BOOLEAN DEFAULT TRUE )	0 row(s) affected, 1 warning(s): 1050 Table 'itens_alimentacao' already exists	0.015 sec
-
-17:39:35	CREATE TABLE IF NOT EXISTS cardapios (     id INT AUTO_INCREMENT PRIMARY KEY,     titulo VARCHAR(255) NOT NULL,     descricao TEXT,     url_capa VARCHAR(500),     tipo_preco ENUM('fixo', 'soma') DEFAULT 'soma',     preco_fixo DECIMAL(10,2) DEFAULT 0.00,     modo_cobranca ENUM('fixo', 'por_pessoa') DEFAULT 'por_pessoa',     ativo BOOLEAN DEFAULT TRUE,     data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP )	0 row(s) affected, 1 warning(s): 1050 Table 'cardapios' already exists	0.016 sec
-
-17:39:35	CREATE TABLE IF NOT EXISTS cardapio_composicao (     id INT AUTO_INCREMENT PRIMARY KEY,     cardapio_id INT NOT NULL,     alimento_id INT NOT NULL,     quantidade INT DEFAULT 1,     FOREIGN KEY (cardapio_id) REFERENCES cardapios(id) ON DELETE CASCADE,     FOREIGN KEY (alimento_id) REFERENCES itens_alimentacao(id) ON DELETE CASCADE )	0 row(s) affected, 1 warning(s): 1050 Table 'cardapio_composicao' already exists	0.016 sec
-
+lembrar de colocar o custos festas "abrir um modal para lançar os custos na aba financeiro"

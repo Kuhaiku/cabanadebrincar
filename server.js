@@ -227,22 +227,20 @@ async function enviarEmailConfirmacao(
 
 
 // ==========================================
-// WEBHOOK DO MERCADO PAGO (VERSÃO COMPLETA)
+// WEBHOOK DO MERCADO PAGO (FINAL - CORRIGIDO PARA orcamento_id)
 // ==========================================
 app.post("/webhook", async (req, res) => {
   const { action, data } = req.body;
 
-  // 1. Resposta IMEDIATA para acalmar o Mercado Pago
+  // 1. Resposta IMEDIATA para o Mercado Pago (Stop Retries)
   res.sendStatus(200);
 
   try {
-    // Validação básica se é um pagamento
-    // Aceita tanto o formato novo (req.body.data.id) quanto o antigo (req.query.id / topic)
     const id = data?.id || req.query.id;
     if (!id) return;
 
     // 2. VERIFICAÇÃO DE DUPLICIDADE (Idempotência)
-    // Se já processamos esse ID do MP, paramos aqui.
+    // Verifica se esse ID de transação já existe para evitar quadruplicidade
     const [existing] = await db.query(
       "SELECT id FROM pagamentos_orcamento WHERE id_transacao = ?",
       [id]
@@ -253,88 +251,94 @@ app.post("/webhook", async (req, res) => {
       return;
     }
 
-    // 3. Consulta Oficial ao Mercado Pago
-    // Usamos a instância 'mpClient' que você já configurou no início do arquivo
+    // 3. CONSULTA OFICIAL AO MERCADO PAGO
     const paymentClient = new Payment(mpClient);
     const payment = await paymentClient.get({ id: id });
 
+    // Só processa se estiver APROVADO
     if (payment.status === 'approved') {
       console.log(`[Webhook] Processando pagamento aprovado: ${id}`);
 
       const valorPago = parseFloat(payment.transaction_amount);
       const externalRef = payment.external_reference; // Ex: "15" ou "15__SINAL"
 
-      // TRATAMENTO DO ID DO PEDIDO (Recupera ID e TIPO)
-      let pedidoId, tipoPagamento;
+      // TRATAMENTO DO ID DO PEDIDO
+      let orcamentoId, tipoPagamento;
       
       if (externalRef && externalRef.includes("__")) {
         // Formato novo: "15__SINAL"
-        [pedidoId, tipoPagamento] = externalRef.split("__");
+        [orcamentoId, tipoPagamento] = externalRef.split("__");
       } else {
-        // Formato antigo: "15" (Assume que é SINAL ou TOTAL dependendo da lógica, ou define padrão)
-        pedidoId = externalRef;
-        tipoPagamento = 'PAGAMENTO'; // Valor padrão caso não venha especificado
+        // Formato antigo/padrão: "15"
+        orcamentoId = externalRef;
+        tipoPagamento = 'PAGAMENTO';
       }
 
-      // 4. BUSCA DADOS DO PEDIDO (Necessário para E-mail e Cálculos)
-      const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [pedidoId]);
-      
-      if (rows.length === 0) {
-        console.error(`[Webhook] Pedido ${pedidoId} não encontrado.`);
-        return;
-      }
+      // Converte para garantir que é número
+      orcamentoId = parseInt(orcamentoId); 
 
-      const pedido = rows[0];
-
-      // 5. INSERÇÃO NO FINANCEIRO (pagamentos_orcamento)
-      // Isso é o que faz aparecer no histórico financeiro do pedido
+      // 4. INSERÇÃO NO FINANCEIRO (Correção Principal: orcamento_id)
       await db.query(
-        "INSERT INTO pagamentos_orcamento (pedido_id, valor, data_pagamento, tipo, id_transacao) VALUES (?, ?, NOW(), ?, ?)",
-        [pedidoId, valorPago, tipoPagamento, id]
+        "INSERT INTO pagamentos_orcamento (orcamento_id, valor, data_pagamento, tipo, id_transacao) VALUES (?, ?, NOW(), ?, ?)",
+        [orcamentoId, valorPago, tipoPagamento, id]
       );
 
-      // 6. ATUALIZAÇÃO DE STATUS E LÓGICA DE SALDO
-      const valorTotal = parseFloat(pedido.valor_final || 0);
-      const jaPago = await db.query("SELECT SUM(valor) as total FROM pagamentos_orcamento WHERE pedido_id = ?", [pedidoId]);
-      const totalPagoAteAgora = parseFloat(jaPago[0][0].total || 0);
-      const saldoRestante = valorTotal - totalPagoAteAgora;
+      console.log(`[Webhook] Sucesso! Financeiro registrado para orcamento_id: ${orcamentoId}`);
 
-      let novoStatus = pedido.status_pagamento;
-      let linkRestante = "#";
-
-      // Lógica: Se pagou tudo (ou saldo é irrisório), marca como 'pago'. 
-      // Se foi só um sinal, marca como 'confirmado' (ou mantém lógica antiga).
-      if (saldoRestante <= 1) { // Margem de erro de 1 real
-          novoStatus = 'pago';
-          // Se quiser atualizar também o status da agenda/festa:
-          // await db.query("UPDATE orcamentos SET status_agenda = 'confirmado' WHERE id = ?", [pedidoId]);
-      } else {
-          novoStatus = 'sinal_pago'; // Ou 'parcial'
-          
-          // Gera link do restante se necessário (Recuperando sua lógica antiga)
-          if (typeof criarLinkMP === 'function') {
-             linkRestante = await criarLinkMP(`Restante - ${pedido.nome}`, saldoRestante.toFixed(2), `${pedidoId}__RESTANTE`);
-          }
-      }
-
-      // Executa a atualização do Status
-      await db.query("UPDATE orcamentos SET status_pagamento = ? WHERE id = ?", [novoStatus, pedidoId]);
-
-      // 7. ENVIO DE E-MAIL (Recuperando sua função original)
-      // Verifica se a função existe antes de chamar para não quebrar
-      if (typeof enviarEmailConfirmacao === 'function' && pedido.email) {
-        // Passamos os dados atualizados
-        await enviarEmailConfirmacao(pedido.email, pedido.nome, valorPago, valorTotal, linkRestante);
-        console.log(`[Webhook] E-mail enviado para ${pedido.email}`);
-      } else {
-         // Fallback caso a função não esteja acessível aqui, tentamos enviar manualmente se tiver o transporter
-         console.log("[Webhook] Função enviarEmailConfirmacao não encontrada ou e-mail vazio.");
-      }
+      // 5. ATUALIZAÇÃO DE STATUS E LÓGICA DE NEGÓCIO
+      // Busca dados do pedido para e-mail e cálculos
+      const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [orcamentoId]);
       
-      console.log(`[Webhook] Sucesso total para pedido ${pedidoId}. Status: ${novoStatus}`);
+      if (rows.length > 0) {
+          const pedido = rows[0];
+          const valorTotal = parseFloat(pedido.valor_final || 0);
+          
+          // Calcula total pago até agora
+          const [jaPago] = await db.query("SELECT SUM(valor) as total FROM pagamentos_orcamento WHERE orcamento_id = ?", [orcamentoId]);
+          const totalPagoAteAgora = parseFloat(jaPago[0].total || 0);
+          const saldoRestante = valorTotal - totalPagoAteAgora;
+
+          let novoStatus = pedido.status_pagamento;
+          let linkRestante = "#";
+
+          // Define o novo status
+          if (saldoRestante <= 1) { // Margem de erro de R$ 1,00
+              novoStatus = 'pago';
+          } else {
+              novoStatus = 'sinal_pago'; // Ou 'parcial'
+              
+              // Gera Link para o restante (se a função existir)
+              if (typeof criarLinkMP === 'function') {
+                 try {
+                    // Tenta gerar link com a referência correta para o futuro (orcamentoId__RESTANTE)
+                    linkRestante = await criarLinkMP(
+                        `Restante - ${pedido.nome}`, 
+                        saldoRestante.toFixed(2), 
+                        `${orcamentoId}__RESTANTE`
+                    );
+                 } catch (errLink) {
+                    console.error("[Webhook] Erro ao gerar link restante:", errLink.message);
+                 }
+              }
+          }
+
+          // Atualiza status no banco
+          await db.query("UPDATE orcamentos SET status_pagamento = ? WHERE id = ?", [novoStatus, orcamentoId]);
+          console.log(`[Webhook] Status atualizado para: ${novoStatus}`);
+
+          // Envia E-mail de confirmação
+          if (typeof enviarEmailConfirmacao === 'function' && pedido.email) {
+            await enviarEmailConfirmacao(pedido.email, pedido.nome, valorPago, valorTotal, linkRestante);
+            console.log(`[Webhook] E-mail enviado para ${pedido.email}`);
+          }
+      } else {
+          console.error(`[Webhook] ERRO: Orçamento ${orcamentoId} não encontrado no banco.`);
+      }
     }
   } catch (error) {
-    console.error("[Webhook] Erro no processamento:", error);
+    console.error("[Webhook] ERRO CRÍTICO:", error);
+    // Se quiser ver detalhes do erro SQL no log:
+    if (error.sqlMessage) console.error("SQL Error:", error.sqlMessage);
   }
 });
 // =========================================================================

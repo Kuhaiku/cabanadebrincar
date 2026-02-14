@@ -7,8 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
-const { MercadoPagoConfig, Preference, Payment } = require("mercadopago");
-//const { MercadoPagoConfig, Preference } = require("mercadopago");
+const { MercadoPagoConfig, Preference } = require("mercadopago");
 const nodemailer = require("nodemailer");
 const { randomUUID: uuidv4 } = require("crypto");
 
@@ -225,7 +224,7 @@ async function enviarEmailConfirmacao(
   }
 }
 
-// --- 4. WEBHOOK (MERCADO PAGO - CORRIGIDO E LIMPO) ---
+// --- 4. WEBHOOK (MERCADO PAGO - ATUALIZADO) ---
 app.post("/api/webhook", async (req, res) => {
   res.status(200).send("OK");
   const id = req.body?.data?.id || req.body?.id || req.query.id;
@@ -249,40 +248,64 @@ app.post("/api/webhook", async (req, res) => {
 
           if (!pedidoId) return;
 
-          // Busca dados atuais do pedido para pegar o nome/email
+          // Busca dados atuais do pedido
           const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [pedidoId]);
           if (rows.length === 0) return;
           const pedido = rows[0];
 
-          // 1. REGISTRA APENAS NA TABELA DE PAGAMENTOS DA FESTA
-          // (Removemos o insert em custos_gerais aqui!)
+          // --- NOVO: REGISTRAR NA TABELA DE PAGAMENTOS DA FESTA ---
           await db.query(
             "INSERT INTO pagamentos_orcamento (orcamento_id, valor, tipo, data_pagamento, metodo) VALUES (?, ?, ?, NOW(), 'mercadopago')",
             [pedidoId, valorPago, tipoPagamento]
           );
+          // --------------------------------------------------------
 
-          // 2. ATUALIZA STATUS DO PEDIDO
+          // 1. LÓGICA DE STATUS
           let novoStatusPagamento = "parcial";
           let novoStatusAgenda = pedido.status_agenda;
 
+          // Se for INTEGRAL ou se for o RESTANTE (o que completa o pagamento), marcamos como pago
           if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE") {
              novoStatusPagamento = "pago"; 
           }
           
+          // Se pagou o SINAL ou INTEGRAL, agenda automaticamente!
           if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL") {
              novoStatusAgenda = "agendado";
-             await db.query("UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", [pedidoId]);
+             await db.query(
+               "UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", 
+               [pedidoId]
+             );
           }
 
+          // Atualiza o Status do Pedido
           await db.query(
             "UPDATE orcamentos SET status_pagamento = ?, status_agenda = ? WHERE id = ?",
             [novoStatusPagamento, novoStatusAgenda, pedidoId]
           );
 
-          // 3. ENVIO DE E-MAIL (Opcional, mas recomendado manter)
+          // 2. LÓGICA FINANCEIRA GERAL (Mantida para seu painel geral)
+          let tituloLancamento = `Receita Pedido #${pedidoId}`;
+          if (tipoPagamento === "SINAL") tituloLancamento = `Entrada (Sinal) - ${pedido.nome}`;
+          else if (tipoPagamento === "RESTANTE") tituloLancamento = `Pagamento Restante - ${pedido.nome}`;
+          else if (tipoPagamento === "INTEGRAL") tituloLancamento = `Pagamento Integral - ${pedido.nome}`;
+
+          await db.query(
+            "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, 'receita', ?, NOW())",
+            [tituloLancamento, valorPago]
+          );
+
+          // 3. ENVIO DE E-MAIL
           const valorTotal = parseFloat(pedido.valor_final || 0);
           if (pedido.email) {
-            enviarEmailConfirmacao(pedido.email, pedido.nome, valorPago, valorTotal, "#");
+            let linkRestanteEmail = "#"; // Aqui você pode gerar o link se desejar
+            enviarEmailConfirmacao(
+              pedido.email,
+              pedido.nome,
+              valorPago,
+              valorTotal,
+              linkRestanteEmail 
+            );
           }
         }
       }

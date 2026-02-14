@@ -125,39 +125,44 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
     // 1. Buscamos valor_final (itens) E valor_itens_extras
     const [r] = await db.query(
       "SELECT valor_final, valor_itens_extras, nome FROM orcamentos WHERE id = ?",
-      [req.params.id]
+      [req.params.id],
     );
     if (r.length === 0) return res.status(404).json({ error: "Erro" });
-    
+
     const vBase = parseFloat(r[0].valor_final || 0);
     const vExtras = parseFloat(r[0].valor_itens_extras || 0); // Frete (+) ou Desconto (-)
-    
+
     // O TOTAL AGORA É A SOMA DOS DOIS
     const vTotal = vBase + vExtras;
 
     // Proteção contra valor zero ou negativo
     if (vTotal <= 0) {
-        return res.status(400).json({ error: "O valor total do pedido (Itens + Extras) deve ser maior que zero." });
+      return res
+        .status(400)
+        .json({
+          error:
+            "O valor total do pedido (Itens + Extras) deve ser maior que zero.",
+        });
     }
 
     const nome = r[0].nome.split(" ")[0];
 
     // 1. SINAL (50% do TOTAL REAL)
-    const valSinal = (vTotal * 0.50).toFixed(2);
+    const valSinal = (vTotal * 0.5).toFixed(2);
     const linkReserva = await criarLinkMP(
       `Sinal Reserva - ${nome}`,
       valSinal,
       req.params.id,
-      "SINAL"
+      "SINAL",
     );
 
     // 2. RESTANTE (50% do TOTAL REAL)
-    const valRestante = (vTotal * 0.50).toFixed(2);
+    const valRestante = (vTotal * 0.5).toFixed(2);
     const linkRestante = await criarLinkMP(
       `Restante - ${nome}`,
       valRestante,
       req.params.id,
-      "RESTANTE"
+      "RESTANTE",
     );
 
     // 3. INTEGRAL COM DESCONTO (5% OFF sobre o TOTAL REAL)
@@ -166,7 +171,7 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
       `Total (5% OFF) - ${nome}`,
       valIntegral,
       req.params.id,
-      "INTEGRAL"
+      "INTEGRAL",
     );
 
     res.json({
@@ -235,10 +240,10 @@ app.post("/api/webhook", async (req, res) => {
         `https://api.mercadopago.com/v1/payments/${id}`,
         { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } },
       );
-      
+
       if (resp.ok) {
         const payment = await resp.json();
-        
+
         if (payment.status === "approved") {
           // Decodifica a referência: ID__TIPO
           const reference = payment.external_reference || "";
@@ -249,14 +254,32 @@ app.post("/api/webhook", async (req, res) => {
           if (!pedidoId) return;
 
           // Busca dados atuais do pedido
-          const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [pedidoId]);
+          const [rows] = await db.query(
+            "SELECT * FROM orcamentos WHERE id = ?",
+            [pedidoId],
+          );
           if (rows.length === 0) return;
           const pedido = rows[0];
+
+          // --- CORREÇÃO: VERIFICAR DUPLICIDADE ---
+          // Se já existe um pagamento deste TIPO (SINAL, RESTANTE, etc) para este orçamento, paramos aqui.
+          const [pagamentoExistente] = await db.query(
+            "SELECT id FROM pagamentos_orcamento WHERE orcamento_id = ? AND tipo = ?",
+            [pedidoId, tipoPagamento],
+          );
+
+          if (pagamentoExistente.length > 0) {
+            console.log(
+              `Webhook ignorado: Pagamento '${tipoPagamento}' para orçamento #${pedidoId} já foi processado.`,
+            );
+            return; // Encerra a execução para não duplicar financeiro nem disparar e-mails repetidos
+          }
+          // ---------------------------------------
 
           // --- NOVO: REGISTRAR NA TABELA DE PAGAMENTOS DA FESTA ---
           await db.query(
             "INSERT INTO pagamentos_orcamento (orcamento_id, valor, tipo, data_pagamento, metodo) VALUES (?, ?, ?, NOW(), 'mercadopago')",
-            [pedidoId, valorPago, tipoPagamento]
+            [pedidoId, valorPago, tipoPagamento],
           );
           // --------------------------------------------------------
 
@@ -266,33 +289,36 @@ app.post("/api/webhook", async (req, res) => {
 
           // Se for INTEGRAL ou se for o RESTANTE (o que completa o pagamento), marcamos como pago
           if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE") {
-             novoStatusPagamento = "pago"; 
+            novoStatusPagamento = "pago";
           }
-          
+
           // Se pagou o SINAL ou INTEGRAL, agenda automaticamente!
           if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL") {
-             novoStatusAgenda = "agendado";
-             await db.query(
-               "UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", 
-               [pedidoId]
-             );
+            novoStatusAgenda = "agendado";
+            await db.query(
+              "UPDATE orcamentos SET status = 'aprovado' WHERE id = ?",
+              [pedidoId],
+            );
           }
 
           // Atualiza o Status do Pedido
           await db.query(
             "UPDATE orcamentos SET status_pagamento = ?, status_agenda = ? WHERE id = ?",
-            [novoStatusPagamento, novoStatusAgenda, pedidoId]
+            [novoStatusPagamento, novoStatusAgenda, pedidoId],
           );
 
           // 2. LÓGICA FINANCEIRA GERAL (Mantida para seu painel geral)
           let tituloLancamento = `Receita Pedido #${pedidoId}`;
-          if (tipoPagamento === "SINAL") tituloLancamento = `Entrada (Sinal) - ${pedido.nome}`;
-          else if (tipoPagamento === "RESTANTE") tituloLancamento = `Pagamento Restante - ${pedido.nome}`;
-          else if (tipoPagamento === "INTEGRAL") tituloLancamento = `Pagamento Integral - ${pedido.nome}`;
+          if (tipoPagamento === "SINAL")
+            tituloLancamento = `Entrada (Sinal) - ${pedido.nome}`;
+          else if (tipoPagamento === "RESTANTE")
+            tituloLancamento = `Pagamento Restante - ${pedido.nome}`;
+          else if (tipoPagamento === "INTEGRAL")
+            tituloLancamento = `Pagamento Integral - ${pedido.nome}`;
 
           await db.query(
             "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, 'receita', ?, NOW())",
-            [tituloLancamento, valorPago]
+            [tituloLancamento, valorPago],
           );
 
           // 3. ENVIO DE E-MAIL
@@ -304,7 +330,7 @@ app.post("/api/webhook", async (req, res) => {
               pedido.nome,
               valorPago,
               valorTotal,
-              linkRestanteEmail 
+              linkRestanteEmail,
             );
           }
         }
@@ -365,7 +391,7 @@ app.put("/api/admin/alimentos/:id", checkAuth, async (req, res) => {
     const { nome, unidade, medida, valor, visivel_site } = req.body;
     await db.query(
       "UPDATE itens_alimentacao SET nome=?, unidade=?, medida=?, valor=?, visivel_site=? WHERE id=?",
-      [nome, unidade, medida, valor, visivel_site ? 1 : 0, req.params.id]
+      [nome, unidade, medida, valor, visivel_site ? 1 : 0, req.params.id],
     );
     res.json({ success: true });
   } catch (e) {
@@ -573,12 +599,12 @@ app.post("/api/orcamento", async (req, res) => {
   const data = req.body;
   const qtdCriancas = parseInt(data.qtd_criancas) || 0;
   const qtdBarracas = parseInt(data.qtd_barracas) || 0;
-  
+
   // RECEBE O VALOR CALCULADO NO FRONTEND
-  const valorEstimado = parseFloat(data.valor_estimado) || 0; 
+  const valorEstimado = parseFloat(data.valor_estimado) || 0;
 
   const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, qtd_criancas, faixa_etaria, modelo_barraca, qtd_barracas, cores, tema, itens_padrao, itens_adicionais, data_festa, horario, alimentacao, alergias, status_pagamento, valor_final) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', ?)`;
-  
+
   const values = [
     data.nome,
     data.whatsapp,
@@ -596,7 +622,7 @@ app.post("/api/orcamento", async (req, res) => {
     data.horario,
     JSON.stringify(data.alimentacao || []),
     data.alergias || "",
-    valorEstimado // Salva o valor calculado
+    valorEstimado, // Salva o valor calculado
   ];
 
   try {
@@ -673,15 +699,15 @@ app.get("/api/admin/pedidos", checkAuth, async (req, res) => {
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
   try {
     // 1. Busca Movimentações Gerais (Direita)
-    // Se você inseriu receitas de festa aqui antes, elas aparecerão aqui. 
+    // Se você inseriu receitas de festa aqui antes, elas aparecerão aqui.
     // O ideal é limpar a tabela custos_gerais e deixar só despesas/receitas avulsas.
     const [gerais] = await db.query(
-      "SELECT * FROM custos_gerais ORDER BY data_registro DESC"
+      "SELECT * FROM custos_gerais ORDER BY data_registro DESC",
     );
 
     // 2. Busca Custos Específicos de Festas (Para cálculo de lucro)
     const [custosFestas] = await db.query(
-      "SELECT cf.*, o.nome as nome_cliente FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id"
+      "SELECT cf.*, o.nome as nome_cliente FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id",
     );
 
     // 3. Busca O FLUXO DE PAGAMENTOS (Esquerda)
@@ -1130,7 +1156,7 @@ app.get("/api/feedback/:token", async (req, res) => {
     // Busca o nome do cliente baseado no token
     const [rows] = await db.query(
       "SELECT id, nome FROM orcamentos WHERE feedback_token = ?",
-      [token]
+      [token],
     );
 
     if (rows.length === 0) {
@@ -1152,7 +1178,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
     // 1. Validar Token
     const [rows] = await db.query(
       "SELECT id, nome FROM orcamentos WHERE feedback_token = ?",
-      [token]
+      [token],
     );
 
     if (rows.length === 0) {
@@ -1166,7 +1192,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
     // 'aprovado' = 0 para que o admin precise aprovar antes de aparecer no site
     const [r] = await db.query(
       "INSERT INTO depoimentos (orcamento_id, nome_cliente, texto, nota, aprovado, data_criacao) VALUES (?, ?, ?, ?, 0, NOW())",
-      [pedido.id, pedido.nome, texto, nota]
+      [pedido.id, pedido.nome, texto, nota],
     );
     const depoimentoId = r.insertId;
 
@@ -1186,7 +1212,7 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
       for (const url of urls) {
         await db.query(
           "INSERT INTO fotos_depoimento (depoimento_id, url_foto) VALUES (?, ?)",
-          [depoimentoId, url]
+          [depoimentoId, url],
         );
       }
     }
@@ -1205,7 +1231,7 @@ app.get("/api/admin/pedidos/:id/pagamentos", checkAuth, async (req, res) => {
   try {
     const [rows] = await db.query(
       "SELECT * FROM pagamentos_orcamento WHERE orcamento_id = ? ORDER BY data_pagamento DESC",
-      [req.params.id]
+      [req.params.id],
     );
     res.json(rows);
   } catch (e) {

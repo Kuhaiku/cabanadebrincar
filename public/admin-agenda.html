@@ -122,17 +122,59 @@
                     <h4 class="font-bold text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Gestão da Festa</h4>
                 </div>
                 
-                <div class="flex-1 p-6 flex flex-col items-center justify-center text-center">
+                <div class="flex-1 p-6 flex flex-col items-center justify-center text-center overflow-y-auto">
                     
-                    <div class="mb-8 w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="mb-6 w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <p class="text-xs font-bold text-slate-400 uppercase mb-1">Valor Contratado</p>
                         <p id="det-valor-final" class="text-3xl font-bold text-green-600 tracking-tight">R$ 0,00</p>
-                        <div class="mt-2 text-xs text-slate-500 bg-slate-100 inline-block px-3 py-1 rounded-full">
-                            Status: <span class="font-bold text-blue-600">Agendado</span>
+                        
+                        <div class="mt-4 flex flex-col gap-2 items-center">
+                            <div class="text-[10px] font-bold uppercase tracking-wider bg-slate-100 px-3 py-1 rounded-full text-slate-500 w-fit">
+                                Agenda: <span id="det-status-agenda" class="text-blue-600 font-bold">-</span>
+                            </div>
+                            <div id="badge-status-pagamento" class="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full w-fit border">
+                                Pagamento: <span id="det-status-pagamento">-</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="w-full space-y-4">
+                    <div class="w-full space-y-3">
+                        
+                        <button id="btn-gerar-pagamento" onclick="gerarLinksPagamento()" class="w-full bg-emerald-50 text-emerald-600 font-bold py-4 rounded-xl hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-2 transition-colors">
+                            <i data-lucide="dollar-sign"></i> Gerar Links Mercado Pago
+                        </button>
+
+                        <div id="box-links-pagamento" class="hidden w-full bg-slate-800 p-4 rounded-xl text-left shadow-lg">
+                            <div class="flex justify-between items-center mb-3">
+                                <p class="text-emerald-400 text-xs uppercase font-bold tracking-wider">Links Gerados</p>
+                                <button onclick="document.getElementById('box-links-pagamento').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-3 h-3"></i></button>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 mb-1">Sinal (50%)</p>
+                                    <div class="flex gap-1">
+                                        <input type="text" id="link-sinal" class="w-full bg-slate-700 text-white text-xs border border-slate-600 rounded p-1.5 focus:outline-none" readonly>
+                                        <button onclick="copiarInput('link-sinal')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 rounded"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 mb-1">Restante (50%)</p>
+                                    <div class="flex gap-1">
+                                        <input type="text" id="link-restante" class="w-full bg-slate-700 text-white text-xs border border-slate-600 rounded p-1.5 focus:outline-none" readonly>
+                                        <button onclick="copiarInput('link-restante')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 rounded"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 mb-1">Integral (5% OFF)</p>
+                                    <div class="flex gap-1">
+                                        <input type="text" id="link-integral" class="w-full bg-slate-700 text-white text-xs border border-slate-600 rounded p-1.5 focus:outline-none" readonly>
+                                        <button onclick="copiarInput('link-integral')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 rounded"><i data-lucide="copy" class="w-3 h-3"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <button id="btn-gerar-link" onclick="gerarLinkAvaliacao()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-4 rounded-xl hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-2 transition-colors">
                             <i data-lucide="star"></i> Gerar Link Avaliação
                         </button>
@@ -184,11 +226,16 @@
                             if(dataFesta && dataFesta.includes('T')) dataFesta = dataFesta.split('T')[0];
                             const hora = d.horario ? d.horario : '12:00:00';
                             
+                            // Define cor baseado no status
+                            let cor = '#ec4899'; // padrão rosa
+                            if(d.status_agenda === 'concluido') cor = '#10b981'; // verde
+                            
                             return {
                                 id: d.id,
                                 title: `${d.nome} (${d.modelo_barraca})`,
                                 start: `${dataFesta}T${hora}`,
-                                backgroundColor: '#ec4899',
+                                backgroundColor: cor,
+                                borderColor: cor,
                                 extendedProps: d
                             };
                         });
@@ -208,14 +255,14 @@
         });
 
         // Função auxiliar para parsear JSON seguro
-   function safeParse(json) {
+        function safeParse(json) {
             if(!json) return [];
             try { 
                 const parsed = (typeof json === 'object') ? json : JSON.parse(json); 
-                // A correção é esta linha: verifica se é realmente um Array
                 return Array.isArray(parsed) ? parsed : [];
             } catch { return []; }
         }
+
         function abrirModalAgenda(dados) {
             eventoSelecionado = dados;
             
@@ -272,10 +319,34 @@
                 boxAlergias.classList.add('hidden');
             }
 
-            // --- Coluna Direita (Financeiro e Ações) ---
+            // --- Coluna Direita (Financeiro e Status) ---
             document.getElementById('det-valor-final').innerText = `R$ ${dados.valor_final || '0.00'}`;
             
-            // Resetar estados dos botões
+            // Status Agenda
+            document.getElementById('det-status-agenda').innerText = dados.status_agenda || 'Agendado';
+            
+            // Status Pagamento (Visualização e Lógica dos Botões)
+            const statusPg = (dados.status_pagamento || 'pendente').toLowerCase();
+            const badgePg = document.getElementById('badge-status-pagamento');
+            const spanPg = document.getElementById('det-status-pagamento');
+            const btnPg = document.getElementById('btn-gerar-pagamento');
+            
+            spanPg.innerText = statusPg;
+            
+            // Resetar áreas ocultas
+            document.getElementById('box-links-pagamento').classList.add('hidden');
+            
+            if(statusPg === 'pago') {
+                // Pagamento OK: Verde e esconde botão de gerar link
+                badgePg.className = "text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full w-fit border bg-green-100 text-green-700 border-green-200";
+                btnPg.classList.add('hidden');
+            } else {
+                // Pendente/Parcial: Laranja e mostra botão
+                badgePg.className = "text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full w-fit border bg-orange-100 text-orange-700 border-orange-200";
+                btnPg.classList.remove('hidden');
+            }
+
+            // --- Resetar Botões de Avaliação ---
             document.getElementById('box-link').classList.add('hidden');
             document.getElementById('btn-gerar-link').classList.remove('hidden');
             document.getElementById('modal-agenda').classList.remove('hidden');
@@ -283,6 +354,52 @@
             lucide.createIcons();
         }
 
+        // --- Gerar Links MP (NOVO) ---
+        async function gerarLinksPagamento() {
+            const btn = document.getElementById('btn-gerar-pagamento');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="animate-spin">⏳</span> Gerando...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/admin/gerar-links-mp/${eventoSelecionado.id}`, {
+                    method: 'POST',
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                const data = await res.json();
+                
+                if(data.error) throw new Error(data.error);
+
+                // Preencher inputs
+                document.getElementById('link-sinal').value = data.linkReserva || "Erro ao gerar";
+                document.getElementById('link-restante').value = data.linkRestante || "Erro ao gerar";
+                document.getElementById('link-integral').value = data.linkIntegral || "Erro ao gerar";
+
+                // Mostrar box e esconder botão
+                btn.classList.add('hidden');
+                document.getElementById('box-links-pagamento').classList.remove('hidden');
+                
+                // Recriar ícones pois o box estava oculto
+                lucide.createIcons();
+
+            } catch(e) {
+                alert("Erro ao gerar links: " + e.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function copiarInput(id) {
+            const input = document.getElementById(id);
+            input.select();
+            document.execCommand("copy");
+            // Feedback visual rápido
+            const originalVal = input.value;
+            input.value = "Copiado!";
+            setTimeout(() => input.value = originalVal, 1000);
+        }
+
+        // --- Avaliação ---
         async function gerarLinkAvaliacao() {
             try {
                 const res = await fetch(`/api/admin/gerar-token/${eventoSelecionado.id}`, {

@@ -7,7 +7,8 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
-const { MercadoPagoConfig, Preference } = require("mercadopago");
+const { MercadoPagoConfig, Preference, Payment } = require("mercadopago");
+//const { MercadoPagoConfig, Preference } = require("mercadopago");
 const nodemailer = require("nodemailer");
 const { randomUUID: uuidv4 } = require("crypto");
 
@@ -224,73 +225,96 @@ async function enviarEmailConfirmacao(
   }
 }
 
-// --- 4. WEBHOOK (MERCADO PAGO - CORRIGIDO E LIMPO) ---
-app.post("/api/webhook", async (req, res) => {
-  res.status(200).send("OK");
-  const id = req.body?.data?.id || req.body?.id || req.query.id;
 
-  if ((req.body?.type === "payment" || req.query.topic === "payment") && id) {
-    try {
-      const resp = await fetch(
-        `https://api.mercadopago.com/v1/payments/${id}`,
-        { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } },
-      );
-      
-      if (resp.ok) {
-        const payment = await resp.json();
-        
-        if (payment.status === "approved") {
-          // Decodifica a referência: ID__TIPO
-          const reference = payment.external_reference || "";
-          const [pedidoIdStr, tipoPagamento] = reference.split("__"); // Ex: 55__SINAL
-          const pedidoId = parseInt(pedidoIdStr);
-          const valorPago = parseFloat(payment.transaction_amount);
+// ==========================================
+// WEBHOOK DO MERCADO PAGO (VERSÃO BLINDADA)
+// ==========================================
+app.post("/webhook", async (req, res) => {
+  const { action, data } = req.body;
 
-          if (!pedidoId) return;
+  // 1. Resposta IMEDIATA (Essencial para parar as retentativas do Mercado Pago)
+  // Se demorar mais que alguns segundos, o MP acha que falhou e manda de novo.
+  res.sendStatus(200);
 
-          // Busca dados atuais do pedido para pegar o nome/email
-          const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [pedidoId]);
-          if (rows.length === 0) return;
-          const pedido = rows[0];
-
-          // 1. REGISTRA APENAS NA TABELA DE PAGAMENTOS DA FESTA
-          // (Removemos o insert em custos_gerais aqui!)
-          await db.query(
-            "INSERT INTO pagamentos_orcamento (orcamento_id, valor, tipo, data_pagamento, metodo) VALUES (?, ?, ?, NOW(), 'mercadopago')",
-            [pedidoId, valorPago, tipoPagamento]
-          );
-
-          // 2. ATUALIZA STATUS DO PEDIDO
-          let novoStatusPagamento = "parcial";
-          let novoStatusAgenda = pedido.status_agenda;
-
-          if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE") {
-             novoStatusPagamento = "pago"; 
-          }
-          
-          if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL") {
-             novoStatusAgenda = "agendado";
-             await db.query("UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", [pedidoId]);
-          }
-
-          await db.query(
-            "UPDATE orcamentos SET status_pagamento = ?, status_agenda = ? WHERE id = ?",
-            [novoStatusPagamento, novoStatusAgenda, pedidoId]
-          );
-
-          // 3. ENVIO DE E-MAIL (Opcional, mas recomendado manter)
-          const valorTotal = parseFloat(pedido.valor_final || 0);
-          if (pedido.email) {
-            enviarEmailConfirmacao(pedido.email, pedido.nome, valorPago, valorTotal, "#");
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Webhook Error:", e.message);
+  try {
+    // Se não for um evento de pagamento ou não tiver ID, ignoramos
+    if (!data || !data.id) {
+      return;
     }
+
+    const paymentId = data.id;
+
+    // 2. VERIFICAÇÃO DE DUPLICIDADE (IDEMPOTÊNCIA)
+    // Verificamos se esse ID de transação ESPECÍFICO do Mercado Pago já existe no banco.
+    // Isso resolve o problema de quadruplicar, pois o MP manda o mesmo ID várias vezes.
+    const [existing] = await db.query(
+      "SELECT id FROM pagamentos_orcamento WHERE id_transacao = ?",
+      [paymentId]
+    );
+
+    if (existing.length > 0) {
+      console.log(`[Webhook] Pagamento ${paymentId} já processado anteriormente. Ignorando.`);
+      return; // Para a execução aqui.
+    }
+
+    // 3. CONSULTA OFICIAL AO MERCADO PAGO
+    // Instanciamos a classe de pagamento para buscar os detalhes reais
+    const paymentClient = new Payment(mpClient);
+    const paymentData = await paymentClient.get({ id: paymentId });
+    
+    const status = paymentData.status;
+    const statusDetail = paymentData.status_detail;
+    
+    // Só nos interessa se estiver APROVADO
+    if (status === 'approved') {
+      console.log(`[Webhook] Processando pagamento aprovado: ${paymentId}`);
+
+      // Dados importantes
+      const externalRef = paymentData.external_reference; // Ex: "15__SINAL" ou "15__RESTANTE"
+      const valorPago = paymentData.transaction_amount;
+      
+      // Validação de segurança caso a referência venha vazia
+      if (!externalRef) {
+        console.error(`[Webhook] Erro: Pagamento ${paymentId} sem external_reference.`);
+        return;
+      }
+
+      // Separa o ID do Pedido e o Tipo (SINAL ou RESTANTE)
+      const [pedidoId, tipoPagamento] = externalRef.split("__");
+
+      // 4. INSERÇÃO NO BANCO (Agora segura)
+      await db.query(
+        "INSERT INTO pagamentos_orcamento (pedido_id, valor, data_pagamento, tipo, id_transacao) VALUES (?, ?, NOW(), ?, ?)",
+        [pedidoId, valorPago, tipoPagamento, paymentId]
+      );
+
+      console.log(`[Webhook] Sucesso! Pagamento inserido para o pedido ${pedidoId} (${tipoPagamento}).`);
+
+      // 5. ATUALIZAÇÃO DO STATUS DO ORÇAMENTO (Opcional, mas recomendado)
+      // Se for pagamento do RESTANTE, geralmente significa que o pedido foi quitado.
+      if (tipoPagamento === 'RESTANTE') {
+        await db.query(
+          "UPDATE orcamentos SET status_pagamento = 'pago' WHERE id = ?",
+          [pedidoId]
+        );
+        console.log(`[Webhook] Status do pedido ${pedidoId} atualizado para 'pago'.`);
+      }
+      
+      // Se for SINAL, você pode querer garantir que o status não fique como 'pendente'
+      if (tipoPagamento === 'SINAL') {
+         // Exemplo: Se sua lógica usa status 'confirmado' ou 'sinal_pago'
+         // await db.query("UPDATE orcamentos SET status_pagamento = 'confirmado' WHERE id = ?", [pedidoId]);
+      }
+
+    } else {
+      console.log(`[Webhook] Pagamento ${paymentId} recebido, mas status é ${status} (${statusDetail}). Não inserido.`);
+    }
+
+  } catch (error) {
+    // Log do erro apenas no console, pois já respondemos 200 para o MP.
+    console.error("[Webhook] Erro CRÍTICO no processamento:", error);
   }
 });
-
 // =========================================================================
 // --- 5. NOVAS ROTAS: ALIMENTAÇÃO & CARDÁPIOS (CORRIGIDO) ---
 // =========================================================================

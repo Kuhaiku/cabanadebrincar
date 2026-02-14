@@ -669,24 +669,44 @@ app.get("/api/admin/pedidos", checkAuth, async (req, res) => {
   }
 });
 
-// --- ADMIN: Financeiro ---
+// --- ADMIN: Financeiro (Rota Atualizada) ---
 app.get("/api/admin/financeiro/relatorio", checkAuth, async (req, res) => {
   try {
+    // 1. Busca Movimentações Gerais (Direita)
+    // Se você inseriu receitas de festa aqui antes, elas aparecerão aqui. 
+    // O ideal é limpar a tabela custos_gerais e deixar só despesas/receitas avulsas.
     const [gerais] = await db.query(
-      "SELECT * FROM custos_gerais ORDER BY data_registro DESC",
+      "SELECT * FROM custos_gerais ORDER BY data_registro DESC"
     );
-    const [festas] = await db.query(
-      "SELECT cf.*, o.nome as nome_cliente, o.data_festa FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id",
+
+    // 2. Busca Custos Específicos de Festas (Para cálculo de lucro)
+    const [custosFestas] = await db.query(
+      "SELECT cf.*, o.nome as nome_cliente FROM custos_festa cf JOIN orcamentos o ON cf.orcamento_id = o.id"
     );
-    const [faturamento] = await db.query(
-      "SELECT id, nome, valor_final, data_festa FROM orcamentos WHERE status_agenda = 'concluido'",
-    );
-    res.json({ gerais, festas, faturamento });
+
+    // 3. Busca O FLUXO DE PAGAMENTOS (Esquerda)
+    // Traz o pagamento + Nome do Cliente + Data da Festa
+    const [pagamentos] = await db.query(`
+      SELECT 
+        p.id, 
+        p.valor, 
+        p.tipo, 
+        p.data_pagamento, 
+        p.metodo,
+        o.id as orcamento_id,
+        o.nome, 
+        o.tema,
+        o.data_festa
+      FROM pagamentos_orcamento p
+      JOIN orcamentos o ON p.orcamento_id = o.id
+      ORDER BY p.data_pagamento DESC
+    `);
+
+    res.json({ gerais, custosFestas, pagamentos });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
-
 app.post("/api/admin/financeiro/geral", checkAuth, async (req, res) => {
   try {
     const [r] = await db.query(

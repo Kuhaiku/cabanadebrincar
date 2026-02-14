@@ -1,1 +1,4 @@
 lembrar de colocar o custos festas "abrir um modal para lançar os custos na aba financeiro"
+
+o valor contratado na agenda tem que ser igual a "valor_final e valor_itens_extras" efetuando a operação aritimética
+R$ 96960.00

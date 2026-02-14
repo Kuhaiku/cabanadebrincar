@@ -225,122 +225,73 @@ async function enviarEmailConfirmacao(
   }
 }
 
+// --- 4. WEBHOOK (MERCADO PAGO - CORRIGIDO E LIMPO) ---
+app.post("/api/webhook", async (req, res) => {
+  res.status(200).send("OK");
+  const id = req.body?.data?.id || req.body?.id || req.query.id;
 
-// ==========================================
-// WEBHOOK DO MERCADO PAGO (FINAL - CORRIGIDO PARA orcamento_id)
-// ==========================================
-app.post("/webhook", async (req, res) => {
-  const { action, data } = req.body;
-
-  // 1. Resposta IMEDIATA para o Mercado Pago (Stop Retries)
-  res.sendStatus(200);
-
-  try {
-    const id = data?.id || req.query.id;
-    if (!id) return;
-
-    // 2. VERIFICAÇÃO DE DUPLICIDADE (Idempotência)
-    // Verifica se esse ID de transação já existe para evitar quadruplicidade
-    const [existing] = await db.query(
-      "SELECT id FROM pagamentos_orcamento WHERE id_transacao = ?",
-      [id]
-    );
-
-    if (existing.length > 0) {
-      console.log(`[Webhook] Pagamento ${id} já processado anteriormente. Ignorando.`);
-      return;
-    }
-
-    // 3. CONSULTA OFICIAL AO MERCADO PAGO
-    const paymentClient = new Payment(mpClient);
-    const payment = await paymentClient.get({ id: id });
-
-    // Só processa se estiver APROVADO
-    if (payment.status === 'approved') {
-      console.log(`[Webhook] Processando pagamento aprovado: ${id}`);
-
-      const valorPago = parseFloat(payment.transaction_amount);
-      const externalRef = payment.external_reference; // Ex: "15" ou "15__SINAL"
-
-      // TRATAMENTO DO ID DO PEDIDO
-      let orcamentoId, tipoPagamento;
-      
-      if (externalRef && externalRef.includes("__")) {
-        // Formato novo: "15__SINAL"
-        [orcamentoId, tipoPagamento] = externalRef.split("__");
-      } else {
-        // Formato antigo/padrão: "15"
-        orcamentoId = externalRef;
-        tipoPagamento = 'PAGAMENTO';
-      }
-
-      // Converte para garantir que é número
-      orcamentoId = parseInt(orcamentoId); 
-
-      // 4. INSERÇÃO NO FINANCEIRO (Correção Principal: orcamento_id)
-      await db.query(
-        "INSERT INTO pagamentos_orcamento (orcamento_id, valor, data_pagamento, tipo, id_transacao) VALUES (?, ?, NOW(), ?, ?)",
-        [orcamentoId, valorPago, tipoPagamento, id]
+  if ((req.body?.type === "payment" || req.query.topic === "payment") && id) {
+    try {
+      const resp = await fetch(
+        `https://api.mercadopago.com/v1/payments/${id}`,
+        { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } },
       );
-
-      console.log(`[Webhook] Sucesso! Financeiro registrado para orcamento_id: ${orcamentoId}`);
-
-      // 5. ATUALIZAÇÃO DE STATUS E LÓGICA DE NEGÓCIO
-      // Busca dados do pedido para e-mail e cálculos
-      const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [orcamentoId]);
       
-      if (rows.length > 0) {
+      if (resp.ok) {
+        const payment = await resp.json();
+        
+        if (payment.status === "approved") {
+          // Decodifica a referência: ID__TIPO
+          const reference = payment.external_reference || "";
+          const [pedidoIdStr, tipoPagamento] = reference.split("__"); // Ex: 55__SINAL
+          const pedidoId = parseInt(pedidoIdStr);
+          const valorPago = parseFloat(payment.transaction_amount);
+
+          if (!pedidoId) return;
+
+          // Busca dados atuais do pedido para pegar o nome/email
+          const [rows] = await db.query("SELECT * FROM orcamentos WHERE id = ?", [pedidoId]);
+          if (rows.length === 0) return;
           const pedido = rows[0];
-          const valorTotal = parseFloat(pedido.valor_final || 0);
+
+          // 1. REGISTRA APENAS NA TABELA DE PAGAMENTOS DA FESTA
+          // (Removemos o insert em custos_gerais aqui!)
+          await db.query(
+            "INSERT INTO pagamentos_orcamento (orcamento_id, valor, tipo, data_pagamento, metodo) VALUES (?, ?, ?, NOW(), 'mercadopago')",
+            [pedidoId, valorPago, tipoPagamento]
+          );
+
+          // 2. ATUALIZA STATUS DO PEDIDO
+          let novoStatusPagamento = "parcial";
+          let novoStatusAgenda = pedido.status_agenda;
+
+          if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE") {
+             novoStatusPagamento = "pago"; 
+          }
           
-          // Calcula total pago até agora
-          const [jaPago] = await db.query("SELECT SUM(valor) as total FROM pagamentos_orcamento WHERE orcamento_id = ?", [orcamentoId]);
-          const totalPagoAteAgora = parseFloat(jaPago[0].total || 0);
-          const saldoRestante = valorTotal - totalPagoAteAgora;
-
-          let novoStatus = pedido.status_pagamento;
-          let linkRestante = "#";
-
-          // Define o novo status
-          if (saldoRestante <= 1) { // Margem de erro de R$ 1,00
-              novoStatus = 'pago';
-          } else {
-              novoStatus = 'sinal_pago'; // Ou 'parcial'
-              
-              // Gera Link para o restante (se a função existir)
-              if (typeof criarLinkMP === 'function') {
-                 try {
-                    // Tenta gerar link com a referência correta para o futuro (orcamentoId__RESTANTE)
-                    linkRestante = await criarLinkMP(
-                        `Restante - ${pedido.nome}`, 
-                        saldoRestante.toFixed(2), 
-                        `${orcamentoId}__RESTANTE`
-                    );
-                 } catch (errLink) {
-                    console.error("[Webhook] Erro ao gerar link restante:", errLink.message);
-                 }
-              }
+          if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL") {
+             novoStatusAgenda = "agendado";
+             await db.query("UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", [pedidoId]);
           }
 
-          // Atualiza status no banco
-          await db.query("UPDATE orcamentos SET status_pagamento = ? WHERE id = ?", [novoStatus, orcamentoId]);
-          console.log(`[Webhook] Status atualizado para: ${novoStatus}`);
+          await db.query(
+            "UPDATE orcamentos SET status_pagamento = ?, status_agenda = ? WHERE id = ?",
+            [novoStatusPagamento, novoStatusAgenda, pedidoId]
+          );
 
-          // Envia E-mail de confirmação
-          if (typeof enviarEmailConfirmacao === 'function' && pedido.email) {
-            await enviarEmailConfirmacao(pedido.email, pedido.nome, valorPago, valorTotal, linkRestante);
-            console.log(`[Webhook] E-mail enviado para ${pedido.email}`);
+          // 3. ENVIO DE E-MAIL (Opcional, mas recomendado manter)
+          const valorTotal = parseFloat(pedido.valor_final || 0);
+          if (pedido.email) {
+            enviarEmailConfirmacao(pedido.email, pedido.nome, valorPago, valorTotal, "#");
           }
-      } else {
-          console.error(`[Webhook] ERRO: Orçamento ${orcamentoId} não encontrado no banco.`);
+        }
       }
+    } catch (e) {
+      console.error("Webhook Error:", e.message);
     }
-  } catch (error) {
-    console.error("[Webhook] ERRO CRÍTICO:", error);
-    // Se quiser ver detalhes do erro SQL no log:
-    if (error.sqlMessage) console.error("SQL Error:", error.sqlMessage);
   }
 });
+
 // =========================================================================
 // --- 5. NOVAS ROTAS: ALIMENTAÇÃO & CARDÁPIOS (CORRIGIDO) ---
 // =========================================================================

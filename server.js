@@ -224,8 +224,7 @@ async function enviarEmailConfirmacao(
   }
 }
 
-// --- 4. WEBHOOK (MERCADO PAGO) ---
-// --- 4. WEBHOOK (MERCADO PAGO - INTELIGENTE) ---
+// --- 4. WEBHOOK (MERCADO PAGO - ATUALIZADO) ---
 app.post("/api/webhook", async (req, res) => {
   res.status(200).send("OK");
   const id = req.body?.data?.id || req.body?.id || req.query.id;
@@ -243,7 +242,7 @@ app.post("/api/webhook", async (req, res) => {
         if (payment.status === "approved") {
           // Decodifica a referência: ID__TIPO
           const reference = payment.external_reference || "";
-          const [pedidoIdStr, tipoPagamento] = reference.split("__");
+          const [pedidoIdStr, tipoPagamento] = reference.split("__"); // Ex: 55__SINAL
           const pedidoId = parseInt(pedidoIdStr);
           const valorPago = parseFloat(payment.transaction_amount);
 
@@ -254,39 +253,43 @@ app.post("/api/webhook", async (req, res) => {
           if (rows.length === 0) return;
           const pedido = rows[0];
 
-          // 1. LÓGICA DE STATUS (Sinal ou Integral = Agendado)
+          // --- NOVO: REGISTRAR NA TABELA DE PAGAMENTOS DA FESTA ---
+          await db.query(
+            "INSERT INTO pagamentos_orcamento (orcamento_id, valor, tipo, data_pagamento, metodo) VALUES (?, ?, ?, NOW(), 'mercadopago')",
+            [pedidoId, valorPago, tipoPagamento]
+          );
+          // --------------------------------------------------------
+
+          // 1. LÓGICA DE STATUS
           let novoStatusPagamento = "parcial";
           let novoStatusAgenda = pedido.status_agenda;
 
+          // Se for INTEGRAL ou se for o RESTANTE (o que completa o pagamento), marcamos como pago
           if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE") {
-             novoStatusPagamento = "pago"; // Se pagou tudo ou o restante, tá pago
+             novoStatusPagamento = "pago"; 
           }
           
           // Se pagou o SINAL ou INTEGRAL, agenda automaticamente!
           if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL") {
              novoStatusAgenda = "agendado";
-             // Se estava pendente, agora vira aprovado/agendado
              await db.query(
                "UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", 
                [pedidoId]
              );
           }
 
-          // Atualiza o pedido
+          // Atualiza o Status do Pedido
           await db.query(
             "UPDATE orcamentos SET status_pagamento = ?, status_agenda = ? WHERE id = ?",
             [novoStatusPagamento, novoStatusAgenda, pedidoId]
           );
 
-          // 2. LÓGICA FINANCEIRA (Lança em Custos Gerais como Receita)
-          // Títulos explicativos para o painel
+          // 2. LÓGICA FINANCEIRA GERAL (Mantida para seu painel geral)
           let tituloLancamento = `Receita Pedido #${pedidoId}`;
           if (tipoPagamento === "SINAL") tituloLancamento = `Entrada (Sinal) - ${pedido.nome}`;
           else if (tipoPagamento === "RESTANTE") tituloLancamento = `Pagamento Restante - ${pedido.nome}`;
           else if (tipoPagamento === "INTEGRAL") tituloLancamento = `Pagamento Integral - ${pedido.nome}`;
 
-          // Insere na tabela que alimenta o painel financeiro
-          // Assumindo que 'tipo' = 'receita' é como você filtra entradas no painel
           await db.query(
             "INSERT INTO custos_gerais (titulo, tipo, valor, data_registro) VALUES (?, 'receita', ?, NOW())",
             [tituloLancamento, valorPago]
@@ -294,18 +297,8 @@ app.post("/api/webhook", async (req, res) => {
 
           // 3. ENVIO DE E-MAIL
           const valorTotal = parseFloat(pedido.valor_final || 0);
-          
-          // Se foi sinal, precisamos mandar o link do restante?
-          // Como você quer tudo no primeiro contato, talvez não precise reenviar agora,
-          // mas mandamos o e-mail de confirmação padrão.
           if (pedido.email) {
-            // Recalcula saldo para o email
-            // Nota: Essa lógica de saldoDevedor é simplificada. 
-            // Num sistema real idealmente somamos todos os pagamentos desse ID.
-            let linkRestanteEmail = "#"; 
-            
-            // Se foi só o sinal, podemos tentar gerar o link do restante novamente ou usar fixo se tiver salvo
-            // Por simplicidade, chamamos a função de email existente
+            let linkRestanteEmail = "#"; // Aqui você pode gerar o link se desejar
             enviarEmailConfirmacao(
               pedido.email,
               pedido.nome,
@@ -1184,6 +1177,18 @@ app.post("/api/feedback/:token", upload.array("fotos", 6), async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+// Rota para ver o histórico financeiro de uma festa específica
+app.get("/api/admin/pedidos/:id/pagamentos", checkAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM pagamentos_orcamento WHERE orcamento_id = ? ORDER BY data_pagamento DESC",
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });

@@ -26,10 +26,6 @@
             background: #cbd5e1;
             border-radius: 10px;
         }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
     </style>
 </head>
 
@@ -56,7 +52,7 @@
                     <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-pink-400 transition-all bg-slate-50 relative">
                         <input type="file" id="pm_fotos" accept="image/*" multiple required
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            onchange="previewFotos(this)">
+                            onchange="previewFotos(this, 'previewContainer')">
                         <i data-lucide="images" class="w-8 h-8 mx-auto mb-2 text-slate-400"></i>
                         <span class="text-xs font-bold text-slate-500 block">Adicionar Fotos (Até 10)</span>
                         <span class="text-[10px] text-slate-400">Clique ou arraste</span>
@@ -97,6 +93,57 @@
         </div>
     </div>
 
+    <div id="modalEditar" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="edit" class="text-blue-500 w-5 h-5"></i> Editar Pacote</h2>
+                <button onclick="fecharModalEdicao()" class="p-2 hover:bg-slate-200 rounded-xl text-slate-500 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <form id="formEditar" onsubmit="salvarEdicao(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="edit_id">
+                <input type="hidden" id="edit_status">
+                
+                <div class="bg-blue-50 text-blue-600 text-[10px] p-3 rounded-lg flex gap-2 items-start font-bold mb-2">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+                    <p>Se você enviar novas fotos, elas substituirão as atuais. Se deixar em branco, as fotos atuais serão mantidas.</p>
+                </div>
+
+                <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-blue-400 transition-all bg-slate-50 relative">
+                    <input type="file" id="edit_fotos" accept="image/*" multiple
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        onchange="previewFotos(this, 'edit_previewContainer')">
+                    <i data-lucide="upload-cloud" class="w-6 h-6 mx-auto mb-2 text-slate-400"></i>
+                    <span class="text-xs font-bold text-slate-500 block">Novas Fotos (Opcional)</span>
+                </div>
+                
+                <div id="edit_previewContainer" class="grid grid-cols-3 gap-2 hidden mt-2"></div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Nome do Pacote</label>
+                    <input type="text" id="edit_nome" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-200 outline-none mt-1" required>
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Descrição</label>
+                    <textarea id="edit_descricao" rows="3" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 outline-none mt-1" required></textarea>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Valor (R$)</label>
+                    <input type="number" id="edit_valor" step="0.01" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-200 outline-none mt-1" required>
+                </div>
+
+                <div class="pt-4 flex gap-2">
+                    <button type="button" onclick="fecharModalEdicao()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all">Cancelar</button>
+                    <button type="submit" id="btnSalvarEdicao" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex justify-center items-center gap-2">
+                        <i data-lucide="check" class="w-4 h-4"></i> Atualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
         if (!ADMIN_TOKEN) window.location.href = 'painel.html';
@@ -108,15 +155,13 @@
             await carregarPacotes();
         }
 
-        // --- PRÉ-VISUALIZAÇÃO DAS FOTOS ---
-        function previewFotos(input) {
-            const container = document.getElementById('previewContainer');
-            container.innerHTML = ''; // Limpa previews antigos
+        // --- PRÉ-VISUALIZAÇÃO DAS FOTOS (Genérica) ---
+        function previewFotos(input, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; 
             
             if (input.files && input.files.length > 0) {
                 container.classList.remove('hidden');
-                
-                // Limita a 10 fotos visualmente
                 const limit = Math.min(input.files.length, 10);
                 
                 for (let i = 0; i < limit; i++) {
@@ -124,7 +169,7 @@
                     reader.onload = function(e) {
                         const img = document.createElement('img');
                         img.src = e.target.result;
-                        img.className = 'w-full h-20 object-cover rounded-lg border border-slate-200 shadow-sm';
+                        img.className = 'w-full h-16 object-cover rounded-lg border border-slate-200 shadow-sm';
                         container.appendChild(img);
                     }
                     reader.readAsDataURL(input.files[i]);
@@ -134,16 +179,15 @@
             }
         }
 
-        // --- CARREGAR PACOTES DO BANCO ---
-
+        // --- CARREGAR PACOTES ---
         async function carregarPacotes() {
             try {
                 const res = await fetch('/api/pegue-monte', { headers: { 'x-admin-password': ADMIN_TOKEN } });
                 const json = await res.json();
                 
                 if (json.error) {
-                    console.error('Erro do banco de dados:', json.error);
-                    pacotes = []; // Evita o erro do .map
+                    console.error('Erro:', json.error);
+                    pacotes = [];
                 } else {
                     pacotes = json;
                 }
@@ -154,6 +198,7 @@
                 renderizarPacotes();
             }
         }
+
         // --- RENDERIZAR CARDS ---
         function renderizarPacotes() {
             const grid = document.getElementById('gridPacotes');
@@ -171,9 +216,14 @@
                 return `
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3 relative group">
                     
-                    <button onclick="excluirPacote(${p.id})" class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-white shadow-sm transition-all z-10" title="Excluir">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
+                    <div class="absolute top-2 right-2 flex gap-1 z-10">
+                        <button onclick="abrirModalEdicao(${p.id})" class="bg-white/90 p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-white shadow-sm transition-all" title="Editar">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="excluirPacote(${p.id})" class="bg-white/90 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-white shadow-sm transition-all" title="Excluir">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
 
                     <div class="flex gap-4 items-center">
                         <div class="relative w-20 h-20 shrink-0">
@@ -181,34 +231,31 @@
                             <span class="absolute -bottom-2 -right-2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">+${qtdFotos} img</span>
                         </div>
                         
-                        <div class="flex-1">
-                            <h4 class="font-bold text-slate-800 text-sm">${p.nome_pacote}</h4>
+                        <div class="flex-1 pr-16">
+                            <h4 class="font-bold text-slate-800 text-sm line-clamp-1">${p.nome_pacote}</h4>
                             <span class="text-sm font-bold text-pink-500 block">R$ ${parseFloat(p.valor).toFixed(2)}</span>
                             
                             <div class="flex items-center gap-2 mt-2 bg-white p-1.5 rounded-lg border border-slate-200 inline-flex">
                                 <span class="text-[10px] font-bold uppercase ${isLiberado ? 'text-slate-400' : 'text-red-500'}">Reser</span>
-                                
                                 <div class="relative inline-block w-8 align-middle select-none">
                                     <input type="checkbox" id="toggle_${p.id}" ${isLiberado ? 'checked' : ''} 
                                         onchange="alternarStatus(${p.id}, this.checked)"
                                         class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer border-slate-300 checked:right-0 checked:border-green-500 transition-all" />
                                     <label for="toggle_${p.id}" class="block overflow-hidden h-4 rounded-full bg-slate-300 cursor-pointer checked:bg-green-500 transition-all"></label>
                                 </div>
-                                
                                 <span class="text-[10px] font-bold uppercase ${isLiberado ? 'text-green-500' : 'text-slate-400'}">Lib</span>
                             </div>
-
                         </div>
                     </div>
                     
-                    <p class="text-xs text-slate-500 mt-2 bg-white p-2 rounded-lg border border-slate-100">${p.descricao}</p>
+                    <p class="text-xs text-slate-500 mt-2 bg-white p-2 rounded-lg border border-slate-100 line-clamp-2">${p.descricao}</p>
                 </div>
             `}).join('');
             
             lucide.createIcons();
         }
 
-        // --- SALVAR NOVO PACOTE ---
+        // --- SALVAR NOVO ---
         async function salvarPacote(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
@@ -219,7 +266,7 @@
             formData.append('nome_pacote', document.getElementById('pm_nome').value);
             formData.append('descricao', document.getElementById('pm_descricao').value);
             formData.append('valor', document.getElementById('pm_valor').value);
-            formData.append('status', 'liberado'); // Padrão
+            formData.append('status', 'liberado');
 
             const inputFotos = document.getElementById('pm_fotos');
             for (let i = 0; i < inputFotos.files.length; i++) {
@@ -251,40 +298,94 @@
             }
         }
 
+        // --- LÓGICA DE EDIÇÃO (MODAL) ---
+        function abrirModalEdicao(id) {
+            const pacote = pacotes.find(p => p.id === id);
+            if (!pacote) return;
+
+            document.getElementById('edit_id').value = pacote.id;
+            document.getElementById('edit_nome').value = pacote.nome_pacote;
+            document.getElementById('edit_descricao').value = pacote.descricao;
+            document.getElementById('edit_valor').value = pacote.valor;
+            document.getElementById('edit_status').value = pacote.status;
+            
+            document.getElementById('edit_fotos').value = '';
+            document.getElementById('edit_previewContainer').innerHTML = '';
+            document.getElementById('edit_previewContainer').classList.add('hidden');
+
+            document.getElementById('modalEditar').classList.remove('hidden');
+        }
+
+        function fecharModalEdicao() {
+            document.getElementById('modalEditar').classList.add('hidden');
+        }
+
+        async function salvarEdicao(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSalvarEdicao');
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Atualizando...';
+            btn.disabled = true;
+
+            const id = document.getElementById('edit_id').value;
+            const formData = new FormData();
+            formData.append('nome_pacote', document.getElementById('edit_nome').value);
+            formData.append('descricao', document.getElementById('edit_descricao').value);
+            formData.append('valor', document.getElementById('edit_valor').value);
+            formData.append('status', document.getElementById('edit_status').value);
+
+            const inputFotos = document.getElementById('edit_fotos');
+            if (inputFotos.files.length > 0) {
+                for (let i = 0; i < inputFotos.files.length; i++) {
+                    formData.append('fotos', inputFotos.files[i]);
+                }
+            }
+
+            try {
+                const res = await fetch(`/api/admin/pegue-monte/${id}`, {
+                    method: 'PUT',
+                    headers: { 'x-admin-password': ADMIN_TOKEN },
+                    body: formData
+                });
+                
+                const json = await res.json();
+                if (json.success) {
+                    fecharModalEdicao();
+                    await carregarPacotes();
+                } else {
+                    alert('Erro ao editar: ' + json.error);
+                }
+            } catch (err) {
+                alert('Erro de conexão ao editar pacote.');
+            } finally {
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Atualizar';
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
         // --- ALTERNAR STATUS ---
         async function alternarStatus(id, isChecked) {
             const novoStatus = isChecked ? 'liberado' : 'reservado';
-            
             try {
                 await fetch(`/api/admin/pegue-monte/${id}/status`, {
                     method: 'PATCH',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-admin-password': ADMIN_TOKEN 
-                    },
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_TOKEN },
                     body: JSON.stringify({ status: novoStatus })
                 });
-                // Recarrega silenciosamente para garantir atualização dos badges de texto
                 carregarPacotes();
             } catch (e) {
                 alert('Erro ao alterar status');
-                carregarPacotes(); // Volta o botão ao estado real do banco
+                carregarPacotes(); 
             }
         }
 
         // --- EXCLUIR PACOTE ---
         async function excluirPacote(id) {
             if (!confirm("Tem certeza que deseja excluir este pacote Pegue e Monte?")) return;
-            
             try {
-                await fetch(`/api/admin/pegue-monte/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'x-admin-password': ADMIN_TOKEN }
-                });
+                await fetch(`/api/admin/pegue-monte/${id}`, { method: 'DELETE', headers: { 'x-admin-password': ADMIN_TOKEN } });
                 carregarPacotes();
-            } catch (e) {
-                alert('Erro ao excluir.');
-            }
+            } catch (e) { alert('Erro ao excluir.'); }
         }
 
         init();

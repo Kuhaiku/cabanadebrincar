@@ -1239,11 +1239,8 @@ app.get("/api/admin/pedidos/:id/pagamentos", checkAuth, async (req, res) => {
   }
 });
 
-// =========================================================================
-// --- 8. SISTEMA PEGUE E MONTE (NOVO) ---
-// =========================================================================
 
-// 8.1 Listar Pacotes (Público/Admin)
+// 8.1 Listar Pacotes (Público/Admin) - CORRIGIDO
 app.get("/api/pegue-monte", async (req, res) => {
   try {
     const apenasLiberados = req.query.liberados === "true";
@@ -1251,14 +1248,18 @@ app.get("/api/pegue-monte", async (req, res) => {
     
     const [rows] = await db.query(`SELECT * FROM pacotes_pegue_monte ${filtro} ORDER BY id DESC`);
     
-    // Converte a string JSON de volta para array para o Frontend usar facilmente
-    const pacotes = rows.map(p => ({
-      ...p,
-      fotos: p.fotos ? JSON.parse(p.fotos) : []
-    }));
+    const pacotes = rows.map(p => {
+      let fotosArray = [];
+      if (p.fotos) {
+          // Garante que não vai dar erro se o mysql2 já tiver convertido o JSON
+          fotosArray = typeof p.fotos === 'string' ? JSON.parse(p.fotos) : p.fotos;
+      }
+      return { ...p, fotos: fotosArray };
+    });
 
     res.json(pacotes);
   } catch (e) {
+    console.error("Erro na rota /api/pegue-monte:", e.message); // Vai mostrar no terminal o real problema
     res.status(500).json({ error: e.message });
   }
 });

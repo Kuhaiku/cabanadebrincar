@@ -135,16 +135,25 @@
         }
 
         // --- CARREGAR PACOTES DO BANCO ---
+
         async function carregarPacotes() {
             try {
                 const res = await fetch('/api/pegue-monte', { headers: { 'x-admin-password': ADMIN_TOKEN } });
-                pacotes = await res.json();
+                const json = await res.json();
+                
+                if (json.error) {
+                    console.error('Erro do banco de dados:', json.error);
+                    pacotes = []; // Evita o erro do .map
+                } else {
+                    pacotes = json;
+                }
                 renderizarPacotes();
             } catch (e) {
                 console.error('Erro ao carregar pacotes:', e);
+                pacotes = [];
+                renderizarPacotes();
             }
         }
-
         // --- RENDERIZAR CARDS ---
         function renderizarPacotes() {
             const grid = document.getElementById('gridPacotes');

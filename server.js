@@ -1238,4 +1238,115 @@ app.get("/api/admin/pedidos/:id/pagamentos", checkAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// =========================================================================
+// --- 8. SISTEMA PEGUE E MONTE (NOVO) ---
+// =========================================================================
+
+// 8.1 Listar Pacotes (Público/Admin)
+app.get("/api/pegue-monte", async (req, res) => {
+  try {
+    const apenasLiberados = req.query.liberados === "true";
+    const filtro = apenasLiberados ? "WHERE status = 'liberado'" : "";
+    
+    const [rows] = await db.query(`SELECT * FROM pacotes_pegue_monte ${filtro} ORDER BY id DESC`);
+    
+    // Converte a string JSON de volta para array para o Frontend usar facilmente
+    const pacotes = rows.map(p => ({
+      ...p,
+      fotos: p.fotos ? JSON.parse(p.fotos) : []
+    }));
+
+    res.json(pacotes);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 8.2 Cadastrar Pacote com Múltiplas Fotos (Admin)
+app.post("/api/admin/pegue-monte", checkAuth, upload.array("fotos", 10), async (req, res) => {
+  try {
+    const { nome_pacote, descricao, valor, status } = req.body;
+    let urlsFotos = [];
+
+    // Faz o upload de todas as fotos para o Cloudinary
+    if (req.files && req.files.length > 0) {
+      const uploads = req.files.map(file => {
+        return cloudinary.uploader.upload(file.path, { folder: "cabana/pegue_monte" })
+          .then(up => {
+            fs.unlinkSync(file.path);
+            return up.secure_url;
+          });
+      });
+      urlsFotos = await Promise.all(uploads);
+    }
+
+    const fotosJson = JSON.stringify(urlsFotos);
+
+    const [result] = await db.query(
+      "INSERT INTO pacotes_pegue_monte (nome_pacote, descricao, valor, status, fotos) VALUES (?, ?, ?, ?, ?)",
+      [nome_pacote, descricao, valor, status || 'liberado', fotosJson]
+    );
+
+    res.status(201).json({ success: true, id: result.insertId });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 8.3 Alternar Status (Liberado <-> Reservado) Rápido (Admin)
+app.patch("/api/admin/pegue-monte/:id/status", checkAuth, async (req, res) => {
+  try {
+    const { status } = req.body; // 'liberado' ou 'reservado'
+    await db.query("UPDATE pacotes_pegue_monte SET status = ? WHERE id = ?", [status, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 8.4 Excluir Pacote (Admin)
+app.delete("/api/admin/pegue-monte/:id", checkAuth, async (req, res) => {
+  try {
+    await db.query("DELETE FROM pacotes_pegue_monte WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 8.5 Receber Pedido de Pegue e Monte do Cliente (Público)
+app.post("/api/orcamento-pegue-monte", async (req, res) => {
+  try {
+    const { nome, telefone, email, data_festa, pacote_id, nome_pacote, valor_pacote } = req.body;
+
+    // Reaproveita a tabela 'orcamentos' mas marca o tipo ou salva no formato específico
+    // Inserindo na tabela existente de orçamentos de forma simplificada
+    const sql = `INSERT INTO orcamentos 
+      (nome, whatsapp, email, data_festa, modelo_barraca, status_pagamento, valor_final, tema) 
+      VALUES (?, ?, ?, ?, ?, 'pendente', ?, ?)`;
+
+    const values = [
+      nome, 
+      telefone, 
+      email || null, 
+      data_festa, 
+      'PEGUE E MONTE', 
+      valor_pacote, 
+      `Pacote: ${nome_pacote} (ID: ${pacote_id})` // Usa o campo tema para gravar qual foi o pacote escolhido
+    ];
+
+    const [result] = await db.query(sql, values);
+
+    // Opcional: Já marca o pacote como 'reservado' automaticamente ao receber o pedido
+    await db.query("UPDATE pacotes_pegue_monte SET status = 'reservado' WHERE id = ?", [pacote_id]);
+
+    res.status(201).json({ success: true, pedido_id: result.insertId });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Erro ao registrar o pedido pegue e monte." });
+  }
+});
+
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

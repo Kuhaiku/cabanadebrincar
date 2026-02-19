@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pegue e Monte | Cabana Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen p-6">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="flex items-center gap-4 mb-8">
+            <a href="painel.html" class="p-2 bg-white rounded-xl hover:bg-slate-100 transition-colors"><i
+                    data-lucide="arrow-left" class="text-slate-600"></i></a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Gestão: Pegue e Monte</h1>
+                <p class="text-slate-500 text-sm">Cadastre pacotes, gerencie fotos e controle a disponibilidade.</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit sticky top-6">
+                <h2 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="package-plus"
+                        class="text-pink-500"></i> Novo Pacote</h2>
+
+                <form id="formPegueMonte" onsubmit="salvarPacote(event)" class="space-y-4">
+                    
+                    <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-pink-400 transition-all bg-slate-50 relative">
+                        <input type="file" id="pm_fotos" accept="image/*" multiple required
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            onchange="previewFotos(this)">
+                        <i data-lucide="images" class="w-8 h-8 mx-auto mb-2 text-slate-400"></i>
+                        <span class="text-xs font-bold text-slate-500 block">Adicionar Fotos (Até 10)</span>
+                        <span class="text-[10px] text-slate-400">Clique ou arraste</span>
+                    </div>
+                    
+                    <div id="previewContainer" class="grid grid-cols-3 gap-2 hidden mt-2"></div>
+
+                    <input type="text" id="pm_nome" placeholder="Nome do Pacote (ex: Kit Dinossauro)"
+                        class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none" required>
+                    
+                    <textarea id="pm_descricao" placeholder="O que está incluso neste pacote?..." rows="3"
+                        class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-pink-200 outline-none" required></textarea>
+
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>
+                        <input type="number" id="pm_valor" step="0.01" placeholder="0.00"
+                            class="w-full pl-10 p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none" required>
+                    </div>
+
+                    <button type="submit" id="btnSubmit"
+                        class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 transition-all shadow-lg flex justify-center items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Salvar Pacote
+                    </button>
+                </form>
+            </div>
+
+            <div class="lg:col-span-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-700 mb-6 text-xl flex items-center gap-2">
+                        <i data-lucide="layout-list" class="text-green-500"></i> Pacotes Cadastrados
+                    </h3>
+                    
+                    <div id="gridPacotes" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_TOKEN = localStorage.getItem('cabana_admin_token');
+        if (!ADMIN_TOKEN) window.location.href = 'painel.html';
+
+        let pacotes = [];
+
+        async function init() {
+            lucide.createIcons();
+            await carregarPacotes();
+        }
+
+        // --- PRÉ-VISUALIZAÇÃO DAS FOTOS ---
+        function previewFotos(input) {
+            const container = document.getElementById('previewContainer');
+            container.innerHTML = ''; // Limpa previews antigos
+            
+            if (input.files && input.files.length > 0) {
+                container.classList.remove('hidden');
+                
+                // Limita a 10 fotos visualmente
+                const limit = Math.min(input.files.length, 10);
+                
+                for (let i = 0; i < limit; i++) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'w-full h-20 object-cover rounded-lg border border-slate-200 shadow-sm';
+                        container.appendChild(img);
+                    }
+                    reader.readAsDataURL(input.files[i]);
+                }
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // --- CARREGAR PACOTES DO BANCO ---
+        async function carregarPacotes() {
+            try {
+                const res = await fetch('/api/pegue-monte', { headers: { 'x-admin-password': ADMIN_TOKEN } });
+                pacotes = await res.json();
+                renderizarPacotes();
+            } catch (e) {
+                console.error('Erro ao carregar pacotes:', e);
+            }
+        }
+
+        // --- RENDERIZAR CARDS ---
+        function renderizarPacotes() {
+            const grid = document.getElementById('gridPacotes');
+            
+            if (pacotes.length === 0) {
+                grid.innerHTML = `<p class="text-slate-400 text-sm col-span-full">Nenhum pacote Pegue e Monte cadastrado ainda.</p>`;
+                return;
+            }
+
+            grid.innerHTML = pacotes.map(p => {
+                const capa = (p.fotos && p.fotos.length > 0) ? p.fotos[0] : 'https://via.placeholder.com/150?text=Sem+Foto';
+                const qtdFotos = p.fotos ? p.fotos.length : 0;
+                const isLiberado = p.status === 'liberado';
+
+                return `
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3 relative group">
+                    
+                    <button onclick="excluirPacote(${p.id})" class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-white shadow-sm transition-all z-10" title="Excluir">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+
+                    <div class="flex gap-4 items-center">
+                        <div class="relative w-20 h-20 shrink-0">
+                            <img src="${capa}" class="w-full h-full rounded-lg object-cover shadow-sm border border-slate-200">
+                            <span class="absolute -bottom-2 -right-2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">+${qtdFotos} img</span>
+                        </div>
+                        
+                        <div class="flex-1">
+                            <h4 class="font-bold text-slate-800 text-sm">${p.nome_pacote}</h4>
+                            <span class="text-sm font-bold text-pink-500 block">R$ ${parseFloat(p.valor).toFixed(2)}</span>
+                            
+                            <div class="flex items-center gap-2 mt-2 bg-white p-1.5 rounded-lg border border-slate-200 inline-flex">
+                                <span class="text-[10px] font-bold uppercase ${isLiberado ? 'text-slate-400' : 'text-red-500'}">Reser</span>
+                                
+                                <div class="relative inline-block w-8 align-middle select-none">
+                                    <input type="checkbox" id="toggle_${p.id}" ${isLiberado ? 'checked' : ''} 
+                                        onchange="alternarStatus(${p.id}, this.checked)"
+                                        class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer border-slate-300 checked:right-0 checked:border-green-500 transition-all" />
+                                    <label for="toggle_${p.id}" class="block overflow-hidden h-4 rounded-full bg-slate-300 cursor-pointer checked:bg-green-500 transition-all"></label>
+                                </div>
+                                
+                                <span class="text-[10px] font-bold uppercase ${isLiberado ? 'text-green-500' : 'text-slate-400'}">Lib</span>
+                            </div>
+
+                        </div>
+                    </div>
+                    
+                    <p class="text-xs text-slate-500 mt-2 bg-white p-2 rounded-lg border border-slate-100">${p.descricao}</p>
+                </div>
+            `}).join('');
+            
+            lucide.createIcons();
+        }
+
+        // --- SALVAR NOVO PACOTE ---
+        async function salvarPacote(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Salvando...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('nome_pacote', document.getElementById('pm_nome').value);
+            formData.append('descricao', document.getElementById('pm_descricao').value);
+            formData.append('valor', document.getElementById('pm_valor').value);
+            formData.append('status', 'liberado'); // Padrão
+
+            const inputFotos = document.getElementById('pm_fotos');
+            for (let i = 0; i < inputFotos.files.length; i++) {
+                formData.append('fotos', inputFotos.files[i]);
+            }
+
+            try {
+                const res = await fetch('/api/admin/pegue-monte', {
+                    method: 'POST',
+                    headers: { 'x-admin-password': ADMIN_TOKEN },
+                    body: formData
+                });
+                
+                const json = await res.json();
+                if (json.success) {
+                    document.getElementById('formPegueMonte').reset();
+                    document.getElementById('previewContainer').innerHTML = '';
+                    document.getElementById('previewContainer').classList.add('hidden');
+                    await carregarPacotes();
+                } else {
+                    alert('Erro ao salvar: ' + json.error);
+                }
+            } catch (err) {
+                alert('Erro de conexão ao salvar pacote.');
+            } finally {
+                btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Salvar Pacote';
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        // --- ALTERNAR STATUS ---
+        async function alternarStatus(id, isChecked) {
+            const novoStatus = isChecked ? 'liberado' : 'reservado';
+            
+            try {
+                await fetch(`/api/admin/pegue-monte/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': ADMIN_TOKEN 
+                    },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                // Recarrega silenciosamente para garantir atualização dos badges de texto
+                carregarPacotes();
+            } catch (e) {
+                alert('Erro ao alterar status');
+                carregarPacotes(); // Volta o botão ao estado real do banco
+            }
+        }
+
+        // --- EXCLUIR PACOTE ---
+        async function excluirPacote(id) {
+            if (!confirm("Tem certeza que deseja excluir este pacote Pegue e Monte?")) return;
+            
+            try {
+                await fetch(`/api/admin/pegue-monte/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': ADMIN_TOKEN }
+                });
+                carregarPacotes();
+            } catch (e) {
+                alert('Erro ao excluir.');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

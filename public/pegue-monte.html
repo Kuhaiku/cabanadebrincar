@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pegue e Monte | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Estilização para o rádio customizado dos pacotes */
+        .pacote-radio:checked + div {
+            border-color: #ec4899; /* pink-500 */
+            background-color: #fdf2f8; /* pink-50 */
+            box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.1), 0 2px 4px -1px rgba(236, 72, 153, 0.06);
+        }
+        
+        .pacote-radio:checked + div .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <nav class="bg-white shadow-sm border-b border-slate-100 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-2">
+                <i data-lucide="tent" class="w-8 h-8 text-pink-500"></i>
+                <span class="font-bold text-xl tracking-tight text-slate-700">Cabana de Brincar</span>
+            </a>
+            <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-pink-500 transition-colors">Voltar ao Início</a>
+        </div>
+    </nav>
+
+    <header class="max-w-6xl mx-auto px-4 py-12 text-center">
+        <div class="inline-flex items-center justify-center p-3 bg-pink-100 text-pink-500 rounded-2xl mb-4">
+            <i data-lucide="package-open" class="w-8 h-8"></i>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">Pegue e Monte</h1>
+        <p class="text-slate-500 max-w-2xl mx-auto text-lg">A festa pronta para você levar, montar e criar memórias incríveis. Escolha seu pacote abaixo, reserve a data e nós deixamos tudo separado para você!</p>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+
+        <div class="lg:col-span-7 space-y-4" id="listaPacotes">
+            <div class="text-center py-12 text-slate-400 flex flex-col items-center">
+                <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2 text-pink-500"></i>
+                <p>Carregando pacotes disponíveis...</p>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5">
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 sticky top-28">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="calendar-check-2" class="text-pink-500"></i> Faça sua Reserva
+                </h3>
+
+                <form id="formReserva" onsubmit="enviarPedido(event)" class="space-y-4">
+                    
+                    <div id="resumoSelecao" class="bg-slate-50 p-4 rounded-2xl border border-slate-100 hidden mb-4">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pacote Selecionado</p>
+                        <div class="flex justify-between items-center">
+                            <h4 id="resumoNome" class="font-bold text-pink-600">Nenhum</h4>
+                            <span id="resumoValor" class="font-bold text-slate-700">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="req_pacote_id" required>
+                    <input type="hidden" id="req_nome_pacote" required>
+                    <input type="hidden" id="req_valor_pacote" required>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Seu Nome</label>
+                        <input type="text" id="req_nome" placeholder="Como gosta de ser chamado(a)?" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1" required>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">WhatsApp</label>
+                            <input type="tel" id="req_telefone" placeholder="(00) 00000-0000" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1" required>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Data da Festa</label>
+                            <input type="date" id="req_data" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1 text-slate-600" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">E-mail (Opcional)</label>
+                        <input type="email" id="req_email" placeholder="Para receber a confirmação" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1">
+                    </div>
+
+                    <button type="submit" id="btnEnviar" disabled
+                        class="w-full mt-6 bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-slate-900 transition-all shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="send" class="w-4 h-4"></i> Solicitar Reserva
+                    </button>
+                    <p class="text-xs text-center text-slate-400 mt-3 font-medium">Selecione um pacote ao lado para liberar o botão.</p>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modalGaleria" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center opacity-0 transition-opacity duration-300">
+        
+        <div class="absolute top-0 w-full p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/50 to-transparent">
+            <span id="contadorGaleria" class="text-white font-bold bg-black/50 px-3 py-1 rounded-full text-sm">1 / 1</span>
+            <button onclick="fecharGaleria()" class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div class="relative w-full max-w-4xl max-h-[80vh] flex items-center justify-center px-12 group">
+            
+            <button onclick="mudarFoto(-1)" id="btnAnterior" class="absolute left-4 bg-white/10 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg hidden md:block">
+                <i data-lucide="chevron-left" class="w-6 h-6"></i>
+            </button>
+            
+            <img id="imagemPrincipal" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl transition-transform duration-300 transform scale-95" alt="Galeria">
+            
+            <button onclick="mudarFoto(1)" id="btnProximo" class="absolute right-4 bg-white/10 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg hidden md:block">
+                <i data-lucide="chevron-right" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div class="absolute bottom-6 w-full px-4 flex justify-center">
+            <div id="containerMiniaturas" class="flex gap-2 overflow-x-auto py-2 custom-scrollbar max-w-full">
+                </div>
+        </div>
+    </div>
+    <div id="modalAvisoMP" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden text-center p-8 border border-slate-100">
+            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Pedido Registrado!</h2>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                Você será redirecionado ao <b>Mercado Pago</b> para concluir sua reserva com segurança.
+            </p>
+            
+            <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-8 text-sm text-blue-800 text-left">
+                <p class="font-bold flex items-center gap-2 mb-2"><i data-lucide="info" class="w-4 h-4"></i> Pagamentos via PIX</p>
+                <p>Assim que o Mercado Pago aprovar seu PIX, seu pacote será marcado como <b>Reservado</b>. Nós entraremos em contato no seu WhatsApp logo em seguida para combinar a retirada!</p>
+            </div>
+
+            <button id="btnIrPagamento" class="w-full bg-pink-500 text-white font-bold py-4 rounded-xl hover:bg-pink-600 transition-all shadow-lg shadow-pink-200 flex items-center justify-center gap-2 text-lg">
+                Ir para o Pagamento <i data-lucide="external-link" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let pacotes = [];
+        let galeriaAtual = [];
+        let indiceFotoAtual = 0;
+
+        async function init() {
+            lucide.createIcons();
+            await carregarPacotes();
+        }
+
+        // --- BUSCA DE DADOS ---
+        async function carregarPacotes() {
+            try {
+                // Busca apenas os pacotes com status 'liberado'
+                const res = await fetch('/api/pegue-monte?liberados=true');
+                pacotes = await res.json();
+                renderizarPacotes();
+            } catch (error) {
+                document.getElementById('listaPacotes').innerHTML = `
+                    <div class="text-center py-12 text-red-400 font-bold bg-red-50 rounded-2xl border border-red-100">
+                        Erro ao carregar os pacotes. Tente recarregar a página.
+                    </div>`;
+            }
+        }
+
+        // --- RENDERIZAÇÃO DA VITRINE ---
+        function renderizarPacotes() {
+            const container = document.getElementById('listaPacotes');
+            
+            if (!pacotes || pacotes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                        <i data-lucide="inbox" class="w-12 h-12 mx-auto text-slate-300 mb-4"></i>
+                        <h3 class="text-xl font-bold text-slate-600">Nenhum pacote disponível no momento.</h3>
+                        <p class="text-slate-400 mt-2">Em breve teremos novidades por aqui!</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = pacotes.map(p => {
+                const capa = (p.fotos && p.fotos.length > 0) ? p.fotos[0] : 'https://via.placeholder.com/400x300?text=Sem+Foto';
+                const hasFotos = p.fotos && p.fotos.length > 0;
+
+                return `
+                <label class="block cursor-pointer relative group">
+                    <input type="radio" name="pacote_escolhido" class="pacote-radio sr-only" value="${p.id}" 
+                        onchange="selecionarPacote(${p.id}, '${p.nome_pacote.replace(/'/g, "\\'")}', ${p.valor})">
+                    
+                    <div class="bg-white rounded-3xl border-2 border-transparent shadow-sm hover:shadow-md transition-all p-2 flex flex-col md:flex-row gap-4 overflow-hidden">
+                        
+                        <div class="check-icon absolute top-4 right-4 bg-pink-500 text-white p-1 rounded-full shadow-lg opacity-0 transform scale-50 transition-all duration-300 z-10 pointer-events-none">
+                            <i data-lucide="check" class="w-5 h-5"></i>
+                        </div>
+
+                        <div class="relative w-full md:w-48 h-48 shrink-0 rounded-2xl overflow-hidden bg-slate-100 group-hover:shadow-inner transition-shadow">
+                            <img src="${capa}" alt="${p.nome_pacote}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            
+                            ${hasFotos ? `
+                            <button type="button" onclick="abrirGaleria(${p.id}, event)" class="absolute bottom-2 left-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1 transition-colors z-20">
+                                <i data-lucide="images" class="w-3 h-3"></i> Ver Galeria (${p.fotos.length})
+                            </button>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="flex-1 py-2 pr-4 flex flex-col justify-center">
+                            <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-pink-600 transition-colors">${p.nome_pacote}</h3>
+                            <p class="text-slate-500 text-sm mb-4 line-clamp-3 leading-relaxed">${p.descricao}</p>
+                            <div class="mt-auto inline-block bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl w-fit">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Valor do Kit</span>
+                                <span class="text-xl font-bold text-slate-800">R$ ${parseFloat(p.valor).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+            `}).join('');
+            
+            lucide.createIcons();
+        }
+
+        // --- LÓGICA DO FORMULÁRIO ---
+        function selecionarPacote(id, nome, valor) {
+            // Atualiza inputs ocultos
+            document.getElementById('req_pacote_id').value = id;
+            document.getElementById('req_nome_pacote').value = nome;
+            document.getElementById('req_valor_pacote').value = valor;
+
+            // Atualiza Interface de Resumo
+            const resumo = document.getElementById('resumoSelecao');
+            document.getElementById('resumoNome').innerText = nome;
+            document.getElementById('resumoValor').innerText = `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`;
+            resumo.classList.remove('hidden');
+
+            // Habilita o botão
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = false;
+            btn.classList.remove('bg-slate-800');
+            btn.classList.add('bg-pink-500', 'hover:bg-pink-600');
+
+            // Scroll suave para o formulário no mobile
+            if(window.innerWidth < 1024) {
+                resumo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+async function enviarPedido(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnEnviar');
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processando...';
+            btn.disabled = true;
+
+            const payload = {
+                nome: document.getElementById('req_nome').value,
+                telefone: document.getElementById('req_telefone').value,
+                email: document.getElementById('req_email').value,
+                data_festa: document.getElementById('req_data').value,
+                pacote_id: document.getElementById('req_pacote_id').value,
+                nome_pacote: document.getElementById('req_nome_pacote').value,
+                valor_pacote: document.getElementById('req_valor_pacote').value
+            };
+
+            try {
+                const res = await fetch('/api/orcamento-pegue-monte', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                if (data.success && data.link_pagamento) {
+                    // Abre o modal de aviso amigável
+                    const modal = document.getElementById('modalAvisoMP');
+                    modal.classList.remove('hidden');
+                    lucide.createIcons(); // Recarrega os ícones do modal
+
+                    // Configura o botão do modal para ir para o Mercado Pago
+                    document.getElementById('btnIrPagamento').onclick = function() {
+                        this.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Redirecionando...';
+                        window.location.href = data.link_pagamento;
+                    };
+                } else {
+                    alert('Ocorreu um problema ao enviar seu pedido. Tente novamente.');
+                }
+            } catch (err) {
+                alert('Erro de conexão. Verifique sua internet.');
+            } finally {
+                btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Solicitar Reserva';
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+        // --- LÓGICA DA GALERIA MODAL ---
+        const modal = document.getElementById('modalGaleria');
+        const imgPrincipal = document.getElementById('imagemPrincipal');
+        const contador = document.getElementById('contadorGaleria');
+        const containerMiniaturas = document.getElementById('containerMiniaturas');
+
+        function abrirGaleria(pacoteId, event) {
+            // Evita que clicar no botão selecione o radio button atrás dele
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const pacote = pacotes.find(p => p.id === pacoteId);
+            if (!pacote || !pacote.fotos || pacote.fotos.length === 0) return;
+
+            galeriaAtual = pacote.fotos;
+            indiceFotoAtual = 0;
+
+            // Configura a primeira foto
+            atualizarVisaoGaleria();
+
+            // Renderiza as miniaturas
+            containerMiniaturas.innerHTML = galeriaAtual.map((url, i) => `
+                <button onclick="irParaFoto(${i})" class="w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${i === 0 ? 'border-pink-500 opacity-100' : 'border-transparent opacity-50 hover:opacity-100'} miniatura-btn">
+                    <img src="${url}" class="w-full h-full object-cover">
+                </button>
+            `).join('');
+
+            // Mostra/Oculta setas se tiver 1 só imagem
+            document.getElementById('btnAnterior').style.display = galeriaAtual.length > 1 ? 'block' : 'none';
+            document.getElementById('btnProximo').style.display = galeriaAtual.length > 1 ? 'block' : 'none';
+
+            // Abre o modal com animação
+            modal.classList.remove('hidden');
+            // Pequeno delay para a transição de opacidade funcionar
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.classList.add('opacity-100');
+                imgPrincipal.classList.remove('scale-95');
+                imgPrincipal.classList.add('scale-100');
+            }, 10);
+            
+            // Bloqueia scroll do body
+            document.body.style.overflow = 'hidden';
+        }
+
+        function fecharGaleria() {
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            imgPrincipal.classList.remove('scale-100');
+            imgPrincipal.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = ''; // Libera scroll
+            }, 300); // Tempo da transição
+        }
+
+        function atualizarVisaoGaleria() {
+            imgPrincipal.src = galeriaAtual[indiceFotoAtual];
+            contador.innerText = `${indiceFotoAtual + 1} / ${galeriaAtual.length}`;
+
+            // Atualiza estilo das miniaturas ativas
+            const minis = document.querySelectorAll('.miniatura-btn');
+            minis.forEach((btn, i) => {
+                if(i === indiceFotoAtual) {
+                    btn.classList.add('border-pink-500', 'opacity-100');
+                    btn.classList.remove('border-transparent', 'opacity-50');
+                    // Garante que a miniatura ativa esteja visível no scroll horizontal
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } else {
+                    btn.classList.remove('border-pink-500', 'opacity-100');
+                    btn.classList.add('border-transparent', 'opacity-50');
+                }
+            });
+        }
+
+        function mudarFoto(direcao) {
+            indiceFotoAtual += direcao;
+            
+            if (indiceFotoAtual >= galeriaAtual.length) {
+                indiceFotoAtual = 0; // Volta pro começo
+            } else if (indiceFotoAtual < 0) {
+                indiceFotoAtual = galeriaAtual.length - 1; // Vai pro final
+            }
+            
+            atualizarVisaoGaleria();
+        }
+
+        function irParaFoto(indice) {
+            indiceFotoAtual = indice;
+            atualizarVisaoGaleria();
+        }
+
+        // Navegação por teclado na galeria
+        document.addEventListener('keydown', (e) => {
+            if (!modal.classList.contains('hidden')) {
+                if (e.key === 'Escape') fecharGaleria();
+                if (e.key === 'ArrowRight') mudarFoto(1);
+                if (e.key === 'ArrowLeft') mudarFoto(-1);
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

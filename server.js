@@ -287,18 +287,24 @@ app.post("/api/webhook", async (req, res) => {
           let novoStatusPagamento = "parcial";
           let novoStatusAgenda = pedido.status_agenda;
 
-          // Se for INTEGRAL ou se for o RESTANTE (o que completa o pagamento), marcamos como pago
-          if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE") {
+          // Se for INTEGRAL, RESTANTE ou PEGUE_MONTE (completa o pagamento)
+          if (tipoPagamento === "INTEGRAL" || tipoPagamento === "RESTANTE" || tipoPagamento === "PEGUE_MONTE") {
             novoStatusPagamento = "pago";
           }
 
-          // Se pagou o SINAL ou INTEGRAL, agenda automaticamente!
-          if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL") {
+          if (tipoPagamento === "SINAL" || tipoPagamento === "INTEGRAL" || tipoPagamento === "PEGUE_MONTE") {
             novoStatusAgenda = "agendado";
-            await db.query(
-              "UPDATE orcamentos SET status = 'aprovado' WHERE id = ?",
-              [pedidoId],
-            );
+            await db.query("UPDATE orcamentos SET status = 'aprovado' WHERE id = ?", [pedidoId]);
+            
+            // NOVO: Se for Pegue e Monte, reserva o pacote para sumir do site!
+            if (tipoPagamento === "PEGUE_MONTE" && pedido.tema) {
+                // Extrai o ID do pacote que salvamos no texto do tema: (ID: 12)
+                const match = pedido.tema.match(/ID: (\d+)/);
+                if (match && match[1]) {
+                    const idDoPacote = match[1];
+                    await db.query("UPDATE pacotes_pegue_monte SET status = 'reservado' WHERE id = ?", [idDoPacote]);
+                }
+            }
           }
 
           // Atualiza o Status do Pedido
@@ -1353,32 +1359,38 @@ app.delete("/api/admin/pegue-monte/:id", checkAuth, async (req, res) => {
   }
 });
 
-// 8.5 Receber Pedido de Pegue e Monte do Cliente (Público)
+// 8.5 Receber Pedido de Pegue e Monte do Cliente (Público) - COM MERCADO PAGO
 app.post("/api/orcamento-pegue-monte", async (req, res) => {
   try {
     const { nome, telefone, email, data_festa, pacote_id, nome_pacote, valor_pacote } = req.body;
 
-    // Reaproveita a tabela 'orcamentos' para centralizar os pedidos
     const sql = `INSERT INTO orcamentos 
       (nome, whatsapp, email, data_festa, modelo_barraca, status_pagamento, valor_final, tema) 
       VALUES (?, ?, ?, ?, ?, 'pendente', ?, ?)`;
 
+    // Guardamos o ID do pacote no 'tema' para o webhook conseguir ler depois
     const values = [
-      nome, 
-      telefone, 
-      email || null, 
-      data_festa, 
-      'PEGUE E MONTE', 
-      valor_pacote, 
-      `Pacote: ${nome_pacote} (ID: ${pacote_id})` // Salva qual foi o pacote escolhido no campo tema
+      nome, telefone, email || null, data_festa, 
+      'PEGUE E MONTE', valor_pacote, 
+      `Pacote Pegue e Monte: ${nome_pacote} (ID: ${pacote_id})` 
     ];
 
     const [result] = await db.query(sql, values);
+    const pedidoId = result.insertId;
 
-    // Marca o pacote como 'reservado' automaticamente ao receber o pedido (Opcional, mas recomendado)
-    await db.query("UPDATE pacotes_pegue_monte SET status = 'reservado' WHERE id = ?", [pacote_id]);
+    // NOVO: Gera o link do Mercado Pago para o Valor Integral
+    // Passamos "PEGUE_MONTE" como tipo de pagamento para o Webhook saber como agir
+    const linkMP = await criarLinkMP(
+      `Pegue e Monte - ${nome_pacote}`,
+      valor_pacote,
+      pedidoId,
+      "PEGUE_MONTE"
+    );
 
-    res.status(201).json({ success: true, pedido_id: result.insertId });
+    // NOTA: Removemos aquele código que reservava o pacote automaticamente. 
+    // Agora a reserva real só acontece quando o Webhook confirmar o pagamento!
+
+    res.status(201).json({ success: true, pedido_id: pedidoId, link_pagamento: linkMP });
   } catch (e) {
     console.error("Erro ao registrar orçamento Pegue e Monte:", e);
     res.status(500).json({ error: "Erro ao registrar o pedido pegue e monte." });

@@ -1349,21 +1349,19 @@ app.post("/api/orcamento-pegue-monte", async (req, res) => {
     res.status(500).json({ error: "Erro ao registrar o pedido pegue e monte." });
   }
 });
-// 8.6 Editar Pacote (Admin)
+// 8.6 Editar Pacote (Admin) - COM CONTROLE DE FOTOS MANTIDAS
 app.put("/api/admin/pegue-monte/:id", checkAuth, upload.array("fotos", 10), async (req, res) => {
   try {
-    const { nome_pacote, descricao, valor, status } = req.body;
+    const { nome_pacote, descricao, valor, status, fotos_mantidas } = req.body;
     const pacoteId = req.params.id;
 
-    // Busca o pacote atual para manter as fotos caso nenhuma nova seja enviada
-    const [atual] = await db.query("SELECT fotos FROM pacotes_pegue_monte WHERE id = ?", [pacoteId]);
-    if (atual.length === 0) return res.status(404).json({ error: "Pacote não encontrado" });
+    // 1. Pega as fotos que o admin decidiu NÃO apagar no frontend
+    let fotosFinais = [];
+    if (fotos_mantidas) {
+        fotosFinais = JSON.parse(fotos_mantidas);
+    }
 
-    // Garante que o valor que já está no banco seja tratado como string JSON
-    let fotosSalvas = atual[0].fotos;
-    let fotosJsonStr = typeof fotosSalvas === 'string' ? fotosSalvas : JSON.stringify(fotosSalvas);
-
-    // Se o admin enviou arquivos novos, fazemos upload e substituímos
+    // 2. Se o admin enviou arquivos novos, fazemos upload e ADICIONAMOS à lista
     if (req.files && req.files.length > 0) {
       const uploads = req.files.map(file => {
         return cloudinary.uploader.upload(file.path, { folder: "cabana/pegue_monte" })
@@ -1372,11 +1370,13 @@ app.put("/api/admin/pegue-monte/:id", checkAuth, upload.array("fotos", 10), asyn
             return up.secure_url;
           });
       });
-      const urlsFotos = await Promise.all(uploads);
-      fotosJsonStr = JSON.stringify(urlsFotos);
+      const urlsNovas = await Promise.all(uploads);
+      fotosFinais = [...fotosFinais, ...urlsNovas]; // Junta as mantidas com as novas
     }
 
-    // Atualiza o banco
+    const fotosJsonStr = JSON.stringify(fotosFinais);
+
+    // 3. Atualiza o banco
     await db.query(
       "UPDATE pacotes_pegue_monte SET nome_pacote = ?, descricao = ?, valor = ?, status = ?, fotos = ? WHERE id = ?",
       [nome_pacote, descricao, valor, status || 'liberado', fotosJsonStr, pacoteId]

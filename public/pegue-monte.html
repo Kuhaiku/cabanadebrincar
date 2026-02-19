@@ -15,16 +15,17 @@
             scroll-behavior: smooth;
         }
 
-        /* Estilização para o rádio customizado dos pacotes */
-        .pacote-radio:checked + div {
-            border-color: #ec4899; /* pink-500 */
-            background-color: #fdf2f8; /* pink-50 */
-            box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.1), 0 2px 4px -1px rgba(236, 72, 153, 0.06);
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
         }
-        
-        .pacote-radio:checked + div .check-icon {
-            opacity: 1;
-            transform: scale(1);
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -46,12 +47,12 @@
             <i data-lucide="package-open" class="w-8 h-8"></i>
         </div>
         <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">Pegue e Monte</h1>
-        <p class="text-slate-500 max-w-2xl mx-auto text-lg">A festa pronta para você levar, montar e criar memórias incríveis. Escolha seu pacote abaixo, reserve a data e nós deixamos tudo separado para você!</p>
+        <p class="text-slate-500 max-w-2xl mx-auto text-lg">A festa pronta para você levar, montar e criar memórias incríveis. Escolha seu pacote abaixo, veja os detalhes, reserve a data e nós deixamos tudo separado para você!</p>
     </header>
 
     <main class="max-w-6xl mx-auto px-4 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
 
-        <div class="lg:col-span-7 space-y-4" id="listaPacotes">
+        <div class="lg:col-span-7 space-y-6" id="listaPacotes">
             <div class="text-center py-12 text-slate-400 flex flex-col items-center">
                 <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2 text-pink-500"></i>
                 <p>Carregando pacotes disponíveis...</p>
@@ -59,85 +60,102 @@
         </div>
 
         <div class="lg:col-span-5">
-            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 sticky top-28">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 sticky top-28" id="areaFormulario">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800">
                     <i data-lucide="calendar-check-2" class="text-pink-500"></i> Faça sua Reserva
                 </h3>
 
                 <form id="formReserva" onsubmit="enviarPedido(event)" class="space-y-4">
                     
-                    <div id="resumoSelecao" class="bg-slate-50 p-4 rounded-2xl border border-slate-100 hidden mb-4">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pacote Selecionado</p>
-                        <div class="flex justify-between items-center">
-                            <h4 id="resumoNome" class="font-bold text-pink-600">Nenhum</h4>
-                            <span id="resumoValor" class="font-bold text-slate-700">R$ 0,00</span>
-                        </div>
+                    <div id="resumoSelecao" class="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-200 text-center mb-6">
+                        <p class="text-sm font-bold text-slate-400 mb-1">Nenhum pacote selecionado</p>
+                        <p class="text-xs text-slate-400">Escolha uma opção ao lado para continuar.</p>
                     </div>
 
                     <input type="hidden" id="req_pacote_id" required>
                     <input type="hidden" id="req_nome_pacote" required>
                     <input type="hidden" id="req_valor_pacote" required>
 
-                    <div>
-                        <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Seu Nome</label>
-                        <input type="text" id="req_nome" placeholder="Como gosta de ser chamado(a)?" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1" required>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div id="camposFormulario" class="opacity-50 pointer-events-none transition-opacity duration-300 space-y-4">
                         <div>
-                            <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">WhatsApp</label>
-                            <input type="tel" id="req_telefone" placeholder="(00) 00000-0000" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1" required>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Seu Nome</label>
+                            <input type="text" id="req_nome" placeholder="Como gosta de ser chamado(a)?" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1" required>
                         </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">WhatsApp</label>
+                                <input type="tel" id="req_telefone" placeholder="(00) 00000-0000" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1" required>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Data da Festa</label>
+                                <input type="date" id="req_data" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1 text-slate-600" required>
+                            </div>
+                        </div>
+
                         <div>
-                            <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Data da Festa</label>
-                            <input type="date" id="req_data" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1 text-slate-600" required>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">E-mail</label>
+                            <input type="email" id="req_email" placeholder="Para receber os detalhes da reserva" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1" required>
                         </div>
-                    </div>
 
-                    <div>
-                        <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">E-mail (Opcional)</label>
-                        <input type="email" id="req_email" placeholder="Para receber a confirmação" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-pink-200 outline-none transition-all mt-1">
+                        <button type="submit" id="btnEnviar"
+                            class="w-full mt-6 bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-slate-900 transition-all shadow-lg flex justify-center items-center gap-2">
+                            <i data-lucide="send" class="w-4 h-4"></i> Solicitar Reserva
+                        </button>
                     </div>
-
-                    <button type="submit" id="btnEnviar" disabled
-                        class="w-full mt-6 bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-slate-900 transition-all shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i data-lucide="send" class="w-4 h-4"></i> Solicitar Reserva
-                    </button>
-                    <p class="text-xs text-center text-slate-400 mt-3 font-medium">Selecione um pacote ao lado para liberar o botão.</p>
                 </form>
             </div>
         </div>
 
     </main>
 
-    <div id="modalGaleria" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center opacity-0 transition-opacity duration-300">
-        
-        <div class="absolute top-0 w-full p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/50 to-transparent">
-            <span id="contadorGaleria" class="text-white font-bold bg-black/50 px-3 py-1 rounded-full text-sm">1 / 1</span>
-            <button onclick="fecharGaleria()" class="bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors">
+    <div id="modalDetalhes" class="fixed inset-0 bg-slate-900/90 z-50 hidden flex items-center justify-center p-4 md:p-6 backdrop-blur-sm transition-opacity opacity-0 duration-300">
+        <div class="bg-white rounded-[2rem] w-full max-w-5xl max-h-[95vh] flex flex-col md:flex-row overflow-hidden shadow-2xl relative transform scale-95 transition-transform duration-300" id="modalContainer">
+            
+            <button onclick="fecharDetalhes()" class="absolute top-4 right-4 bg-white/80 hover:bg-white text-slate-800 rounded-full p-2 transition-colors z-20 shadow-sm backdrop-blur-sm">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
-        </div>
-
-        <div class="relative w-full max-w-4xl max-h-[80vh] flex items-center justify-center px-12 group">
             
-            <button onclick="mudarFoto(-1)" id="btnAnterior" class="absolute left-4 bg-white/10 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg hidden md:block">
-                <i data-lucide="chevron-left" class="w-6 h-6"></i>
-            </button>
-            
-            <img id="imagemPrincipal" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl transition-transform duration-300 transform scale-95" alt="Galeria">
-            
-            <button onclick="mudarFoto(1)" id="btnProximo" class="absolute right-4 bg-white/10 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all shadow-lg hidden md:block">
-                <i data-lucide="chevron-right" class="w-6 h-6"></i>
-            </button>
-        </div>
-
-        <div class="absolute bottom-6 w-full px-4 flex justify-center">
-            <div id="containerMiniaturas" class="flex gap-2 overflow-x-auto py-2 custom-scrollbar max-w-full">
+            <div class="w-full md:w-[55%] bg-slate-100 relative flex flex-col border-b md:border-b-0 md:border-r border-slate-200">
+                <div class="relative flex-1 flex items-center justify-center min-h-[300px] bg-slate-900/5 group">
+                    <img id="detalheImagemPrincipal" src="" class="absolute inset-0 w-full h-full object-contain p-4" alt="Galeria">
+                    
+                    <button onclick="mudarFotoDetalhe(-1)" id="btnAntDetalhe" class="absolute left-4 bg-white/80 hover:bg-white text-slate-800 p-3 rounded-full backdrop-blur-sm transition-all shadow-md opacity-0 group-hover:opacity-100">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="mudarFotoDetalhe(1)" id="btnProxDetalhe" class="absolute right-4 bg-white/80 hover:bg-white text-slate-800 p-3 rounded-full backdrop-blur-sm transition-all shadow-md opacity-0 group-hover:opacity-100">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
                 </div>
+                
+                <div class="h-24 bg-white p-3 flex gap-2 overflow-x-auto custom-scrollbar items-center border-t border-slate-200" id="detalheMiniaturas">
+                    </div>
+            </div>
+            
+            <div class="w-full md:w-[45%] flex flex-col bg-white max-h-[50vh] md:max-h-full">
+                <div class="p-6 md:p-8 flex-1 overflow-y-auto custom-scrollbar">
+                    <div class="inline-block bg-pink-100 text-pink-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4">Pegue e Monte</div>
+                    
+                    <h2 id="detalheTitulo" class="text-2xl md:text-3xl font-bold text-slate-800 mb-2 leading-tight"></h2>
+                    <span id="detalheValor" class="text-2xl font-bold text-pink-500 mb-6 block"></span>
+                    
+                    <div class="prose prose-slate prose-sm max-w-none">
+                        <h4 class="text-slate-800 font-bold mb-3 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">O que está incluso neste pacote:</h4>
+                        <p id="detalheDescricao" class="text-slate-600 leading-relaxed whitespace-pre-wrap text-base"></p>
+                    </div>
+                </div>
+                
+                <div class="p-6 border-t border-slate-100 bg-slate-50 shrink-0">
+                    <button id="btnSelecionarModal" onclick="" class="w-full bg-pink-500 text-white font-bold py-4 rounded-xl hover:bg-pink-600 transition-all shadow-lg shadow-pink-200 flex items-center justify-center gap-2 text-lg">
+                        Quero este Pacote <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
-    <div id="modalAvisoMP" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+
+    <div id="modalAvisoMP" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden text-center p-8 border border-slate-100">
             <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                 <i data-lucide="check-circle-2" class="w-10 h-10"></i>
@@ -149,7 +167,7 @@
             
             <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-8 text-sm text-blue-800 text-left">
                 <p class="font-bold flex items-center gap-2 mb-2"><i data-lucide="info" class="w-4 h-4"></i> Pagamentos via PIX</p>
-                <p>Assim que o Mercado Pago aprovar seu PIX, seu pacote será marcado como <b>Reservado</b>. Nós entraremos em contato no seu WhatsApp logo em seguida para combinar a retirada!</p>
+                <p>Assim que o pagamento for aprovado, seu pacote será marcado como <b>Reservado</b>. Nós entraremos em contato no e-mail e WhatsApp para combinar a retirada!</p>
             </div>
 
             <button id="btnIrPagamento" class="w-full bg-pink-500 text-white font-bold py-4 rounded-xl hover:bg-pink-600 transition-all shadow-lg shadow-pink-200 flex items-center justify-center gap-2 text-lg">
@@ -171,7 +189,6 @@
         // --- BUSCA DE DADOS ---
         async function carregarPacotes() {
             try {
-                // Busca apenas os pacotes com status 'liberado'
                 const res = await fetch('/api/pegue-monte?liberados=true');
                 pacotes = await res.json();
                 renderizarPacotes();
@@ -200,70 +217,103 @@
 
             container.innerHTML = pacotes.map(p => {
                 const capa = (p.fotos && p.fotos.length > 0) ? p.fotos[0] : 'https://via.placeholder.com/400x300?text=Sem+Foto';
-                const hasFotos = p.fotos && p.fotos.length > 0;
-
+                
                 return `
-                <label class="block cursor-pointer relative group">
-                    <input type="radio" name="pacote_escolhido" class="pacote-radio sr-only" value="${p.id}" 
-                        onchange="selecionarPacote(${p.id}, '${p.nome_pacote.replace(/'/g, "\\'")}', ${p.valor})">
+                <div id="card-pacote-${p.id}" class="pacote-card bg-white rounded-[2rem] border-2 border-transparent shadow-sm hover:shadow-lg transition-all p-3 flex flex-col md:flex-row gap-5 overflow-hidden relative">
                     
-                    <div class="bg-white rounded-3xl border-2 border-transparent shadow-sm hover:shadow-md transition-all p-2 flex flex-col md:flex-row gap-4 overflow-hidden">
-                        
-                        <div class="check-icon absolute top-4 right-4 bg-pink-500 text-white p-1 rounded-full shadow-lg opacity-0 transform scale-50 transition-all duration-300 z-10 pointer-events-none">
-                            <i data-lucide="check" class="w-5 h-5"></i>
-                        </div>
+                    <div class="check-icon absolute top-5 right-5 bg-pink-500 text-white p-1.5 rounded-full shadow-lg opacity-0 transform scale-50 transition-all duration-300 z-10 pointer-events-none">
+                        <i data-lucide="check" class="w-5 h-5"></i>
+                    </div>
 
-                        <div class="relative w-full md:w-48 h-48 shrink-0 rounded-2xl overflow-hidden bg-slate-100 group-hover:shadow-inner transition-shadow">
-                            <img src="${capa}" alt="${p.nome_pacote}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            
-                            ${hasFotos ? `
-                            <button type="button" onclick="abrirGaleria(${p.id}, event)" class="absolute bottom-2 left-2 right-2 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1 transition-colors z-20">
-                                <i data-lucide="images" class="w-3 h-3"></i> Ver Galeria (${p.fotos.length})
-                            </button>
-                            ` : ''}
+                    <div class="relative w-full md:w-56 h-56 shrink-0 rounded-[1.5rem] overflow-hidden bg-slate-100 cursor-pointer group" onclick="abrirDetalhes(${p.id})">
+                        <img src="${capa}" alt="${p.nome_pacote}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-sm shadow-lg flex items-center gap-1">
+                                <i data-lucide="zoom-in" class="w-3 h-3"></i> Ampliar Fotos
+                            </span>
                         </div>
+                    </div>
+                    
+                    <div class="flex-1 py-3 pr-5 flex flex-col">
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">${p.nome_pacote}</h3>
+                        <p class="text-slate-500 text-sm mb-4 line-clamp-3 leading-relaxed flex-1">${p.descricao}</p>
                         
-                        <div class="flex-1 py-2 pr-4 flex flex-col justify-center">
-                            <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-pink-600 transition-colors">${p.nome_pacote}</h3>
-                            <p class="text-slate-500 text-sm mb-4 line-clamp-3 leading-relaxed">${p.descricao}</p>
-                            <div class="mt-auto inline-block bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl w-fit">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Valor do Kit</span>
-                                <span class="text-xl font-bold text-slate-800">R$ ${parseFloat(p.valor).toFixed(2).replace('.', ',')}</span>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-auto">
+                            <div class="bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Valor do Kit</span>
+                                <span class="text-2xl font-bold text-pink-500 leading-none">R$ ${parseFloat(p.valor).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                            
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <button type="button" onclick="abrirDetalhes(${p.id})" class="flex-1 sm:flex-none bg-white border border-slate-200 text-slate-600 font-bold py-3 px-5 rounded-xl hover:bg-slate-50 hover:text-pink-600 transition-colors">
+                                    Detalhes
+                                </button>
+                                <button type="button" onclick="selecionarPacote(${p.id}, '${p.nome_pacote.replace(/'/g, "\\'")}', ${p.valor})" class="flex-1 sm:flex-none bg-pink-100 text-pink-600 font-bold py-3 px-6 rounded-xl hover:bg-pink-200 hover:shadow-lg hover:shadow-pink-100 transition-all flex items-center justify-center gap-2">
+                                    Selecionar
+                                </button>
                             </div>
                         </div>
                     </div>
-                </label>
+                </div>
             `}).join('');
             
             lucide.createIcons();
         }
 
-        // --- LÓGICA DO FORMULÁRIO ---
+        // --- LÓGICA DE SELEÇÃO E FORMULÁRIO ---
         function selecionarPacote(id, nome, valor) {
+            // Remove destaque de todos os cards
+            document.querySelectorAll('.pacote-card').forEach(card => {
+                card.classList.remove('border-pink-500', 'bg-pink-50/30');
+                card.classList.add('border-transparent', 'bg-white');
+                const icone = card.querySelector('.check-icon');
+                icone.classList.replace('opacity-100', 'opacity-0');
+                icone.classList.replace('scale-100', 'scale-50');
+            });
+
+            // Adiciona destaque no card selecionado
+            const cardSelecionado = document.getElementById(`card-pacote-${id}`);
+            cardSelecionado.classList.remove('border-transparent', 'bg-white');
+            cardSelecionado.classList.add('border-pink-500', 'bg-pink-50/30');
+            const iconeSel = cardSelecionado.querySelector('.check-icon');
+            iconeSel.classList.replace('opacity-0', 'opacity-100');
+            iconeSel.classList.replace('scale-50', 'scale-100');
+
             // Atualiza inputs ocultos
             document.getElementById('req_pacote_id').value = id;
             document.getElementById('req_nome_pacote').value = nome;
             document.getElementById('req_valor_pacote').value = valor;
 
-            // Atualiza Interface de Resumo
+            // Atualiza Resumo visual no formulário
             const resumo = document.getElementById('resumoSelecao');
-            document.getElementById('resumoNome').innerText = nome;
-            document.getElementById('resumoValor').innerText = `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`;
-            resumo.classList.remove('hidden');
+            resumo.className = "bg-pink-50 p-4 rounded-2xl border border-pink-200 mb-6 relative overflow-hidden";
+            resumo.innerHTML = `
+                <div class="absolute -right-4 -top-4 text-pink-200/50">
+                    <i data-lucide="check-circle" class="w-24 h-24"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-1">Pacote Selecionado</p>
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-pink-600 text-lg">${nome}</h4>
+                        <span class="font-bold text-slate-800 text-lg">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</span>
+                    </div>
+                </div>
+            `;
 
-            // Habilita o botão
+            // Libera o formulário para preenchimento
+            document.getElementById('camposFormulario').classList.remove('opacity-50', 'pointer-events-none');
             const btn = document.getElementById('btnEnviar');
-            btn.disabled = false;
-            btn.classList.remove('bg-slate-800');
-            btn.classList.add('bg-pink-500', 'hover:bg-pink-600');
+            btn.classList.replace('bg-slate-800', 'bg-pink-500');
+            btn.classList.add('hover:bg-pink-600', 'shadow-pink-200');
 
-            // Scroll suave para o formulário no mobile
+            // Scroll suave para o formulário no mobile ou limpa visual
             if(window.innerWidth < 1024) {
-                resumo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.getElementById('areaFormulario').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            lucide.createIcons();
         }
 
-async function enviarPedido(e) {
+        async function enviarPedido(e) {
             e.preventDefault();
             
             const btn = document.getElementById('btnEnviar');
@@ -290,12 +340,10 @@ async function enviarPedido(e) {
                 const data = await res.json();
                 
                 if (data.success && data.link_pagamento) {
-                    // Abre o modal de aviso amigável
                     const modal = document.getElementById('modalAvisoMP');
                     modal.classList.remove('hidden');
-                    lucide.createIcons(); // Recarrega os ícones do modal
+                    lucide.createIcons(); 
 
-                    // Configura o botão do modal para ir para o Mercado Pago
                     document.getElementById('btnIrPagamento').onclick = function() {
                         this.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Redirecionando...';
                         window.location.href = data.link_pagamento;
@@ -311,76 +359,77 @@ async function enviarPedido(e) {
                 lucide.createIcons();
             }
         }
-        // --- LÓGICA DA GALERIA MODAL ---
-        const modal = document.getElementById('modalGaleria');
-        const imgPrincipal = document.getElementById('imagemPrincipal');
-        const contador = document.getElementById('contadorGaleria');
-        const containerMiniaturas = document.getElementById('containerMiniaturas');
 
-        function abrirGaleria(pacoteId, event) {
-            // Evita que clicar no botão selecione o radio button atrás dele
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+        // --- LÓGICA DO MODAL DE DETALHES/GALERIA ---
+        const modalDetalhes = document.getElementById('modalDetalhes');
+        const modalContainer = document.getElementById('modalContainer');
+        const imgPrincipal = document.getElementById('detalheImagemPrincipal');
+        const containerMiniaturas = document.getElementById('detalheMiniaturas');
 
+        function abrirDetalhes(pacoteId) {
             const pacote = pacotes.find(p => p.id === pacoteId);
-            if (!pacote || !pacote.fotos || pacote.fotos.length === 0) return;
+            if (!pacote) return;
 
-            galeriaAtual = pacote.fotos;
+            // Preenche dados textuais
+            document.getElementById('detalheTitulo').innerText = pacote.nome_pacote;
+            document.getElementById('detalheValor').innerText = `R$ ${parseFloat(pacote.valor).toFixed(2).replace('.', ',')}`;
+            document.getElementById('detalheDescricao').innerText = pacote.descricao;
+            
+            // Configura botão do modal para selecionar e fechar
+            const btnSel = document.getElementById('btnSelecionarModal');
+            btnSel.onclick = () => {
+                selecionarPacote(pacote.id, pacote.nome_pacote, pacote.valor);
+                fecharDetalhes();
+            };
+
+            // Configura Galeria
+            galeriaAtual = pacote.fotos && pacote.fotos.length > 0 ? pacote.fotos : ['https://via.placeholder.com/800x600?text=Sem+Foto'];
             indiceFotoAtual = 0;
-
-            // Configura a primeira foto
             atualizarVisaoGaleria();
 
-            // Renderiza as miniaturas
+            // Renderiza miniaturas
             containerMiniaturas.innerHTML = galeriaAtual.map((url, i) => `
-                <button onclick="irParaFoto(${i})" class="w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${i === 0 ? 'border-pink-500 opacity-100' : 'border-transparent opacity-50 hover:opacity-100'} miniatura-btn">
+                <button onclick="irParaFoto(${i})" class="w-16 h-16 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${i === 0 ? 'border-pink-500 opacity-100' : 'border-transparent opacity-50 hover:opacity-100'} miniatura-btn">
                     <img src="${url}" class="w-full h-full object-cover">
                 </button>
             `).join('');
 
-            // Mostra/Oculta setas se tiver 1 só imagem
-            document.getElementById('btnAnterior').style.display = galeriaAtual.length > 1 ? 'block' : 'none';
-            document.getElementById('btnProximo').style.display = galeriaAtual.length > 1 ? 'block' : 'none';
+            // Setas
+            document.getElementById('btnAntDetalhe').style.display = galeriaAtual.length > 1 ? 'flex' : 'none';
+            document.getElementById('btnProxDetalhe').style.display = galeriaAtual.length > 1 ? 'flex' : 'none';
 
-            // Abre o modal com animação
-            modal.classList.remove('hidden');
-            // Pequeno delay para a transição de opacidade funcionar
+            // Abre modal com animação
+            modalDetalhes.classList.remove('hidden');
             setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                modal.classList.add('opacity-100');
-                imgPrincipal.classList.remove('scale-95');
-                imgPrincipal.classList.add('scale-100');
+                modalDetalhes.classList.remove('opacity-0');
+                modalDetalhes.classList.add('opacity-100');
+                modalContainer.classList.remove('scale-95');
+                modalContainer.classList.add('scale-100');
             }, 10);
             
-            // Bloqueia scroll do body
             document.body.style.overflow = 'hidden';
         }
 
-        function fecharGaleria() {
-            modal.classList.remove('opacity-100');
-            modal.classList.add('opacity-0');
-            imgPrincipal.classList.remove('scale-100');
-            imgPrincipal.classList.add('scale-95');
+        function fecharDetalhes() {
+            modalDetalhes.classList.remove('opacity-100');
+            modalDetalhes.classList.add('opacity-0');
+            modalContainer.classList.remove('scale-100');
+            modalContainer.classList.add('scale-95');
             
             setTimeout(() => {
-                modal.classList.add('hidden');
-                document.body.style.overflow = ''; // Libera scroll
-            }, 300); // Tempo da transição
+                modalDetalhes.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
         }
 
         function atualizarVisaoGaleria() {
             imgPrincipal.src = galeriaAtual[indiceFotoAtual];
-            contador.innerText = `${indiceFotoAtual + 1} / ${galeriaAtual.length}`;
 
-            // Atualiza estilo das miniaturas ativas
             const minis = document.querySelectorAll('.miniatura-btn');
             minis.forEach((btn, i) => {
                 if(i === indiceFotoAtual) {
                     btn.classList.add('border-pink-500', 'opacity-100');
                     btn.classList.remove('border-transparent', 'opacity-50');
-                    // Garante que a miniatura ativa esteja visível no scroll horizontal
                     btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 } else {
                     btn.classList.remove('border-pink-500', 'opacity-100');
@@ -389,15 +438,10 @@ async function enviarPedido(e) {
             });
         }
 
-        function mudarFoto(direcao) {
+        function mudarFotoDetalhe(direcao) {
             indiceFotoAtual += direcao;
-            
-            if (indiceFotoAtual >= galeriaAtual.length) {
-                indiceFotoAtual = 0; // Volta pro começo
-            } else if (indiceFotoAtual < 0) {
-                indiceFotoAtual = galeriaAtual.length - 1; // Vai pro final
-            }
-            
+            if (indiceFotoAtual >= galeriaAtual.length) indiceFotoAtual = 0;
+            else if (indiceFotoAtual < 0) indiceFotoAtual = galeriaAtual.length - 1;
             atualizarVisaoGaleria();
         }
 
@@ -406,12 +450,12 @@ async function enviarPedido(e) {
             atualizarVisaoGaleria();
         }
 
-        // Navegação por teclado na galeria
+        // Navegação pelo teclado no modal
         document.addEventListener('keydown', (e) => {
-            if (!modal.classList.contains('hidden')) {
-                if (e.key === 'Escape') fecharGaleria();
-                if (e.key === 'ArrowRight') mudarFoto(1);
-                if (e.key === 'ArrowLeft') mudarFoto(-1);
+            if (!modalDetalhes.classList.contains('hidden')) {
+                if (e.key === 'Escape') fecharDetalhes();
+                if (e.key === 'ArrowRight') mudarFotoDetalhe(1);
+                if (e.key === 'ArrowLeft') mudarFotoDetalhe(-1);
             }
         });
 

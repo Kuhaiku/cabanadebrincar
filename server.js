@@ -1240,7 +1240,24 @@ app.get("/api/admin/pedidos/:id/pagamentos", checkAuth, async (req, res) => {
 });
 
 
-// 8.1 Listar Pacotes (Público/Admin) - CORRIGIDO
+// =========================================================================
+// --- 8. SISTEMA PEGUE E MONTE ---
+// =========================================================================
+
+// --- FUNÇÃO AUXILIAR PARA LIMPEZA NO CLOUDINARY ---
+// Extrai o ID público da imagem para podermos deletar do Cloudinary
+function getCloudinaryPublicId(url) {
+  if (!url) return null;
+  try {
+    const urlSemExtensao = url.substring(0, url.lastIndexOf('.'));
+    const match = urlSemExtensao.match(/cabana\/.*$/); // Pega tudo a partir da pasta 'cabana'
+    return match ? match[0] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// 8.1 Listar Pacotes (Público/Admin)
 app.get("/api/pegue-monte", async (req, res) => {
   try {
     const apenasLiberados = req.query.liberados === "true";
@@ -1259,7 +1276,7 @@ app.get("/api/pegue-monte", async (req, res) => {
 
     res.json(pacotes);
   } catch (e) {
-    console.error("Erro na rota /api/pegue-monte:", e.message); // Vai mostrar no terminal o real problema
+    console.error("Erro na rota /api/pegue-monte:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
@@ -1291,7 +1308,7 @@ app.post("/api/admin/pegue-monte", checkAuth, upload.array("fotos", 10), async (
 
     res.status(201).json({ success: true, id: result.insertId });
   } catch (e) {
-    console.error(e);
+    console.error("Erro ao cadastrar pacote:", e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -1307,12 +1324,31 @@ app.patch("/api/admin/pegue-monte/:id/status", checkAuth, async (req, res) => {
   }
 });
 
-// 8.4 Excluir Pacote (Admin)
+// 8.4 Excluir Pacote (Admin) - Limpa Banco e Cloudinary
 app.delete("/api/admin/pegue-monte/:id", checkAuth, async (req, res) => {
   try {
-    await db.query("DELETE FROM pacotes_pegue_monte WHERE id = ?", [req.params.id]);
+    const pacoteId = req.params.id;
+
+    // 1. Busca as fotos antes de apagar o pacote do banco
+    const [pacote] = await db.query("SELECT fotos FROM pacotes_pegue_monte WHERE id = ?", [pacoteId]);
+    
+    if (pacote.length > 0 && pacote[0].fotos) {
+        const fotosLista = typeof pacote[0].fotos === 'string' ? JSON.parse(pacote[0].fotos) : pacote[0].fotos;
+        
+        // 2. Percorre a lista de fotos e deleta uma por uma do Cloudinary
+        for (const urlFoto of fotosLista) {
+            const publicId = getCloudinaryPublicId(urlFoto);
+            if (publicId) {
+                await cloudinary.uploader.destroy(publicId).catch(err => console.error("Erro ao limpar Cloudinary:", err));
+            }
+        }
+    }
+
+    // 3. Deleta o pacote do banco de dados
+    await db.query("DELETE FROM pacotes_pegue_monte WHERE id = ?", [pacoteId]);
     res.json({ success: true });
   } catch (e) {
+    console.error("Erro ao excluir pacote:", e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -1322,8 +1358,7 @@ app.post("/api/orcamento-pegue-monte", async (req, res) => {
   try {
     const { nome, telefone, email, data_festa, pacote_id, nome_pacote, valor_pacote } = req.body;
 
-    // Reaproveita a tabela 'orcamentos' mas marca o tipo ou salva no formato específico
-    // Inserindo na tabela existente de orçamentos de forma simplificada
+    // Reaproveita a tabela 'orcamentos' para centralizar os pedidos
     const sql = `INSERT INTO orcamentos 
       (nome, whatsapp, email, data_festa, modelo_barraca, status_pagamento, valor_final, tema) 
       VALUES (?, ?, ?, ?, ?, 'pendente', ?, ?)`;
@@ -1335,48 +1370,61 @@ app.post("/api/orcamento-pegue-monte", async (req, res) => {
       data_festa, 
       'PEGUE E MONTE', 
       valor_pacote, 
-      `Pacote: ${nome_pacote} (ID: ${pacote_id})` // Usa o campo tema para gravar qual foi o pacote escolhido
+      `Pacote: ${nome_pacote} (ID: ${pacote_id})` // Salva qual foi o pacote escolhido no campo tema
     ];
 
     const [result] = await db.query(sql, values);
 
-    // Opcional: Já marca o pacote como 'reservado' automaticamente ao receber o pedido
+    // Marca o pacote como 'reservado' automaticamente ao receber o pedido (Opcional, mas recomendado)
     await db.query("UPDATE pacotes_pegue_monte SET status = 'reservado' WHERE id = ?", [pacote_id]);
 
     res.status(201).json({ success: true, pedido_id: result.insertId });
   } catch (e) {
-    console.error(e);
+    console.error("Erro ao registrar orçamento Pegue e Monte:", e);
     res.status(500).json({ error: "Erro ao registrar o pedido pegue e monte." });
   }
 });
-// 8.6 Editar Pacote (Admin) - COM CONTROLE DE FOTOS MANTIDAS
+
+// 8.6 Editar Pacote (Admin) - Com gerenciamento inteligente de fotos no Cloudinary
 app.put("/api/admin/pegue-monte/:id", checkAuth, upload.array("fotos", 10), async (req, res) => {
   try {
     const { nome_pacote, descricao, valor, status, fotos_mantidas } = req.body;
     const pacoteId = req.params.id;
 
-    // 1. Pega as fotos que o admin decidiu NÃO apagar no frontend
-    let fotosFinais = [];
-    if (fotos_mantidas) {
-        fotosFinais = JSON.parse(fotos_mantidas);
+    // 1. Pega as fotos atuais do banco
+    const [atual] = await db.query("SELECT fotos FROM pacotes_pegue_monte WHERE id = ?", [pacoteId]);
+    if (atual.length === 0) return res.status(404).json({ error: "Pacote não encontrado" });
+    
+    const fotosAntigas = typeof atual[0].fotos === 'string' ? JSON.parse(atual[0].fotos) : (atual[0].fotos || []);
+    
+    // 2. Lê as fotos que o admin NÃO deletou na interface (as que ficaram no modal)
+    let fotosFinais = fotos_mantidas ? JSON.parse(fotos_mantidas) : [];
+
+    // 3. Lógica de Limpeza: Se a foto estava no banco, mas não está nas 'fotos_mantidas', o admin excluiu!
+    const fotosParaDeletar = fotosAntigas.filter(fotoAntiga => !fotosFinais.includes(fotoAntiga));
+    for (const urlFoto of fotosParaDeletar) {
+        const publicId = getCloudinaryPublicId(urlFoto);
+        if (publicId) {
+            await cloudinary.uploader.destroy(publicId).catch(err => console.error("Erro ao deletar sobra no Cloudinary:", err));
+        }
     }
 
-    // 2. Se o admin enviou arquivos novos, fazemos upload e ADICIONAMOS à lista
+    // 4. Se enviou novos arquivos, faz upload e soma com as fotos finais mantidas
     if (req.files && req.files.length > 0) {
       const uploads = req.files.map(file => {
         return cloudinary.uploader.upload(file.path, { folder: "cabana/pegue_monte" })
           .then(up => {
-            fs.unlinkSync(file.path);
+            fs.unlinkSync(file.path); // limpa o cache local do multer
             return up.secure_url;
           });
       });
       const urlsNovas = await Promise.all(uploads);
-      fotosFinais = [...fotosFinais, ...urlsNovas]; // Junta as mantidas com as novas
+      fotosFinais = [...fotosFinais, ...urlsNovas]; 
     }
 
     const fotosJsonStr = JSON.stringify(fotosFinais);
 
-    // 3. Atualiza o banco
+    // 5. Atualiza os dados no banco
     await db.query(
       "UPDATE pacotes_pegue_monte SET nome_pacote = ?, descricao = ?, valor = ?, status = ?, fotos = ? WHERE id = ?",
       [nome_pacote, descricao, valor, status || 'liberado', fotosJsonStr, pacoteId]
@@ -1384,9 +1432,8 @@ app.put("/api/admin/pegue-monte/:id", checkAuth, upload.array("fotos", 10), asyn
 
     res.json({ success: true });
   } catch (e) {
-    console.error("Erro ao editar pacote:", e);
+    console.error("Erro ao editar pacote Pegue e Monte:", e);
     res.status(500).json({ error: e.message });
   }
 });
-
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

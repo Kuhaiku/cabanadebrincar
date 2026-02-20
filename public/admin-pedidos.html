@@ -220,7 +220,7 @@
         </div>
       </div>
     </div>
-
+    
     <script>
       // VOLTANDO AO TOKEN ORIGINAL PARA NÃO DAR ERRO NO SEU PAINEL
       const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
@@ -233,6 +233,23 @@
       let taxasSistema = []; // Lista de itens 'sistema'
       let pedidoAtual = null;
 
+      // --- FUNÇÃO DE COPIAR WHATSAPP ---
+async function copiarWhatsApp(numero, btn) {
+    if (!numero) return;
+    try {
+        await navigator.clipboard.writeText(numero);
+        const iconeOriginal = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-green-600"></i>';
+        lucide.createIcons();
+        setTimeout(() => {
+            btn.innerHTML = iconeOriginal;
+            lucide.createIcons();
+        }, 2000);
+    } catch (err) {
+        console.error('Erro ao copiar', err);
+        alert('Erro ao copiar o número.');
+    }
+}
       // --- 1. CARREGAMENTO GERAL ---
       async function carregarDados() {
         try {
@@ -334,131 +351,134 @@
       }
 
       // --- ABRIR DETALHES ---
-      function abrirDetalhes(id) {
-        pedidoAtual = todosPedidos.find((p) => p.id === id);
-        if (!pedidoAtual) return;
+// --- ABRIR DETALHES ---
+function abrirDetalhes(id) {
+  pedidoAtual = todosPedidos.find((p) => p.id === id);
+  if (!pedidoAtual) return;
 
-        // --- RENDERIZAÇÃO DO CONTEÚDO (Cliente, Evento, Comida) ---
-        let htmlAlimentacao = '<span class="text-slate-400 italic">Nenhuma.</span>';
-        const alim = parseSeguro(pedidoAtual.alimentacao);
-        
-        if (alim) {
-          if (Array.isArray(alim) && alim.length > 0) {
-            htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
-          } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
-            let partes = [];
-            if (alim.combo) {
-              const titulo = alim.combo.titulo || "Combo";
-              partes.push(`<div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100"><span class="font-bold text-slate-700 block">${titulo}</span></div>`);
-            }
-            if (alim.extras && alim.extras.length > 0) {
-              partes.push(`<ul class="text-sm text-slate-600 space-y-1">`);
-              alim.extras.forEach((e) => {
-                 partes.push(`<li>${e.qtd}x ${e.nome}</li>`);
-              });
-              partes.push(`</ul>`);
-            }
-            htmlAlimentacao = partes.join("");
-          }
-        }
-
-        const html = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                    <h4 class="font-bold text-slate-800 mb-1">Cliente</h4>
-                    <p><strong>Nome:</strong> ${pedidoAtual.nome}</p>
-                    <p><strong>WhatsApp:</strong> <a href="https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}" target="_blank" class="text-green-600 font-bold">${pedidoAtual.whatsapp}</a></p>
-                    <p><strong>Endereço:</strong> ${pedidoAtual.endereco}</p>
-                </div>
-                <div>
-                    <h4 class="font-bold text-slate-800 mb-1">Evento</h4>
-                    <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
-                    <p><strong>Horário:</strong> ${pedidoAtual.horario}</p>
-                    <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
-                </div>
-            </div>
-            <div class="border-t border-slate-100 pt-2 text-sm">
-                 <p><strong>Alimentação:</strong></p>
-                 ${htmlAlimentacao}
-            </div>
-            <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2">
-                 <p><strong>Obs:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
-                 <p><strong>Alergias:</strong> <span class="text-red-600 font-bold">${pedidoAtual.alergias || "-"}</span></p>
-            </div>
-        `;
-        document.getElementById("conteudoModal").innerHTML = html;
-
-        // --- RENDERIZAR CHECKBOXES DE TAXAS ---
-        const divTaxas = document.getElementById("areaTaxasSistema");
-        divTaxas.innerHTML = "";
-        
-        if (taxasSistema.length > 0) {
-            taxasSistema.forEach(taxa => {
-                const htmlId = `taxa_${taxa.id}`;
-                const valorFormatado = parseFloat(taxa.valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-                
-                // Verifica se essa taxa já está mencionada na descrição salva
-                const descSalva = (pedidoAtual.descricao_itens_extras || "").toLowerCase();
-                const isMarcado = descSalva.includes(taxa.descricao.toLowerCase());
-
-                divTaxas.innerHTML += `
-                    <div class="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
-                        <input type="checkbox" id="${htmlId}" value="${taxa.valor}" data-nome="${taxa.descricao}" 
-                               onchange="atualizarTotalVisual()" ${isMarcado ? "checked" : ""}
-                               class="w-4 h-4 text-pink-600 rounded border-gray-300 focus:ring-pink-500 cursor-pointer">
-                        <label for="${htmlId}" class="text-sm text-slate-700 cursor-pointer select-none flex-1 flex justify-between">
-                            <span>${taxa.descricao}</span>
-                            <span class="text-xs font-bold text-slate-500">${valorFormatado}</span>
-                        </label>
-                    </div>
-                `;
-            });
-        } else {
-            divTaxas.innerHTML = "<p class='text-xs text-slate-400 col-span-2'>Nenhuma taxa cadastrada na categoria 'sistema'.</p>";
-        }
-
-        // --- FINANCEIRO ---
-        const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
-        let valorSalvoExtraTotal = parseFloat(pedidoAtual.valor_itens_extras) || 0;
-
-        // Calcula quanto do extra salvo já está nos checkboxes
-        let somaTaxasDetectadas = 0;
-        const checkboxes = divTaxas.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(cb => {
-            if(cb.checked) somaTaxasDetectadas += parseFloat(cb.value);
-        });
-        
-        // O input manual recebe: Total Extras Salvo - Taxas Detectadas
-        let valorManual = valorSalvoExtraTotal - somaTaxasDetectadas;
-        if (valorManual < 0.01 && valorManual > -0.01) valorManual = 0;
-
-        document.getElementById("fin_valor_final").value = valorSalvoBase.toFixed(2);
-        document.getElementById("fin_valor_extras").value = valorManual.toFixed(2);
-        document.getElementById("fin_desc_extras").value = pedidoAtual.descricao_itens_extras || "";
-
-        atualizarTotalVisual();
-
-        // Botões Status
-        const btnAprovar = document.getElementById("btnAprovar");
-        const btnConcluir = document.getElementById("btnConcluir");
-        if (pedidoAtual.status === "aprovado" && pedidoAtual.status_agenda !== "concluido") {
-          btnAprovar.classList.add("hidden");
-          btnConcluir.classList.remove("hidden");
-        } else {
-          btnAprovar.classList.remove("hidden");
-          btnConcluir.classList.add("hidden");
-        }
-
-        // Reset Botão Mágico
-        const btnFluxo = document.getElementById("btnFluxo");
-        btnFluxo.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i> <span>Salvar, Gerar Links e Copiar</span>`;
-        btnFluxo.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
-        btnFluxo.disabled = false;
-
-        document.getElementById("modalDetalhes").classList.remove("hidden");
-        lucide.createIcons();
+  // --- RENDERIZAÇÃO DO CONTEÚDO (Cliente, Evento, Comida) ---
+  let htmlAlimentacao = '<span class="text-slate-400 italic">Nenhuma.</span>';
+  const alim = parseSeguro(pedidoAtual.alimentacao);
+  
+  if (alim) {
+    if (Array.isArray(alim) && alim.length > 0) {
+      htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
+    } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
+      let partes = [];
+      if (alim.combo) {
+        const titulo = alim.combo.titulo || "Combo";
+        partes.push(`<div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100"><span class="font-bold text-slate-700 block">${titulo}</span></div>`);
       }
+      if (alim.extras && alim.extras.length > 0) {
+        partes.push(`<ul class="text-sm text-slate-600 space-y-1">`);
+        alim.extras.forEach((e) => {
+           partes.push(`<li>${e.qtd}x ${e.nome}</li>`);
+        });
+        partes.push(`</ul>`);
+      }
+      htmlAlimentacao = partes.join("");
+    }
+  }
 
+  // AQUI ENTROU O BOTÃO DE COPIAR DO LADO DO WHATSAPP
+  const html = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+              <h4 class="font-bold text-slate-800 mb-1">Cliente</h4>
+              <p><strong>Nome:</strong> ${pedidoAtual.nome}</p>
+              <div class="flex items-center gap-2 mt-1">
+                  <strong>WhatsApp:</strong> 
+                  <a href="https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}" target="_blank" class="text-green-600 font-bold hover:underline">${pedidoAtual.whatsapp}</a>
+                  <button onclick="copiarWhatsApp('${pedidoAtual.whatsapp}', this)" class="text-slate-400 hover:text-green-600 transition-colors p-1 bg-slate-100 rounded-md hover:bg-green-100" title="Copiar Número">
+                      <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  </button>
+              </div>
+              <p class="mt-1"><strong>Endereço:</strong> ${pedidoAtual.endereco}</p>
+          </div>
+          <div>
+              <h4 class="font-bold text-slate-800 mb-1">Evento</h4>
+              <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
+              <p><strong>Horário:</strong> ${pedidoAtual.horario}</p>
+              <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
+          </div>
+      </div>
+      <div class="border-t border-slate-100 pt-2 text-sm mt-2">
+           <p><strong>Alimentação:</strong></p>
+           ${htmlAlimentacao}
+      </div>
+      <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2">
+           <p><strong>Obs:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
+           <p><strong>Alergias:</strong> <span class="text-red-600 font-bold">${pedidoAtual.alergias || "-"}</span></p>
+      </div>
+  `;
+  document.getElementById("conteudoModal").innerHTML = html;
+
+  // --- RENDERIZAR CHECKBOXES DE TAXAS ---
+  const divTaxas = document.getElementById("areaTaxasSistema");
+  divTaxas.innerHTML = "";
+  
+  if (taxasSistema.length > 0) {
+      taxasSistema.forEach(taxa => {
+          const htmlId = `taxa_${taxa.id}`;
+          const valorFormatado = parseFloat(taxa.valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+          
+          const descSalva = (pedidoAtual.descricao_itens_extras || "").toLowerCase();
+          const isMarcado = descSalva.includes(taxa.descricao.toLowerCase());
+
+          divTaxas.innerHTML += `
+              <div class="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                  <input type="checkbox" id="${htmlId}" value="${taxa.valor}" data-nome="${taxa.descricao}" 
+                         onchange="atualizarTotalVisual()" ${isMarcado ? "checked" : ""}
+                         class="w-4 h-4 text-pink-600 rounded border-gray-300 focus:ring-pink-500 cursor-pointer">
+                  <label for="${htmlId}" class="text-sm text-slate-700 cursor-pointer select-none flex-1 flex justify-between">
+                      <span>${taxa.descricao}</span>
+                      <span class="text-xs font-bold text-slate-500">${valorFormatado}</span>
+                  </label>
+              </div>
+          `;
+      });
+  } else {
+      divTaxas.innerHTML = "<p class='text-xs text-slate-400 col-span-2'>Nenhuma taxa cadastrada na categoria 'sistema'.</p>";
+  }
+
+  // --- FINANCEIRO ---
+  const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
+  let valorSalvoExtraTotal = parseFloat(pedidoAtual.valor_itens_extras) || 0;
+
+  let somaTaxasDetectadas = 0;
+  const checkboxes = divTaxas.querySelectorAll('input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+      if(cb.checked) somaTaxasDetectadas += parseFloat(cb.value);
+  });
+  
+  let valorManual = valorSalvoExtraTotal - somaTaxasDetectadas;
+  if (valorManual < 0.01 && valorManual > -0.01) valorManual = 0;
+
+  document.getElementById("fin_valor_final").value = valorSalvoBase.toFixed(2);
+  document.getElementById("fin_valor_extras").value = valorManual.toFixed(2);
+  document.getElementById("fin_desc_extras").value = pedidoAtual.descricao_itens_extras || "";
+
+  atualizarTotalVisual();
+
+  // Botões Status
+  const btnAprovar = document.getElementById("btnAprovar");
+  const btnConcluir = document.getElementById("btnConcluir");
+  if (pedidoAtual.status === "aprovado" && pedidoAtual.status_agenda !== "concluido") {
+    btnAprovar.classList.add("hidden");
+    btnConcluir.classList.remove("hidden");
+  } else {
+    btnAprovar.classList.remove("hidden");
+    btnConcluir.classList.add("hidden");
+  }
+
+  const btnFluxo = document.getElementById("btnFluxo");
+  btnFluxo.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i> <span>Salvar, Gerar Links e Copiar</span>`;
+  btnFluxo.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
+  btnFluxo.disabled = false;
+
+  document.getElementById("modalDetalhes").classList.remove("hidden");
+  lucide.createIcons();
+}
       function fecharModal() {
         document.getElementById("modalDetalhes").classList.add("hidden");
       }

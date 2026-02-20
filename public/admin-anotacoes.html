@@ -91,63 +91,68 @@
         });
 
         // 3. CARREGAR ANOTAÇÕES DO BANCO
-        async function carregarAnotacoes() {
-            try {
-                const res = await fetch('/api/admin/anotacoes', {
-                    headers: { 'x-admin-password': adminPass }
-                });
-                
-                if (!res.ok) throw new Error('Falha de autenticação ao carregar as notas.');
-                
-                const notas = await res.json();
-                const container = document.getElementById('container-notas');
-                container.innerHTML = '';
+        // 3. CARREGAR ANOTAÇÕES DO BANCO
+async function carregarAnotacoes() {
+    try {
+        const res = await fetch('/api/admin/anotacoes', {
+            headers: { 'x-admin-password': adminPass }
+        });
+        
+        if (!res.ok) throw new Error('Falha de autenticação ao carregar as notas.');
+        
+        const notas = await res.json();
+        const container = document.getElementById('container-notas');
+        container.innerHTML = '';
 
-                if (notas.length === 0) {
-                    container.innerHTML = `
-                        <div class="col-span-full flex flex-col items-center justify-center text-slate-400 py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
-                            <i data-lucide="inbox" class="w-12 h-12 mb-3 opacity-50"></i>
-                            <p>Nenhuma anotação encontrada.</p>
-                        </div>
-                    `;
-                    lucide.createIcons();
-                    return;
-                }
-
-                notas.forEach(nota => {
-                    const dataFormatada = new Date(nota.data_criacao).toLocaleString('pt-BR', {
-                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'
-                    });
-                    
-                    // Proteção simples contra quebra de HTML (XSS)
-                    const safeTitulo = nota.titulo ? nota.titulo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
-                    const safeConteudo = nota.conteudo ? nota.conteudo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
-
-                    container.innerHTML += `
-                        <div class="relative p-5 rounded-2xl shadow-sm border border-slate-200 transition-transform hover:-translate-y-1 group flex flex-col justify-between" style="background-color: ${nota.cor}; min-height: 150px;">
-                            
-                            <button onclick="excluirAnotacao(${nota.id})" class="absolute top-3 right-3 text-red-400 hover:text-red-600 hover:bg-white/50 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" title="Excluir Anotação">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                            
-                            <div>
-                                ${safeTitulo ? `<h3 class="font-bold text-slate-800 mb-2 border-b border-slate-800/10 pb-2 pr-6">${safeTitulo}</h3>` : ''}
-                                <div class="text-slate-700 whitespace-pre-wrap break-words text-sm mt-2">${safeConteudo}</div>
-                            </div>
-                            
-                            <div class="mt-4 text-xs text-slate-500/80 text-right font-medium">
-                                ${dataFormatada}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                lucide.createIcons();
-            } catch (err) {
-                console.error(err);
-            }
+        if (notas.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center text-slate-400 py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
+                    <i data-lucide="inbox" class="w-12 h-12 mb-3 opacity-50"></i>
+                    <p>Nenhuma anotação encontrada.</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
         }
 
+        notas.forEach(nota => {
+            const dataFormatada = new Date(nota.data_criacao).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'
+            });
+            
+            // Proteção simples contra quebra de HTML (XSS)
+            const safeTitulo = nota.titulo ? nota.titulo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+            const safeConteudo = nota.conteudo ? nota.conteudo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+
+            container.innerHTML += `
+                <div class="relative p-5 rounded-2xl shadow-sm border border-slate-200 transition-transform hover:-translate-y-1 group flex flex-col justify-between" style="background-color: ${nota.cor}; min-height: 150px;">
+                    
+                    <div class="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="copiarAnotacao(${nota.id}, this)" class="text-slate-500 hover:text-blue-600 hover:bg-white/60 p-1.5 rounded-lg transition-colors" title="Copiar Anotação">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="excluirAnotacao(${nota.id})" class="text-red-400 hover:text-red-600 hover:bg-white/60 p-1.5 rounded-lg transition-colors" title="Excluir Anotação">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div>
+                        ${safeTitulo ? `<h3 class="font-bold text-slate-800 mb-2 border-b border-slate-800/10 pb-2 pr-16">${safeTitulo}</h3>` : ''}
+                        <div id="conteudo-${nota.id}" class="text-slate-700 whitespace-pre-wrap break-words text-sm mt-2">${safeConteudo}</div>
+                    </div>
+                    
+                    <div class="mt-4 text-xs text-slate-500/80 text-right font-medium">
+                        ${dataFormatada}
+                    </div>
+                </div>
+            `;
+        });
+        
+        lucide.createIcons();
+    } catch (err) {
+        console.error(err);
+    }
+}
         // 4. SALVAR NOVA ANOTAÇÃO
         async function salvarAnotacao() {
             const titulo = document.getElementById('nota-titulo').value;
@@ -202,7 +207,29 @@
                 console.error(err);
             }
         }
-
+        // 6. COPIAR ANOTAÇÃO (Com Feedback Visual)
+        async function copiarAnotacao(id, btn) {
+    const conteudo = document.getElementById(`conteudo-${id}`).innerText;
+    
+    try {
+        await navigator.clipboard.writeText(conteudo);
+        
+        // Feedback visual: Muda para o ícone de Check verde
+        const iconeOriginal = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-600"></i>';
+        lucide.createIcons(); 
+        
+        // Retorna ao ícone de cópia após 2 segundos
+        setTimeout(() => {
+            btn.innerHTML = iconeOriginal;
+            lucide.createIcons();
+        }, 2000);
+        
+    } catch (err) {
+        console.error('Erro ao copiar:', err);
+        alert('Não foi possível copiar o texto.');
+    }
+}
         // Executa a carga inicial das notas
         carregarAnotacoes();
     </script>

@@ -281,115 +281,125 @@
             } catch { return []; }
         }
 
-        function abrirModalAgenda(dados) {
-            eventoSelecionado = dados;
-            
-            // --- Preencher Ficha do Evento ---
-            document.getElementById('det-nome').innerText = dados.nome;
-            
-            const whatsappLimpo = dados.whatsapp ? dados.whatsapp.replace(/\D/g,'') : '';
-            document.getElementById('det-whatsapp').innerText = dados.whatsapp || '-';
-            document.getElementById('det-whatsapp-link').href = whatsappLimpo ? `https://wa.me/55${whatsappLimpo}` : '#';
+ function abrirModalAgenda(dados) {
+    eventoSelecionado = dados;
+    
+    // --- Preencher Ficha do Evento ---
+    document.getElementById('det-nome').innerText = dados.nome;
+    
+    const whatsappLimpo = dados.whatsapp ? dados.whatsapp.replace(/\D/g,'') : '';
+    document.getElementById('det-whatsapp').innerText = dados.whatsapp || '-';
+    document.getElementById('det-whatsapp-link').href = whatsappLimpo ? `https://wa.me/55${whatsappLimpo}` : '#';
 
-            const btnCopyWa = document.getElementById('btn-copy-wa');
-            if (dados.whatsapp) {
-                btnCopyWa.classList.remove('hidden');
-                btnCopyWa.setAttribute('onclick', `copiarWhatsApp('${dados.whatsapp}', this)`);
-            } else {
-                btnCopyWa.classList.add('hidden');
-            }
+    const btnCopyWa = document.getElementById('btn-copy-wa');
+    if (dados.whatsapp) {
+        btnCopyWa.classList.remove('hidden');
+        btnCopyWa.setAttribute('onclick', `copiarWhatsApp('${dados.whatsapp}', this)`);
+    } else {
+        btnCopyWa.classList.add('hidden');
+    }
 
-            let d = dados.data_festa;
-            if(d.includes('T')) d = d.split('T')[0];
-            const dataFormatada = new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-            document.getElementById('det-data').innerText = dataFormatada;
-            document.getElementById('det-horario').innerText = dados.horario || 'Não informado';
-            
-            document.getElementById('det-endereco').innerText = dados.endereco;
+    let d = dados.data_festa;
+    if(d.includes('T')) d = d.split('T')[0];
+    const dataFormatada = new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+    document.getElementById('det-data').innerText = dataFormatada;
+    document.getElementById('det-horario').innerText = dados.horario || 'Não informado';
+    
+    document.getElementById('det-endereco').innerText = dados.endereco;
 
-            // --- Estrutura ---
-            document.getElementById('det-modelo').innerText = dados.modelo_barraca;
-            document.getElementById('det-qtd-barracas').innerText = dados.qtd_barracas;
-            document.getElementById('det-criancas').innerText = dados.qtd_criancas || '-';
-            document.getElementById('det-faixa').innerText = dados.faixa_etaria || '-';
+    // --- Estrutura ---
+    document.getElementById('det-modelo').innerText = dados.modelo_barraca;
+    document.getElementById('det-qtd-barracas').innerText = dados.qtd_barracas;
+    document.getElementById('det-criancas').innerText = dados.qtd_criancas || '-';
+    document.getElementById('det-faixa').innerText = dados.faixa_etaria || '-';
 
-            // --- Decoração ---
-            document.getElementById('det-tema').innerText = dados.tema || 'A definir';
-            document.getElementById('det-cores').innerText = dados.cores || 'A definir';
+    // --- Decoração ---
+    document.getElementById('det-tema').innerText = dados.tema || 'A definir';
+    document.getElementById('det-cores').innerText = dados.cores || 'A definir';
 
-            // --- Itens e Alimentação ---
-            const divItens = document.getElementById('det-itens-tags');
-            const divComida = document.getElementById('det-comida-tags');
-            divItens.innerHTML = '';
-            divComida.innerHTML = '';
+    // --- Itens e Alimentação ---
+    const divItens = document.getElementById('det-itens-tags');
+    const divComida = document.getElementById('det-comida-tags');
+    divItens.innerHTML = '';
+    divComida.innerHTML = '';
 
-            const itens = safeParse(dados.itens_padrao);
-            if(itens.length === 0) divItens.innerHTML = '<span class="text-xs text-slate-400 italic">Nenhum item extra.</span>';
-            itens.forEach(i => {
-                divItens.innerHTML += `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded border border-indigo-100">${i}</span>`;
-            });
+    const itens = safeParse(dados.itens_padrao);
+    if(itens.length === 0) divItens.innerHTML = '<span class="text-xs text-slate-400 italic">Nenhum item extra.</span>';
+    itens.forEach(i => {
+        divItens.innerHTML += `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded border border-indigo-100">${i}</span>`;
+    });
 
-            const comida = safeParse(dados.alimentacao);
-            if(comida.length === 0) divComida.innerHTML = '<span class="text-xs text-slate-400 italic">Sem alimentação inclusa.</span>';
-            comida.forEach(c => {
-                divComida.innerHTML += `<span class="bg-pink-50 text-pink-700 text-[10px] font-bold px-2 py-1 rounded border border-pink-100 flex items-center gap-1"><i data-lucide="utensils" class="w-3 h-3"></i> ${c}</span>`;
-            });
+    const comida = safeParse(dados.alimentacao);
+    if(comida.length === 0) divComida.innerHTML = '<span class="text-xs text-slate-400 italic">Sem alimentação inclusa.</span>';
+    comida.forEach(c => {
+        divComida.innerHTML += `<span class="bg-pink-50 text-pink-700 text-[10px] font-bold px-2 py-1 rounded border border-pink-100 flex items-center gap-1"><i data-lucide="utensils" class="w-3 h-3"></i> ${c}</span>`;
+    });
 
-            // --- Obs e Alergias ---
-            document.getElementById('det-obs').innerText = dados.itens_adicionais || 'Nenhuma.';
-            const boxAlergias = document.getElementById('box-alergias');
-            if(dados.alergias && dados.alergias.length > 2 && dados.alergias.toLowerCase() !== 'não') {
-                document.getElementById('det-alergias').innerText = dados.alergias;
-                boxAlergias.classList.remove('hidden');
-            } else {
-                boxAlergias.classList.add('hidden');
-            }
+    // --- Obs e Alergias ---
+    document.getElementById('det-obs').innerText = dados.itens_adicionais || 'Nenhuma.';
+    const boxAlergias = document.getElementById('box-alergias');
+    if(dados.alergias && dados.alergias.length > 2 && dados.alergias.toLowerCase() !== 'não') {
+        document.getElementById('det-alergias').innerText = dados.alergias;
+        boxAlergias.classList.remove('hidden');
+    } else {
+        boxAlergias.classList.add('hidden');
+    }
 
-            // --- Coluna Direita (Financeiro e Status) ---
-            document.getElementById('det-valor-final').innerText = `R$ ${dados.valor_final || '0.00'}`;
-            document.getElementById('det-status-agenda').innerText = dados.status_agenda || 'Agendado';
-            
-            const statusPg = (dados.status_pagamento || 'pendente').toLowerCase();
-            const badgePg = document.getElementById('badge-status-pagamento');
-            const spanPg = document.getElementById('det-status-pagamento');
-            const btnPg = document.getElementById('btn-gerar-pagamento');
-            
-            spanPg.innerText = statusPg;
-            document.getElementById('box-links-pagamento').classList.add('hidden');
-            
-            if(statusPg === 'pago') {
-                badgePg.className = "text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full w-fit border bg-green-100 text-green-700 border-green-200";
-                btnPg.classList.add('hidden');
-            } else {
-                badgePg.className = "text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full w-fit border bg-orange-100 text-orange-700 border-orange-200";
-                btnPg.classList.remove('hidden');
-            }
+    // --- Coluna Direita (Financeiro e Status) ---
+    
+    // 1. CÁLCULO CORRETO DO VALOR TOTAL (Base + Extras)
+    const valorBase = parseFloat(dados.valor_final) || 0;
+    const valorExtras = parseFloat(dados.valor_itens_extras) || 0;
+    const valorTotalContratado = valorBase + valorExtras;
+    
+    document.getElementById('det-valor-final').innerText = `R$ ${valorTotalContratado.toFixed(2).replace('.', ',')}`;
+    document.getElementById('det-status-agenda').innerText = dados.status_agenda || 'Agendado';
+    
+    const statusPg = (dados.status_pagamento || 'pendente').toLowerCase();
+    const statusAg = (dados.status_agenda || '').toLowerCase();
+    const badgePg = document.getElementById('badge-status-pagamento');
+    const spanPg = document.getElementById('det-status-pagamento');
+    const btnPg = document.getElementById('btn-gerar-pagamento');
+    
+    spanPg.innerText = statusPg;
+    document.getElementById('box-links-pagamento').classList.add('hidden');
+    
+    if(statusPg === 'pago') {
+        badgePg.className = "text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full w-fit border bg-green-100 text-green-700 border-green-200";
+        btnPg.classList.add('hidden');
+    } else {
+        badgePg.className = "text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full w-fit border bg-orange-100 text-orange-700 border-orange-200";
+        btnPg.classList.remove('hidden');
+    }
 
-            document.getElementById('box-link').classList.add('hidden');
-            document.getElementById('btn-gerar-link').classList.remove('hidden');
+    document.getElementById('box-link').classList.add('hidden');
+    document.getElementById('btn-gerar-link').classList.remove('hidden');
 
-            // --- LÓGICA DO BOTÃO INFERIOR (PEGUE E MONTE vs NORMAL) ---
-            const areaBotao = document.getElementById('area-botao-concluir');
-            if (dados.modelo_barraca === 'PEGUE E MONTE') {
-                areaBotao.innerHTML = `
-                    <button onclick="concluirFestaSimples()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-slate-900 shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
-                        <i data-lucide="check-circle" class="w-5 h-5"></i> Concluir Pedido (Sem lançar receita)
-                    </button>
-                    <p class="text-[10px] text-center text-slate-400 mt-2">Apenas finaliza na agenda. O financeiro do Pegue e Monte já foi contabilizado.</p>
-                `;
-            } else {
-                areaBotao.innerHTML = `
-                    <button onclick="concluirServico()" class="w-full bg-green-500 text-white font-bold py-4 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200 flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
-                        <i data-lucide="check-circle-2" class="w-5 h-5"></i> Concluir & Lançar Receita
-                    </button>
-                    <p class="text-[10px] text-center text-slate-400 mt-2">Isso marcará a festa como realizada e atualizará o financeiro.</p>
-                `;
-            }
+    // --- 2. LÓGICA INTELIGENTE DO BOTÃO INFERIOR ---
+    const areaBotao = document.getElementById('area-botao-concluir');
+    const isPegueMonte = dados.modelo_barraca === 'PEGUE E MONTE';
+    
+    // Se for Pegue e Monte, OU já estiver Agendado, OU já estiver Pago -> Não lança receita duplicada
+    if (isPegueMonte || statusAg === 'agendado' || statusPg === 'pago') {
+        areaBotao.innerHTML = `
+            <button onclick="concluirFestaSimples()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-slate-900 shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> Concluir Pedido na Agenda
+            </button>
+            <p class="text-[10px] text-center text-slate-400 mt-2">Apenas finaliza na agenda. (Lançamentos financeiros já foram registrados).</p>
+        `;
+    } else {
+        // Caso contrário (ex: status pendente), permite lançar a receita manual ao concluir
+        areaBotao.innerHTML = `
+            <button onclick="concluirServico()" class="w-full bg-green-500 text-white font-bold py-4 rounded-xl hover:bg-green-600 shadow-lg shadow-green-200 flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i> Concluir & Lançar Receita
+            </button>
+            <p class="text-[10px] text-center text-slate-400 mt-2">Isso marcará a festa como realizada e atualizará o financeiro.</p>
+        `;
+    }
 
-            document.getElementById('modal-agenda').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
+    document.getElementById('modal-agenda').classList.remove('hidden');
+    lucide.createIcons();
+}
         async function gerarLinksPagamento() {
             const btn = document.getElementById('btn-gerar-pagamento');
             const originalText = btn.innerHTML;

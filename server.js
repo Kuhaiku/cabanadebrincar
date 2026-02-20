@@ -1448,4 +1448,39 @@ app.put("/api/admin/pegue-monte/:id", checkAuth, upload.array("fotos", 10), asyn
     res.status(500).json({ error: e.message });
   }
 });
+
+
+// =========================================================================
+// --- 9. SISTEMA DE ANOTAÇÕES (BLOCO DE NOTAS) ---
+// =========================================================================
+
+app.get("/api/admin/anotacoes", checkAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM anotacoes ORDER BY data_criacao DESC");
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/admin/anotacoes", checkAuth, async (req, res) => {
+  try {
+    const { titulo, conteudo, cor } = req.body;
+    await db.query("INSERT INTO anotacoes (titulo, conteudo, cor) VALUES (?, ?, ?)", [titulo, conteudo, cor || '#ffffff']);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete("/api/admin/anotacoes/:id", checkAuth, async (req, res) => {
+  try {
+    await db.query("DELETE FROM anotacoes WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

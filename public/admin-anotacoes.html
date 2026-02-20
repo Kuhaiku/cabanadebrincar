@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anotações - Cabana de Brincar</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f4f9; margin: 0; padding: 20px; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; background-color: #6C63FF; font-weight: bold; }
+        .btn:hover { background-color: #5750d1; }
+        
+        /* Formulário */
+        .form-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px; max-width: 600px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        textarea { resize: vertical; min-height: 80px; }
+        .color-picker { display: flex; gap: 10px; align-items: center; }
+        .color-option { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+        .color-option.selected { border-color: #333; }
+        
+        /* Grid de Notas */
+        .notas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .nota-card { padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; transition: transform 0.2s; white-space: pre-wrap; word-wrap: break-word; }
+        .nota-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .nota-titulo { font-weight: bold; margin-bottom: 10px; font-size: 16px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px; }
+        .nota-data { font-size: 11px; color: #666; margin-top: 15px; text-align: right; }
+        .btn-excluir { position: absolute; top: 10px; right: 10px; background: rgba(255, 0, 0, 0.1); color: red; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; }
+        .btn-excluir:hover { background: red; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>📌 Minhas Anotações</h2>
+        <button class="btn" onclick="window.location.href='painel.html'">Voltar ao Painel</button>
+    </div>
+
+    <div class="form-container">
+        <input type="text" id="nota-titulo" placeholder="Título da anotação (opcional)">
+        <textarea id="nota-conteudo" placeholder="Escreva sua anotação aqui..." required></textarea>
+        
+        <div class="color-picker" id="color-picker">
+            <span>Cor:</span>
+            <div class="color-option selected" style="background-color: #ffffff;" data-color="#ffffff"></div>
+            <div class="color-option" style="background-color: #fff475;" data-color="#fff475"></div> <div class="color-option" style="background-color: #ccff90;" data-color="#ccff90"></div> <div class="color-option" style="background-color: #fbbc04;" data-color="#fbbc04"></div> <div class="color-option" style="background-color: #fdcfe8;" data-color="#fdcfe8"></div> <div class="color-option" style="background-color: #cbf0f8;" data-color="#cbf0f8"></div> </div>
+
+        <button class="btn" onclick="salvarAnotacao()">Salvar Anotação</button>
+    </div>
+
+    <div class="notas-grid" id="container-notas"></div>
+
+    <script>
+        const adminPass = localStorage.getItem('admin_pass');
+        if (!adminPass) {
+            alert('Acesso negado.');
+            window.location.href = 'index.html';
+        }
+
+        let corSelecionada = '#ffffff';
+
+        // Lógica para selecionar cor
+        document.querySelectorAll('.color-option').forEach(el => {
+            el.addEventListener('click', (e) => {
+                document.querySelectorAll('.color-option').forEach(c => c.classList.remove('selected'));
+                e.target.classList.add('selected');
+                corSelecionada = e.target.getAttribute('data-color');
+            });
+        });
+
+        async function carregarAnotacoes() {
+            try {
+                const res = await fetch('/api/admin/anotacoes', {
+                    headers: { 'x-admin-password': adminPass }
+                });
+                const notas = await res.json();
+                
+                const container = document.getElementById('container-notas');
+                container.innerHTML = '';
+
+                notas.forEach(nota => {
+                    const dataFormatada = new Date(nota.data_criacao).toLocaleString('pt-BR');
+                    container.innerHTML += `
+                        <div class="nota-card" style="background-color: ${nota.cor};">
+                            <button class="btn-excluir" onclick="excluirAnotacao(${nota.id})">✖</button>
+                            ${nota.titulo ? `<div class="nota-titulo">${nota.titulo}</div>` : ''}
+                            <div class="nota-conteudo">${nota.conteudo}</div>
+                            <div class="nota-data">${dataFormatada}</div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function salvarAnotacao() {
+            const titulo = document.getElementById('nota-titulo').value;
+            const conteudo = document.getElementById('nota-conteudo').value;
+
+            if (!conteudo.trim()) return alert('O conteúdo da anotação não pode estar vazio.');
+
+            try {
+                const res = await fetch('/api/admin/anotacoes', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': adminPass 
+                    },
+                    body: JSON.stringify({ titulo, conteudo, cor: corSelecionada })
+                });
+
+                if (res.ok) {
+                    document.getElementById('nota-titulo').value = '';
+                    document.getElementById('nota-conteudo').value = '';
+                    carregarAnotacoes();
+                } else {
+                    alert('Erro ao salvar anotação.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function excluirAnotacao(id) {
+            if (!confirm('Tem certeza que deseja apagar esta anotação?')) return;
+            try {
+                const res = await fetch(`/api/admin/anotacoes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': adminPass }
+                });
+                if (res.ok) carregarAnotacoes();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Inicializa a página
+        carregarAnotacoes();
+    </script>
+</body>
+</html>

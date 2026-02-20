@@ -28,6 +28,48 @@ const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
 });
+// --- FUNÇÃO PARA ENVIAR E-MAIL NO ATO DA RESERVA (PEGUE E MONTE) ---
+async function enviarEmailReservaPegueMonte(email, nome, nome_pacote, data_festa, horario, linkMP) {
+  if (!email || email.length < 5) return;
+  
+  let dataFormatada = new Date(data_festa + 'T00:00:00').toLocaleDateString('pt-BR');
+
+  let corpoHtml = `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #f1f5f9; padding: 20px; border-radius: 10px;">
+      <h2 style="color: #ec4899; margin-top: 0;">Olá, ${nome}! ⛺</h2>
+      <p>Recebemos o seu pedido de reserva para o formato <strong>Pegue e Monte</strong>.</p>
+      
+      <div style="background: #fdf2f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0 0 10px 0;"><strong>📦 Pacote Escolhido:</strong> ${nome_pacote}</p>
+          <p style="margin: 0 0 10px 0;"><strong>📅 Data da Retirada/Festa:</strong> ${dataFormatada}</p>
+          <p style="margin: 0;"><strong>⏰ Horário:</strong> ${horario || 'Não informado'}</p>
+      </div>
+      
+      <p>Para confirmar sua reserva e bloquearmos a data exclusivamente para você, conclua o pagamento pelo link seguro do Mercado Pago:</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+          <a href="${linkMP}" style="background: #ec4899; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Pagar e Confirmar Reserva</a>
+      </div>
+      
+      <p style="font-size: 12px; color: #64748b;">Se você já realizou o pagamento, desconsidere. Enviaremos outro e-mail assim que for aprovado!</p>
+      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+      <small style="color: #94a3b8; font-weight: bold;">Cabana de Brincar</small>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Cabana de Brincar" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Sua Reserva: Pegue e Monte ⛺",
+      html: corpoHtml,
+    });
+    console.log(`✅ E-mail de reserva enviado para: ${email}`);
+  } catch (err) {
+    console.error("❌ Erro ao enviar e-mail:", err.message);
+  }
+}
+
 
 // Mercado Pago
 const mpClient = new MercadoPagoConfig({
@@ -1244,55 +1286,25 @@ app.delete("/api/admin/pegue-monte/:id", checkAuth, async (req, res) => {
 
 app.post("/api/orcamento-pegue-monte", async (req, res) => {
   try {
-    const {
-      nome,
-      telefone,
-      email,
-      data_festa,
-      horario,
-      endereco,
-      pacote_id,
-      nome_pacote,
-      valor_pacote,
-    } = req.body;
-
-    // O nome do pacote fica salvo no tema
+    const { nome, telefone, email, data_festa, horario, endereco, pacote_id, nome_pacote, valor_pacote } = req.body;
+    
     const temaString = `Pacote: ${nome_pacote} (ID: ${pacote_id})`;
 
-    // Inserindo com endereço e horário agora
     const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, horario, data_festa, modelo_barraca, status_pagamento, valor_final, tema) VALUES (?, ?, ?, ?, ?, ?, ?, 'pendente', ?, ?)`;
-    const values = [
-      nome,
-      telefone,
-      email || null,
-      endereco,
-      horario,
-      data_festa,
-      "PEGUE E MONTE",
-      valor_pacote,
-      temaString,
-    ];
+    const values = [nome, telefone, email || null, endereco, horario, data_festa, 'PEGUE E MONTE', valor_pacote, temaString];
 
     const [result] = await db.query(sql, values);
-    const linkMP = await criarLinkMP(
-      `Pegue e Monte - ${nome_pacote}`,
-      valor_pacote,
-      result.insertId,
-      "PEGUE_MONTE",
-    );
+    const linkMP = await criarLinkMP(`Pegue e Monte - ${nome_pacote}`, valor_pacote, result.insertId, "PEGUE_MONTE");
+    
+    // --- CHAMA O E-MAIL AQUI ---
+    if (email) {
+        enviarEmailReservaPegueMonte(email, nome, nome_pacote, data_festa, horario, linkMP);
+    }
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        pedido_id: result.insertId,
-        link_pagamento: linkMP,
-      });
-  } catch (e) {
+    res.status(201).json({ success: true, pedido_id: result.insertId, link_pagamento: linkMP });
+  } catch (e) { 
     console.error(e);
-    res
-      .status(500)
-      .json({ error: "Erro ao registrar o pedido pegue e monte." });
+    res.status(500).json({ error: "Erro ao registrar o pedido pegue e monte." }); 
   }
 });
 

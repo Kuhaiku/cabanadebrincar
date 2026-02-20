@@ -91,8 +91,7 @@
         });
 
         // 3. CARREGAR ANOTAÇÕES DO BANCO
-        // 3. CARREGAR ANOTAÇÕES DO BANCO
-async function carregarAnotacoes() {
+        async function carregarAnotacoes() {
     try {
         const res = await fetch('/api/admin/anotacoes', {
             headers: { 'x-admin-password': adminPass }
@@ -120,7 +119,6 @@ async function carregarAnotacoes() {
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'
             });
             
-            // Proteção simples contra quebra de HTML (XSS)
             const safeTitulo = nota.titulo ? nota.titulo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
             const safeConteudo = nota.conteudo ? nota.conteudo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
 
@@ -137,7 +135,7 @@ async function carregarAnotacoes() {
                     </div>
                     
                     <div>
-                        ${safeTitulo ? `<h3 class="font-bold text-slate-800 mb-2 border-b border-slate-800/10 pb-2 pr-16">${safeTitulo}</h3>` : ''}
+                        ${safeTitulo ? `<h3 id="titulo-${nota.id}" class="font-bold text-slate-800 mb-2 border-b border-slate-800/10 pb-2 pr-16">${safeTitulo}</h3>` : ''}
                         <div id="conteudo-${nota.id}" class="text-slate-700 whitespace-pre-wrap break-words text-sm mt-2">${safeConteudo}</div>
                     </div>
                     
@@ -153,6 +151,7 @@ async function carregarAnotacoes() {
         console.error(err);
     }
 }
+
         // 4. SALVAR NOVA ANOTAÇÃO
         async function salvarAnotacao() {
             const titulo = document.getElementById('nota-titulo').value;
@@ -207,19 +206,21 @@ async function carregarAnotacoes() {
                 console.error(err);
             }
         }
-        // 6. COPIAR ANOTAÇÃO (Com Feedback Visual)
-        async function copiarAnotacao(id, btn) {
+        // 6. COPIAR ANOTAÇÃO (Com Título e Feedback Visual)
+async function copiarAnotacao(id, btn) {
+    const elTitulo = document.getElementById(`titulo-${id}`);
     const conteudo = document.getElementById(`conteudo-${id}`).innerText;
     
+    // Se existir um título, junta ele com o conteúdo quebrando duas linhas
+    const textoParaCopiar = elTitulo ? `${elTitulo.innerText}\n\n${conteudo}` : conteudo;
+    
     try {
-        await navigator.clipboard.writeText(conteudo);
+        await navigator.clipboard.writeText(textoParaCopiar);
         
-        // Feedback visual: Muda para o ícone de Check verde
         const iconeOriginal = btn.innerHTML;
         btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-600"></i>';
         lucide.createIcons(); 
         
-        // Retorna ao ícone de cópia após 2 segundos
         setTimeout(() => {
             btn.innerHTML = iconeOriginal;
             lucide.createIcons();
@@ -230,6 +231,8 @@ async function carregarAnotacoes() {
         alert('Não foi possível copiar o texto.');
     }
 }
+        
+
         // Executa a carga inicial das notas
         carregarAnotacoes();
     </script>

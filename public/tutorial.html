@@ -63,7 +63,7 @@
     </header>
 
     <main class="pt-24 pb-16 px-4">
-      <div class="container mx-auto max-w-7xl">
+      <div class="container mx-auto max-w-[1400px]">
         
         <div class="text-center mb-12">
           <div class="inline-block px-4 py-1.5 rounded-full bg-white border border-brand-pink/20 text-brand-pink text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
@@ -73,22 +73,20 @@
             Qual é o estilo da sua festa?
           </h1>
           <p class="text-slate-500 text-lg max-w-2xl mx-auto">
-            Da brincadeira de criança ao lounge sofisticado. <br class="hidden md:block">
-            Entenda a diferença entre nossas estruturas e escolha a ideal.
+            Da brincadeira de criança ao lounge sofisticado, ou a praticidade de montar você mesmo. <br class="hidden md:block">
+            Entenda nossos formatos e escolha o ideal.
           </p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 items-stretch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-16 items-stretch">
           
           <div class="h-full group cursor-pointer" onclick="abrirPreview('fotos/tendagigante.jpg')">
              <div class="bg-white rounded-[2rem] shadow-xl border-4 border-white group-hover:border-brand-purple/30 transition-all h-full overflow-hidden duration-300 p-6 flex flex-col">
                 
                 <div class="h-48 bg-purple-100 rounded-2xl mb-6 relative overflow-hidden transition-all duration-500">
-                    
                     <div class="absolute inset-0 bg-[url('fotos/tendagigante.jpg')] bg-cover bg-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                         <div class="absolute inset-0 bg-black/30"></div>
                     </div>
-
                     <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
                         <i data-lucide="tent" class="w-16 h-16 text-brand-purple opacity-50 transition-colors duration-500 group-hover:text-white group-hover:opacity-100"></i>
                         <div class="mt-2 font-display font-bold text-brand-purple/60 text-xs tracking-widest transition-colors duration-500 group-hover:text-white/90">ESTILO "SALÃO"</div>
@@ -120,19 +118,15 @@
           </div>
 
           <div class="h-full relative group hover:scale-105 transition-transform duration-300 z-10 cursor-pointer" onclick="abrirPreview('fotos/tipi.png')">
-            
              <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-pink text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg uppercase tracking-wider whitespace-nowrap z-20 border-2 border-white">
-              ★ Mais Pedida das Crianças
+               ★ Mais Pedida
             </div>
 
             <div class="bg-white rounded-[2rem] shadow-xl border-4 border-brand-pink h-full overflow-hidden duration-300 p-6 flex flex-col pt-8">
-                
                 <div class="h-48 bg-pink-50 rounded-2xl mb-6 relative overflow-hidden transition-all duration-500">
-                    
                     <div class="absolute inset-0 bg-[url('fotos/tipi.png')] bg-cover bg-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                         <div class="absolute inset-0 bg-black/30"></div>
                     </div>
-
                     <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
                         <i data-lucide="tent-tree" class="w-16 h-16 text-brand-pink opacity-50 transition-colors duration-500 group-hover:text-white group-hover:opacity-100"></i>
                         <div class="mt-2 font-display font-bold text-brand-pink/60 text-xs tracking-widest transition-colors duration-500 group-hover:text-white/90">ESTILO "TIPI"</div>
@@ -165,13 +159,10 @@
 
           <div class="h-full group cursor-pointer" onclick="abrirPreview('fotos/GAZEBO.png')">
             <div class="bg-white rounded-[2rem] shadow-xl border-4 border-white group-hover:border-brand-gold/30 transition-all h-full overflow-hidden duration-300 p-6 flex flex-col">
-
                 <div class="h-48 bg-amber-50 rounded-2xl mb-6 relative overflow-hidden transition-all duration-500">
-                    
                     <div class="absolute inset-0 bg-[url('fotos/GAZEBO.png')] bg-cover bg-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                         <div class="absolute inset-0 bg-black/30"></div>
                     </div>
-
                     <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
                         <i data-lucide="store" class="w-16 h-16 text-brand-gold opacity-50 transition-colors duration-500 group-hover:text-white group-hover:opacity-100"></i>
                         <div class="mt-2 font-display font-bold text-brand-gold/60 text-xs tracking-widest transition-colors duration-500 group-hover:text-white/90">ESTILO "GAZEBO"</div>
@@ -186,17 +177,48 @@
                 </div>
                 
                 <p class="text-slate-500 text-sm mb-6 leading-relaxed flex-grow">
-                  Semelhante a um <strong>toldo ou gazebo elegante</strong>. É uma estrutura aberta, com tecidos fluidos, focada na estética e na convivência, não apenas em dormir.
+                  Semelhante a um <strong>toldo ou gazebo elegante</strong>. É uma estrutura aberta, com tecidos fluidos, focada na estética e na convivência.
                 </p>
 
                 <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <li class="flex items-start gap-2">
                     <i data-lucide="wine" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5"></i>
-                    <span><strong>Vibe Adulta:</strong> Perfeito para noites de vinhos, fotos e rodas de conversa.</span>
+                    <span><strong>Vibe Adulta:</strong> Perfeito para noites de vinhos e rodas de conversa.</span>
                   </li>
                   <li class="flex items-start gap-2">
                     <i data-lucide="camera" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5"></i>
-                    <span><strong>Cenográfico:</strong> Mais decorativo, ideal para compor o ambiente da festa.</span>
+                    <span><strong>Cenográfico:</strong> Decorativo, ideal para compor o ambiente da festa.</span>
+                  </li>
+                </ul>
+            </div>
+          </div>
+
+          <div class="h-full group">
+            <div class="bg-white rounded-[2rem] shadow-xl border-4 border-white group-hover:border-slate-800/20 transition-all h-full overflow-hidden duration-300 p-6 flex flex-col">
+                <div class="h-48 bg-slate-100 rounded-2xl mb-6 relative overflow-hidden transition-all duration-500 flex flex-col items-center justify-center group-hover:bg-slate-800">
+                    <i data-lucide="package-open" class="w-16 h-16 text-slate-400 transition-colors duration-500 group-hover:text-white"></i>
+                    <div class="mt-2 font-display font-bold text-slate-400 text-xs tracking-widest transition-colors duration-500 group-hover:text-white/90">FORMATO DE SERVIÇO</div>
+                </div>
+                
+                <h2 class="font-display text-xl font-bold text-brand-dark mb-2 flex items-center gap-2">
+                  Pegue e Monte
+                </h2>
+                <div>
+                    <span class="inline-block bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-full mb-4">Econômico / Prático</span>
+                </div>
+                
+                <p class="text-slate-500 text-sm mb-6 leading-relaxed flex-grow">
+                  A opção mais rápida e econômica. Você escolhe um de nossos pacotes prontos, retira conosco, monta do seu jeito e devolve no final.
+                </p>
+
+                <ul class="space-y-3 text-xs md:text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <li class="flex items-start gap-2">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-slate-500 shrink-0 mt-0.5"></i>
+                    <span><strong>Praticidade:</strong> Kits fechados com tudo que você precisa.</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <i data-lucide="wallet" class="w-4 h-4 text-slate-500 shrink-0 mt-0.5"></i>
+                    <span><strong>Economia:</strong> Excelente custo-benefício para sua festa.</span>
                   </li>
                 </ul>
             </div>
@@ -204,12 +226,23 @@
 
         </div>
 
-        <div class="text-center">
-            <p class="text-slate-400 mb-4 text-sm font-bold">Já escolheu a estrutura perfeita?</p>
-            <a href="orcamento.html" class="inline-flex items-center gap-3 bg-brand-pink text-white px-10 py-5 rounded-full font-bold text-xl shadow-lg shadow-pink-500/30 hover:bg-pink-500 transition-all transform hover:-translate-y-1 group">
-                Simular meu Orçamento
-                <i data-lucide="arrow-right" class="w-6 h-6 group-hover:translate-x-1 transition-transform"></i>
-            </a>
+        <div class="bg-white p-8 md:p-12 rounded-[2rem] shadow-sm border border-brand-pink/10 text-center max-w-4xl mx-auto">
+            <h3 class="font-display text-2xl md:text-3xl font-bold text-brand-dark mb-4">Tudo pronto para começar?</h3>
+            <p class="text-slate-500 mb-8 max-w-xl mx-auto">Escolha abaixo como você deseja seguir com a sua reserva. Nós cuidamos da montagem ou você mesmo leva a diversão para casa!</p>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6">
+                
+                <a href="orcamento.html" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-brand-pink text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg shadow-pink-500/30 hover:bg-pink-500 transition-all transform hover:-translate-y-1 group">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    Festa Personalizada
+                </a>
+                
+                <a href="pegue-monte.html" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-brand-dark text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg shadow-slate-800/30 hover:bg-slate-800 transition-all transform hover:-translate-y-1 group">
+                    <i data-lucide="package-open" class="w-5 h-5 text-brand-accent"></i>
+                    Festa Pronta (Pegue e Monte)
+                </a>
+
+            </div>
         </div>
 
       </div>

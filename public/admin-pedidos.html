@@ -204,8 +204,10 @@
         </div>
 
         <div
-          class="p-6 border-t border-slate-100 flex gap-3 justify-end bg-white sticky bottom-0"
+          class="p-6 border-t border-slate-100 flex gap-3 justify-end bg-white sticky bottom-0 items-center"
         >
+          <div class="flex-1" id="areaAvisoModal"></div>
+          
           <button
             onclick="acaoPedido('excluir')"
             class="px-4 py-2 text-red-500 font-bold hover:bg-red-50 rounded-lg text-sm"
@@ -231,7 +233,6 @@
     </div>
 
     <script>
-      // VOLTANDO AO TOKEN ORIGINAL PARA NÃO DAR ERRO NO SEU PAINEL
       const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
       if (!ADMIN_TOKEN) window.location.href = "painel.html";
 
@@ -260,6 +261,7 @@
           alert("Erro ao copiar o número.");
         }
       }
+
       // --- 1. CARREGAMENTO GERAL ---
       async function carregarDados() {
         try {
@@ -280,7 +282,7 @@
               fetch("/api/itens-disponiveis"), // Busca itens para os checkboxes (categoria sistema)
             ]);
 
-          todosPedidos = await resPedidos.json();
+          let pedidosBrutos = await resPedidos.json();
           tabelaPrecos = await resPrecos.json();
           listaCardapios = await resCardapios.json();
           listaAlimentos = await resAlimentos.json();
@@ -289,6 +291,28 @@
           const todosItens = await resItens.json();
           taxasSistema = todosItens.filter((i) => i.categoria === "sistema");
 
+          // --- LÓGICA DE DATA: +1 DIA = CONCLUÍDO AUTOMATICAMENTE ---
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+
+          pedidosBrutos.forEach(p => {
+              if (p.data_festa) {
+                  let dataFestaStr = p.data_festa;
+                  if (dataFestaStr.includes('T')) dataFestaStr = dataFestaStr.split('T')[0];
+                  const dataFesta = new Date(dataFestaStr + 'T00:00:00');
+                  
+                  const msPorDia = 1000 * 60 * 60 * 24;
+                  const diasPassados = (hoje.getTime() - dataFesta.getTime()) / msPorDia;
+                  
+                  // Se já passou 1 dia e não está cancelado, força visualmente como concluído
+                  if (diasPassados >= 1 && p.status !== 'cancelado') {
+                      p.status = 'concluido';
+                      p.status_agenda = 'concluido';
+                  }
+              }
+          });
+          
+          todosPedidos = pedidosBrutos;
           filtrar("todos");
         } catch (e) {
           console.error(e);
@@ -321,9 +345,12 @@
 
         grid.innerHTML = filtrados
           .map((p) => {
-            const dataFesta = new Date(p.data_festa).toLocaleDateString(
-              "pt-BR",
-            );
+            let dataFormatada = "Data não informada";
+            if(p.data_festa) {
+               let dStr = p.data_festa.includes('T') ? p.data_festa.split('T')[0] : p.data_festa;
+               dataFormatada = new Date(dStr + 'T00:00:00').toLocaleDateString("pt-BR");
+            }
+            
             let statusColor = "bg-yellow-100 text-yellow-700";
             let statusText = "Pendente";
 
@@ -354,7 +381,7 @@
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="font-bold text-slate-800 text-lg">${p.nome}</h3>
-                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${dataFesta} às ${p.horario}</p>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">${dataFormatada} às ${p.horario || '-'}</p>
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             <span class="${statusColor} px-3 py-1 rounded-full text-xs font-bold">${statusText}</span>
@@ -363,7 +390,7 @@
                     </div>
                     <div class="space-y-1 text-sm text-slate-600 mb-4">
                         <p class="flex items-center gap-2"><i data-lucide="tent" class="w-4 h-4 text-pink-400"></i> ${p.modelo_barraca}</p>
-                        <p class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-pink-400"></i> ${p.qtd_criancas} Crianças</p>
+                        <p class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-pink-400"></i> ${p.qtd_criancas || '-'} Crianças</p>
                     </div>
                     <div class="pt-4 border-t border-slate-50 flex justify-between items-center">
                         <span class="text-xs text-slate-400">Ver detalhes -></span>
@@ -398,8 +425,6 @@
       }
 
       // --- ABRIR DETALHES ---
-      // --- ABRIR DETALHES ---
-      // --- ABRIR DETALHES ---
       function abrirDetalhes(id) {
         pedidoAtual = todosPedidos.find((p) => p.id === id);
         if (!pedidoAtual) return;
@@ -411,6 +436,12 @@
         const areaFinanceira = btnFluxo
           ? btnFluxo.closest(".bg-slate-50.border-t")
           : null;
+
+        let dataFormatadaModal = "Data não informada";
+        if(pedidoAtual.data_festa) {
+            let dStr = pedidoAtual.data_festa.includes('T') ? pedidoAtual.data_festa.split('T')[0] : pedidoAtual.data_festa;
+            dataFormatadaModal = new Date(dStr + 'T00:00:00').toLocaleDateString("pt-BR");
+        }
 
         if (isPegueMonte) {
           // 1. RENDERIZAÇÃO LIMPA (SÓ PEGUE E MONTE)
@@ -448,7 +479,7 @@
                 <div class="space-y-3">
                     <h4 class="font-bold text-slate-800 text-base mb-2 border-b border-slate-100 pb-2">Detalhes da Retirada</h4>
                     <p><strong>Pacote Escolhido:</strong> <span class="font-bold text-pink-600">${nomePacote}</span></p>
-                    <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
+                    <p><strong>Data:</strong> ${dataFormatadaModal}</p>
                     <p><strong>Horário:</strong> ${pedidoAtual.horario || "Não informado"}</p>
                     <p><strong>Valor:</strong> <span class="font-bold text-green-600">R$ ${parseFloat(
                       pedidoAtual.valor_final || 0,
@@ -505,8 +536,8 @@
                 </div>
                 <div>
                     <h4 class="font-bold text-slate-800 mb-1">Evento</h4>
-                    <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
-                    <p><strong>Horário:</strong> ${pedidoAtual.horario}</p>
+                    <p><strong>Data:</strong> ${dataFormatadaModal}</p>
+                    <p><strong>Horário:</strong> ${pedidoAtual.horario || '-'}</p>
                     <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
                 </div>
             </div>
@@ -589,20 +620,30 @@
         // --- CONTROLES DA BARRA INFERIOR (Aprovar / Concluir) ---
         const btnAprovar = document.getElementById("btnAprovar");
         const btnConcluir = document.getElementById("btnConcluir");
-        if (
-          pedidoAtual.status === "aprovado" &&
-          pedidoAtual.status_agenda !== "concluido"
-        ) {
-          btnAprovar.classList.add("hidden");
-          btnConcluir.classList.remove("hidden");
+        const areaAviso = document.getElementById("areaAvisoModal");
+        
+        // Limpa aviso de conclusão
+        areaAviso.innerHTML = "";
+
+        if (pedidoAtual.status_agenda === "concluido") {
+            btnAprovar.classList.add("hidden");
+            btnConcluir.classList.add("hidden");
+            
+            // Exibe que a festa já foi realizada/concluída
+            areaAviso.innerHTML = `<span class="text-green-600 font-bold bg-green-50 px-3 py-1.5 rounded-lg border border-green-100 flex items-center w-fit gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Evento Concluído</span>`;
+            
+        } else if (pedidoAtual.status === "aprovado") {
+            btnAprovar.classList.add("hidden");
+            btnConcluir.classList.remove("hidden");
         } else {
-          btnAprovar.classList.remove("hidden");
-          btnConcluir.classList.add("hidden");
+            btnAprovar.classList.remove("hidden");
+            btnConcluir.classList.add("hidden");
         }
 
         document.getElementById("modalDetalhes").classList.remove("hidden");
         lucide.createIcons();
       }
+      
       function fecharModal() {
         document.getElementById("modalDetalhes").classList.add("hidden");
       }
@@ -759,17 +800,23 @@
               ? `\nTaxas/Extras: R$ ${vExtrasTotal.toFixed(2).replace(".", ",")} (${descFinal})`
               : "";
 
+          let dataFormatadaTexto = "Data não informada";
+          if(pedidoAtual.data_festa) {
+             let dStr = pedidoAtual.data_festa.includes('T') ? pedidoAtual.data_festa.split('T')[0] : pedidoAtual.data_festa;
+             dataFormatadaTexto = new Date(dStr + 'T00:00:00').toLocaleDateString("pt-BR");
+          }
+
           const texto = `
 Olá, ${pedidoAtual.nome}! ⛺✨
 Aqui está o orçamento detalhado da sua *Cabana de Brincar*!
 
 🗓️ *Sua Festa:*
-Data: ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")} às ${pedidoAtual.horario}
+Data: ${dataFormatadaTexto} às ${pedidoAtual.horario || '-'}
 Endereço: ${pedidoAtual.endereco}
 
 🎪 *Estrutura:*
 Modelo: ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas} unidades)
-Participantes: ${pedidoAtual.qtd_criancas} crianças
+Participantes: ${pedidoAtual.qtd_criancas || '-'} crianças
 Tema: ${pedidoAtual.tema}
 
 🥣 *Alimentação:*

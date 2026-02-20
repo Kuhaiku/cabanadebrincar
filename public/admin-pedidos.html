@@ -94,8 +94,7 @@
           </button>
         </div>
 
-        <div id="conteudoModal" class="p-6 space-y-6">
-          </div>
+        <div id="conteudoModal" class="p-6 space-y-6"></div>
 
         <div class="p-6 bg-slate-50 border-t border-slate-200">
           <div class="flex justify-between items-center mb-4">
@@ -113,9 +112,13 @@
           </div>
 
           <div class="mb-4 bg-white p-4 rounded-xl border border-slate-200">
-            <label class="text-xs font-bold text-slate-500 uppercase block mb-3">Taxas Fixas & Serviços</label>
+            <label class="text-xs font-bold text-slate-500 uppercase block mb-3"
+              >Taxas Fixas & Serviços</label
+            >
             <div id="areaTaxasSistema" class="grid grid-cols-2 gap-3">
-                 <p class="text-xs text-slate-400 col-span-2">Carregando taxas...</p>
+              <p class="text-xs text-slate-400 col-span-2">
+                Carregando taxas...
+              </p>
             </div>
           </div>
 
@@ -171,11 +174,17 @@
             </div>
           </div>
 
-          <div class="flex justify-between items-center mb-6 text-sm px-1 bg-green-50 p-3 rounded-lg border border-green-100">
+          <div
+            class="flex justify-between items-center mb-6 text-sm px-1 bg-green-50 p-3 rounded-lg border border-green-100"
+          >
             <span class="text-green-800 font-bold">Total Geral:</span>
             <div class="text-right">
-                <span id="displayTotal" class="text-xl font-bold text-green-700">R$ 0,00</span>
-                <p class="text-[10px] text-green-600" id="displayResumo">Pacote + Taxas + Extra</p>
+              <span id="displayTotal" class="text-xl font-bold text-green-700"
+                >R$ 0,00</span
+              >
+              <p class="text-[10px] text-green-600" id="displayResumo">
+                Pacote + Taxas + Extra
+              </p>
             </div>
           </div>
 
@@ -187,11 +196,11 @@
             <i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i>
             <span>Salvar, Gerar Links e Copiar</span>
           </button>
-          
-          <p class="text-center text-xs text-slate-400 mt-2">
-            Salva no banco, gera link de 50% (Sinal), 50% (Restante) e 100% (c/ 5% OFF).
-          </p>
 
+          <p class="text-center text-xs text-slate-400 mt-2">
+            Salva no banco, gera link de 50% (Sinal), 50% (Restante) e 100% (c/
+            5% OFF).
+          </p>
         </div>
 
         <div
@@ -220,56 +229,65 @@
         </div>
       </div>
     </div>
-    
+
     <script>
       // VOLTANDO AO TOKEN ORIGINAL PARA NÃO DAR ERRO NO SEU PAINEL
       const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
       if (!ADMIN_TOKEN) window.location.href = "painel.html";
 
       let todosPedidos = [];
-      let tabelaPrecos = []; 
-      let listaCardapios = []; 
-      let listaAlimentos = []; 
+      let tabelaPrecos = [];
+      let listaCardapios = [];
+      let listaAlimentos = [];
       let taxasSistema = []; // Lista de itens 'sistema'
       let pedidoAtual = null;
 
       // --- FUNÇÃO DE COPIAR WHATSAPP ---
-async function copiarWhatsApp(numero, btn) {
-    if (!numero) return;
-    try {
-        await navigator.clipboard.writeText(numero);
-        const iconeOriginal = btn.innerHTML;
-        btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-green-600"></i>';
-        lucide.createIcons();
-        setTimeout(() => {
+      async function copiarWhatsApp(numero, btn) {
+        if (!numero) return;
+        try {
+          await navigator.clipboard.writeText(numero);
+          const iconeOriginal = btn.innerHTML;
+          btn.innerHTML =
+            '<i data-lucide="check" class="w-3.5 h-3.5 text-green-600"></i>';
+          lucide.createIcons();
+          setTimeout(() => {
             btn.innerHTML = iconeOriginal;
             lucide.createIcons();
-        }, 2000);
-    } catch (err) {
-        console.error('Erro ao copiar', err);
-        alert('Erro ao copiar o número.');
-    }
-}
+          }, 2000);
+        } catch (err) {
+          console.error("Erro ao copiar", err);
+          alert("Erro ao copiar o número.");
+        }
+      }
       // --- 1. CARREGAMENTO GERAL ---
       async function carregarDados() {
         try {
           const [resPedidos, resPrecos, resCardapios, resAlimentos, resItens] =
             await Promise.all([
-              fetch("/api/admin/pedidos", { headers: { "x-admin-password": ADMIN_TOKEN } }),
-              fetch("/api/admin/precos", { headers: { "x-admin-password": ADMIN_TOKEN } }),
-              fetch("/api/cardapios", { headers: { "x-admin-password": ADMIN_TOKEN } }),
-              fetch("/api/alimentos", { headers: { "x-admin-password": ADMIN_TOKEN } }),
-              fetch("/api/itens-disponiveis") // Busca itens para os checkboxes (categoria sistema)
+              fetch("/api/admin/pedidos", {
+                headers: { "x-admin-password": ADMIN_TOKEN },
+              }),
+              fetch("/api/admin/precos", {
+                headers: { "x-admin-password": ADMIN_TOKEN },
+              }),
+              fetch("/api/cardapios", {
+                headers: { "x-admin-password": ADMIN_TOKEN },
+              }),
+              fetch("/api/alimentos", {
+                headers: { "x-admin-password": ADMIN_TOKEN },
+              }),
+              fetch("/api/itens-disponiveis"), // Busca itens para os checkboxes (categoria sistema)
             ]);
 
           todosPedidos = await resPedidos.json();
           tabelaPrecos = await resPrecos.json();
           listaCardapios = await resCardapios.json();
           listaAlimentos = await resAlimentos.json();
-          
+
           // Separa as taxas de sistema
           const todosItens = await resItens.json();
-          taxasSistema = todosItens.filter(i => i.categoria === 'sistema');
+          taxasSistema = todosItens.filter((i) => i.categoria === "sistema");
 
           filtrar("todos");
         } catch (e) {
@@ -283,23 +301,32 @@ async function copiarWhatsApp(numero, btn) {
         let filtrados = todosPedidos;
 
         if (status === "pendente")
-          filtrados = todosPedidos.filter((p) => p.status === "pendente" || !p.status);
+          filtrados = todosPedidos.filter(
+            (p) => p.status === "pendente" || !p.status,
+          );
         if (status === "aprovado")
-          filtrados = todosPedidos.filter((p) => p.status === "aprovado" && p.status_agenda !== "concluido");
+          filtrados = todosPedidos.filter(
+            (p) => p.status === "aprovado" && p.status_agenda !== "concluido",
+          );
         if (status === "concluido")
-          filtrados = todosPedidos.filter((p) => p.status_agenda === "concluido");
+          filtrados = todosPedidos.filter(
+            (p) => p.status_agenda === "concluido",
+          );
 
         if (filtrados.length === 0) {
-          grid.innerHTML = '<div class="col-span-full text-center py-20 text-slate-400">Nenhum pedido encontrado.</div>';
+          grid.innerHTML =
+            '<div class="col-span-full text-center py-20 text-slate-400">Nenhum pedido encontrado.</div>';
           return;
         }
 
         grid.innerHTML = filtrados
           .map((p) => {
-            const dataFesta = new Date(p.data_festa).toLocaleDateString("pt-BR");
+            const dataFesta = new Date(p.data_festa).toLocaleDateString(
+              "pt-BR",
+            );
             let statusColor = "bg-yellow-100 text-yellow-700";
             let statusText = "Pendente";
-            
+
             if (p.status === "aprovado") {
               statusColor = "bg-blue-100 text-blue-700";
               statusText = "Agendado";
@@ -309,8 +336,18 @@ async function copiarWhatsApp(numero, btn) {
               statusText = "Concluído";
             }
             // Indicador de Pagamento
-            const iconMoney = p.status_pagamento === 'pago' ? 'check-circle' : (p.status_pagamento === 'parcial' ? 'pie-chart' : 'circle');
-            const colorMoney = p.status_pagamento === 'pago' ? 'text-green-500' : (p.status_pagamento === 'parcial' ? 'text-orange-500' : 'text-slate-300');
+            const iconMoney =
+              p.status_pagamento === "pago"
+                ? "check-circle"
+                : p.status_pagamento === "parcial"
+                  ? "pie-chart"
+                  : "circle";
+            const colorMoney =
+              p.status_pagamento === "pago"
+                ? "text-green-500"
+                : p.status_pagamento === "parcial"
+                  ? "text-orange-500"
+                  : "text-slate-300";
 
             return `
                 <div onclick="abrirDetalhes(${p.id})" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden">
@@ -334,7 +371,8 @@ async function copiarWhatsApp(numero, btn) {
                     </div>
                 </div>
             `;
-          }).join("");
+          })
+          .join("");
         lucide.createIcons();
       }
 
@@ -342,177 +380,276 @@ async function copiarWhatsApp(numero, btn) {
       function parseSeguro(dado) {
         if (!dado) return null;
         if (typeof dado === "object") return dado;
-        try { return JSON.parse(dado); } catch (e) { return [dado]; }
+        try {
+          return JSON.parse(dado);
+        } catch (e) {
+          return [dado];
+        }
       }
 
       function normalizar(texto) {
         if (!texto) return "";
-        return texto.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        return texto
+          .toString()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
       }
 
       // --- ABRIR DETALHES ---
-// --- ABRIR DETALHES ---
-function abrirDetalhes(id) {
-  pedidoAtual = todosPedidos.find((p) => p.id === id);
-  if (!pedidoAtual) return;
+      // --- ABRIR DETALHES ---
+      // --- ABRIR DETALHES ---
+      function abrirDetalhes(id) {
+        pedidoAtual = todosPedidos.find((p) => p.id === id);
+        if (!pedidoAtual) return;
 
-  // --- RENDERIZAÇÃO DO CONTEÚDO (Cliente, Evento, Comida) ---
-  let htmlAlimentacao = '<span class="text-slate-400 italic">Nenhuma.</span>';
-  const alim = parseSeguro(pedidoAtual.alimentacao);
-  
-  if (alim) {
-    if (Array.isArray(alim) && alim.length > 0) {
-      htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
-    } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
-      let partes = [];
-      if (alim.combo) {
-        const titulo = alim.combo.titulo || "Combo";
-        partes.push(`<div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100"><span class="font-bold text-slate-700 block">${titulo}</span></div>`);
+        const isPegueMonte = pedidoAtual.modelo_barraca === "PEGUE E MONTE";
+
+        // Pega o bloco financeiro inteiro (pai do botão mágico)
+        const btnFluxo = document.getElementById("btnFluxo");
+        const areaFinanceira = btnFluxo
+          ? btnFluxo.closest(".bg-slate-50.border-t")
+          : null;
+
+        if (isPegueMonte) {
+          // 1. RENDERIZAÇÃO LIMPA (SÓ PEGUE E MONTE)
+          if (areaFinanceira) areaFinanceira.style.display = "none"; // Esconde financeiro
+
+          // Puxa o nome do pacote que nós armazenamos na coluna "tema"
+          const nomePacote = pedidoAtual.tema || "Pacote não especificado";
+
+          const html = `
+            <div class="bg-blue-50 border border-blue-100 p-5 rounded-2xl mb-4 flex items-start gap-4">
+                <div class="bg-blue-100 text-blue-600 p-3 rounded-full shrink-0">
+                    <i data-lucide="package-open" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-blue-800 text-lg">Reserva Pegue e Monte</h4>
+                    <p class="text-sm text-blue-600 mt-1">Este formato não exige cálculo manual. O cliente pagou e recebeu os detalhes pelo site automaticamente.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-800 text-base mb-2 border-b border-slate-100 pb-2">Dados do Cliente</h4>
+                    <p><strong>Nome:</strong> ${pedidoAtual.nome}</p>
+                    <div class="flex items-center gap-2">
+                        <strong>WhatsApp:</strong> 
+                        <a href="https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}" target="_blank" class="text-green-600 font-bold hover:underline">${pedidoAtual.whatsapp}</a>
+                        <button onclick="copiarWhatsApp('${pedidoAtual.whatsapp}', this)" class="text-slate-400 hover:text-green-600 transition-colors p-1 bg-slate-100 rounded-md hover:bg-green-100" title="Copiar Número">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                    <p><strong>E-mail:</strong> ${pedidoAtual.email || "Não informado"}</p>
+                    <p><strong>Endereço:</strong> ${pedidoAtual.endereco || "Não informado"}</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-800 text-base mb-2 border-b border-slate-100 pb-2">Detalhes da Retirada</h4>
+                    <p><strong>Pacote Escolhido:</strong> <span class="font-bold text-pink-600">${nomePacote}</span></p>
+                    <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
+                    <p><strong>Horário:</strong> ${pedidoAtual.horario || "Não informado"}</p>
+                    <p><strong>Valor:</strong> <span class="font-bold text-green-600">R$ ${parseFloat(
+                      pedidoAtual.valor_final || 0,
+                    )
+                      .toFixed(2)
+                      .replace(".", ",")}</span></p>
+                </div>
+            </div>
+        `;
+          document.getElementById("conteudoModal").innerHTML = html;
+        } else {
+          // 2. RENDERIZAÇÃO COMPLETA (FESTAS NORMAIS)
+          if (areaFinanceira) areaFinanceira.style.display = "block"; // Mostra financeiro
+
+          let htmlAlimentacao =
+            '<span class="text-slate-400 italic">Nenhuma.</span>';
+          const alim = parseSeguro(pedidoAtual.alimentacao);
+
+          if (alim) {
+            if (Array.isArray(alim) && alim.length > 0) {
+              htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
+            } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
+              let partes = [];
+              if (alim.combo) {
+                const titulo = alim.combo.titulo || "Combo";
+                partes.push(
+                  `<div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100"><span class="font-bold text-slate-700 block">${titulo}</span></div>`,
+                );
+              }
+              if (alim.extras && alim.extras.length > 0) {
+                partes.push(`<ul class="text-sm text-slate-600 space-y-1">`);
+                alim.extras.forEach((e) => {
+                  partes.push(`<li>${e.qtd}x ${e.nome}</li>`);
+                });
+                partes.push(`</ul>`);
+              }
+              htmlAlimentacao = partes.join("");
+            }
+          }
+
+          const html = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <h4 class="font-bold text-slate-800 mb-1">Cliente</h4>
+                    <p><strong>Nome:</strong> ${pedidoAtual.nome}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <strong>WhatsApp:</strong> 
+                        <a href="https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}" target="_blank" class="text-green-600 font-bold hover:underline">${pedidoAtual.whatsapp}</a>
+                        <button onclick="copiarWhatsApp('${pedidoAtual.whatsapp}', this)" class="text-slate-400 hover:text-green-600 transition-colors p-1 bg-slate-100 rounded-md hover:bg-green-100" title="Copiar Número">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                    <p class="mt-1"><strong>Endereço:</strong> ${pedidoAtual.endereco}</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 mb-1">Evento</h4>
+                    <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
+                    <p><strong>Horário:</strong> ${pedidoAtual.horario}</p>
+                    <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
+                </div>
+            </div>
+            <div class="border-t border-slate-100 pt-2 text-sm mt-2">
+                 <p><strong>Alimentação:</strong></p>
+                 ${htmlAlimentacao}
+            </div>
+            <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2">
+                 <p><strong>Obs:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
+                 <p><strong>Alergias:</strong> <span class="text-red-600 font-bold">${pedidoAtual.alergias || "-"}</span></p>
+            </div>
+        `;
+          document.getElementById("conteudoModal").innerHTML = html;
+
+          // --- LÓGICA DE FINANCEIRO (SÓ RODA PARA FESTAS COMUNS) ---
+          const divTaxas = document.getElementById("areaTaxasSistema");
+          if (divTaxas) {
+            divTaxas.innerHTML = "";
+            if (taxasSistema.length > 0) {
+              taxasSistema.forEach((taxa) => {
+                const htmlId = `taxa_${taxa.id}`;
+                const valorFormatado = parseFloat(taxa.valor).toLocaleString(
+                  "pt-BR",
+                  { style: "currency", currency: "BRL" },
+                );
+                const descSalva = (
+                  pedidoAtual.descricao_itens_extras || ""
+                ).toLowerCase();
+                const isMarcado = descSalva.includes(
+                  taxa.descricao.toLowerCase(),
+                );
+
+                divTaxas.innerHTML += `
+                        <div class="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                            <input type="checkbox" id="${htmlId}" value="${taxa.valor}" data-nome="${taxa.descricao}" 
+                                   onchange="atualizarTotalVisual()" ${isMarcado ? "checked" : ""}
+                                   class="w-4 h-4 text-pink-600 rounded border-gray-300 focus:ring-pink-500 cursor-pointer">
+                            <label for="${htmlId}" class="text-sm text-slate-700 cursor-pointer select-none flex-1 flex justify-between">
+                                <span>${taxa.descricao}</span>
+                                <span class="text-xs font-bold text-slate-500">${valorFormatado}</span>
+                            </label>
+                        </div>
+                    `;
+              });
+            } else {
+              divTaxas.innerHTML =
+                "<p class='text-xs text-slate-400 col-span-2'>Nenhuma taxa cadastrada.</p>";
+            }
+
+            const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
+            let valorSalvoExtraTotal =
+              parseFloat(pedidoAtual.valor_itens_extras) || 0;
+            let somaTaxasDetectadas = 0;
+            divTaxas
+              .querySelectorAll('input[type="checkbox"]')
+              .forEach((cb) => {
+                if (cb.checked) somaTaxasDetectadas += parseFloat(cb.value);
+              });
+
+            let valorManual = valorSalvoExtraTotal - somaTaxasDetectadas;
+            if (valorManual < 0.01 && valorManual > -0.01) valorManual = 0;
+
+            document.getElementById("fin_valor_final").value =
+              valorSalvoBase.toFixed(2);
+            document.getElementById("fin_valor_extras").value =
+              valorManual.toFixed(2);
+            document.getElementById("fin_desc_extras").value =
+              pedidoAtual.descricao_itens_extras || "";
+            atualizarTotalVisual();
+          }
+
+          if (btnFluxo) {
+            btnFluxo.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i> <span>Salvar, Gerar Links e Copiar</span>`;
+            btnFluxo.className =
+              "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
+            btnFluxo.disabled = false;
+          }
+        }
+
+        // --- CONTROLES DA BARRA INFERIOR (Aprovar / Concluir) ---
+        const btnAprovar = document.getElementById("btnAprovar");
+        const btnConcluir = document.getElementById("btnConcluir");
+        if (
+          pedidoAtual.status === "aprovado" &&
+          pedidoAtual.status_agenda !== "concluido"
+        ) {
+          btnAprovar.classList.add("hidden");
+          btnConcluir.classList.remove("hidden");
+        } else {
+          btnAprovar.classList.remove("hidden");
+          btnConcluir.classList.add("hidden");
+        }
+
+        document.getElementById("modalDetalhes").classList.remove("hidden");
+        lucide.createIcons();
       }
-      if (alim.extras && alim.extras.length > 0) {
-        partes.push(`<ul class="text-sm text-slate-600 space-y-1">`);
-        alim.extras.forEach((e) => {
-           partes.push(`<li>${e.qtd}x ${e.nome}</li>`);
-        });
-        partes.push(`</ul>`);
-      }
-      htmlAlimentacao = partes.join("");
-    }
-  }
-
-  // AQUI ENTROU O BOTÃO DE COPIAR DO LADO DO WHATSAPP
-  const html = `
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-              <h4 class="font-bold text-slate-800 mb-1">Cliente</h4>
-              <p><strong>Nome:</strong> ${pedidoAtual.nome}</p>
-              <div class="flex items-center gap-2 mt-1">
-                  <strong>WhatsApp:</strong> 
-                  <a href="https://wa.me/55${pedidoAtual.whatsapp.replace(/\D/g, "")}" target="_blank" class="text-green-600 font-bold hover:underline">${pedidoAtual.whatsapp}</a>
-                  <button onclick="copiarWhatsApp('${pedidoAtual.whatsapp}', this)" class="text-slate-400 hover:text-green-600 transition-colors p-1 bg-slate-100 rounded-md hover:bg-green-100" title="Copiar Número">
-                      <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                  </button>
-              </div>
-              <p class="mt-1"><strong>Endereço:</strong> ${pedidoAtual.endereco}</p>
-          </div>
-          <div>
-              <h4 class="font-bold text-slate-800 mb-1">Evento</h4>
-              <p><strong>Data:</strong> ${new Date(pedidoAtual.data_festa).toLocaleDateString("pt-BR")}</p>
-              <p><strong>Horário:</strong> ${pedidoAtual.horario}</p>
-              <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
-          </div>
-      </div>
-      <div class="border-t border-slate-100 pt-2 text-sm mt-2">
-           <p><strong>Alimentação:</strong></p>
-           ${htmlAlimentacao}
-      </div>
-      <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2">
-           <p><strong>Obs:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
-           <p><strong>Alergias:</strong> <span class="text-red-600 font-bold">${pedidoAtual.alergias || "-"}</span></p>
-      </div>
-  `;
-  document.getElementById("conteudoModal").innerHTML = html;
-
-  // --- RENDERIZAR CHECKBOXES DE TAXAS ---
-  const divTaxas = document.getElementById("areaTaxasSistema");
-  divTaxas.innerHTML = "";
-  
-  if (taxasSistema.length > 0) {
-      taxasSistema.forEach(taxa => {
-          const htmlId = `taxa_${taxa.id}`;
-          const valorFormatado = parseFloat(taxa.valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-          
-          const descSalva = (pedidoAtual.descricao_itens_extras || "").toLowerCase();
-          const isMarcado = descSalva.includes(taxa.descricao.toLowerCase());
-
-          divTaxas.innerHTML += `
-              <div class="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
-                  <input type="checkbox" id="${htmlId}" value="${taxa.valor}" data-nome="${taxa.descricao}" 
-                         onchange="atualizarTotalVisual()" ${isMarcado ? "checked" : ""}
-                         class="w-4 h-4 text-pink-600 rounded border-gray-300 focus:ring-pink-500 cursor-pointer">
-                  <label for="${htmlId}" class="text-sm text-slate-700 cursor-pointer select-none flex-1 flex justify-between">
-                      <span>${taxa.descricao}</span>
-                      <span class="text-xs font-bold text-slate-500">${valorFormatado}</span>
-                  </label>
-              </div>
-          `;
-      });
-  } else {
-      divTaxas.innerHTML = "<p class='text-xs text-slate-400 col-span-2'>Nenhuma taxa cadastrada na categoria 'sistema'.</p>";
-  }
-
-  // --- FINANCEIRO ---
-  const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
-  let valorSalvoExtraTotal = parseFloat(pedidoAtual.valor_itens_extras) || 0;
-
-  let somaTaxasDetectadas = 0;
-  const checkboxes = divTaxas.querySelectorAll('input[type="checkbox"]');
-  checkboxes.forEach(cb => {
-      if(cb.checked) somaTaxasDetectadas += parseFloat(cb.value);
-  });
-  
-  let valorManual = valorSalvoExtraTotal - somaTaxasDetectadas;
-  if (valorManual < 0.01 && valorManual > -0.01) valorManual = 0;
-
-  document.getElementById("fin_valor_final").value = valorSalvoBase.toFixed(2);
-  document.getElementById("fin_valor_extras").value = valorManual.toFixed(2);
-  document.getElementById("fin_desc_extras").value = pedidoAtual.descricao_itens_extras || "";
-
-  atualizarTotalVisual();
-
-  // Botões Status
-  const btnAprovar = document.getElementById("btnAprovar");
-  const btnConcluir = document.getElementById("btnConcluir");
-  if (pedidoAtual.status === "aprovado" && pedidoAtual.status_agenda !== "concluido") {
-    btnAprovar.classList.add("hidden");
-    btnConcluir.classList.remove("hidden");
-  } else {
-    btnAprovar.classList.remove("hidden");
-    btnConcluir.classList.add("hidden");
-  }
-
-  const btnFluxo = document.getElementById("btnFluxo");
-  btnFluxo.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i> <span>Salvar, Gerar Links e Copiar</span>`;
-  btnFluxo.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
-  btnFluxo.disabled = false;
-
-  document.getElementById("modalDetalhes").classList.remove("hidden");
-  lucide.createIcons();
-}
       function fecharModal() {
         document.getElementById("modalDetalhes").classList.add("hidden");
       }
 
       function atualizarTotalVisual() {
-        const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
-        
+        const vFinal =
+          parseFloat(document.getElementById("fin_valor_final").value) || 0;
+
         // 1. Soma Checkboxes
         let vTaxas = 0;
-        const checkboxes = document.querySelectorAll('#areaTaxasSistema input[type="checkbox"]:checked');
-        checkboxes.forEach(cb => { vTaxas += parseFloat(cb.value); });
+        const checkboxes = document.querySelectorAll(
+          '#areaTaxasSistema input[type="checkbox"]:checked',
+        );
+        checkboxes.forEach((cb) => {
+          vTaxas += parseFloat(cb.value);
+        });
 
         // 2. Soma Manual
-        const vManual = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+        const vManual =
+          parseFloat(document.getElementById("fin_valor_extras").value) || 0;
 
         const totalGeral = vFinal + vTaxas + vManual;
-        
-        document.getElementById("displayTotal").innerText = totalGeral.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        document.getElementById("displayResumo").innerText = `(Pacote: ${vFinal.toFixed(0)} + Taxas: ${vTaxas.toFixed(0)} + Extra: ${vManual.toFixed(0)})`;
+
+        document.getElementById("displayTotal").innerText =
+          totalGeral.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          });
+        document.getElementById("displayResumo").innerText =
+          `(Pacote: ${vFinal.toFixed(0)} + Taxas: ${vTaxas.toFixed(0)} + Extra: ${vManual.toFixed(0)})`;
       }
 
       function aplicarSugestaoCalculo() {
         if (!pedidoAtual) return;
         // Tenta achar preço pelo nome do modelo
-        const itemHardware = tabelaPrecos.find(t => t.descricao === pedidoAtual.modelo_barraca);
+        const itemHardware = tabelaPrecos.find(
+          (t) => t.descricao === pedidoAtual.modelo_barraca,
+        );
         if (itemHardware) {
-             const valUnit = parseFloat(itemHardware.valor);
-             const qtd = parseInt(pedidoAtual.qtd_barracas) || 0;
-             const total = valUnit * qtd;
-             document.getElementById("fin_valor_final").value = total.toFixed(2);
-             atualizarTotalVisual();
-             alert(`Valor Base Recalculado: ${qtd} x ${valUnit} = ${total}`);
+          const valUnit = parseFloat(itemHardware.valor);
+          const qtd = parseInt(pedidoAtual.qtd_barracas) || 0;
+          const total = valUnit * qtd;
+          document.getElementById("fin_valor_final").value = total.toFixed(2);
+          atualizarTotalVisual();
+          alert(`Valor Base Recalculado: ${qtd} x ${valUnit} = ${total}`);
         } else {
-             alert("Modelo de barraca não encontrado na tabela de preços.");
+          alert("Modelo de barraca não encontrado na tabela de preços.");
         }
       }
 
@@ -528,16 +665,20 @@ function abrirDetalhes(id) {
         lucide.createIcons();
 
         try {
-          const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
-          const vManual = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
-          
+          const vFinal =
+            parseFloat(document.getElementById("fin_valor_final").value) || 0;
+          const vManual =
+            parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+
           // Calcula Taxas
           let vTaxas = 0;
           let nomesTaxas = [];
-          const checkboxes = document.querySelectorAll('#areaTaxasSistema input[type="checkbox"]:checked');
-          checkboxes.forEach(cb => {
-              vTaxas += parseFloat(cb.value);
-              nomesTaxas.push(cb.getAttribute('data-nome'));
+          const checkboxes = document.querySelectorAll(
+            '#areaTaxasSistema input[type="checkbox"]:checked',
+          );
+          checkboxes.forEach((cb) => {
+            vTaxas += parseFloat(cb.value);
+            nomesTaxas.push(cb.getAttribute("data-nome"));
           });
 
           // Consolida Extras (Taxas + Manual)
@@ -550,10 +691,14 @@ function abrirDetalhes(id) {
           let descUsuario = document.getElementById("fin_desc_extras").value;
           let descFinal = descUsuario;
           if (nomesTaxas.length > 0) {
-              const taxasString = nomesTaxas.join(", ");
-              if (!descUsuario.toLowerCase().includes(nomesTaxas[0].toLowerCase())) {
-                   descFinal = descUsuario ? `${taxasString} + ${descUsuario}` : taxasString;
-              }
+            const taxasString = nomesTaxas.join(", ");
+            if (
+              !descUsuario.toLowerCase().includes(nomesTaxas[0].toLowerCase())
+            ) {
+              descFinal = descUsuario
+                ? `${taxasString} + ${descUsuario}`
+                : taxasString;
+            }
           }
 
           // 1. Salvar no Banco
@@ -582,29 +727,37 @@ function abrirDetalhes(id) {
               headers: { "x-admin-password": ADMIN_TOKEN },
             },
           );
-          
+
           const links = await res.json();
-          if (!links.linkReserva || !links.linkIntegral) throw new Error("Erro ao gerar links.");
+          if (!links.linkReserva || !links.linkIntegral)
+            throw new Error("Erro ao gerar links.");
 
           // --- GERAÇÃO DO TEXTO ---
           const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
-          const textoItens = Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0 
-            ? itensPadraoArr.join(", ") : "Itens padrão do modelo";
+          const textoItens =
+            Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0
+              ? itensPadraoArr.join(", ")
+              : "Itens padrão do modelo";
 
           const alimObj = parseSeguro(pedidoAtual.alimentacao);
           let textoComida = "Nenhuma contratada";
           if (alimObj) {
             let partes = [];
-            if (alimObj.combo) partes.push(`🥪 *Pacote:* ${alimObj.combo.titulo || "Combo"}`);
+            if (alimObj.combo)
+              partes.push(`🥪 *Pacote:* ${alimObj.combo.titulo || "Combo"}`);
             if (alimObj.extras && alimObj.extras.length > 0) {
-                 const lista = alimObj.extras.map(e => `${e.qtd}x ${e.nome}`).join(", ");
-                 partes.push(`➕ *Extras:* ${lista}`);
+              const lista = alimObj.extras
+                .map((e) => `${e.qtd}x ${e.nome}`)
+                .join(", ");
+              partes.push(`➕ *Extras:* ${lista}`);
             }
             if (partes.length > 0) textoComida = partes.join("\n");
           }
-          
-          const textoExtras = vExtrasTotal !== 0 
-            ? `\nTaxas/Extras: R$ ${vExtrasTotal.toFixed(2).replace('.', ',')} (${descFinal})` : '';
+
+          const textoExtras =
+            vExtrasTotal !== 0
+              ? `\nTaxas/Extras: R$ ${vExtrasTotal.toFixed(2).replace(".", ",")} (${descFinal})`
+              : "";
 
           const texto = `
 Olá, ${pedidoAtual.nome}! ⛺✨
@@ -623,23 +776,23 @@ Tema: ${pedidoAtual.tema}
 ${textoComida}
 
 💰 *Resumo Financeiro:*
-Pacote Base: R$ ${vFinal.toFixed(2).replace('.', ',')}${textoExtras}
-*Total Final:* R$ ${vTotalGeral.toFixed(2).replace('.', ',')}
+Pacote Base: R$ ${vFinal.toFixed(2).replace(".", ",")}${textoExtras}
+*Total Final:* R$ ${vTotalGeral.toFixed(2).replace(".", ",")}
 
 ---
 *FORMAS DE PAGAMENTO:*
 Você pode garantir sua data agora de duas formas:
 
 1️⃣ **Sinal de Reserva (50%):**
-Pague R$ ${links.reserva.replace('.', ',')} agora para reservar a data.
-O restante (R$ ${links.restante.replace('.', ',')}) pode ser pago até o dia da festa.
+Pague R$ ${links.reserva.replace(".", ",")} agora para reservar a data.
+O restante (R$ ${links.restante.replace(".", ",")}) pode ser pago até o dia da festa.
 🔗 Link Sinal: ${links.linkReserva}
 🔗 Link Restante: ${links.linkRestante}
 
 2️⃣ **Valor Total à Vista (5% DE DESCONTO):**
 Pague tudo agora com desconto e fique livre!
-De: ~R$ ${vTotalGeral.toFixed(2).replace('.', ',')}~
-Por: *R$ ${links.integral.replace('.', ',')}*
+De: ~R$ ${vTotalGeral.toFixed(2).replace(".", ",")}~
+Por: *R$ ${links.integral.replace(".", ",")}*
 🔗 Link Com Desconto: ${links.linkIntegral}
 ---
 
@@ -649,17 +802,18 @@ Fico no aguardo para confirmarmos! Qualquer dúvida é só chamar. 🥰
           await navigator.clipboard.writeText(texto);
 
           // Sucesso
-          btn.className = "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
+          btn.className =
+            "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
           btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> <span>Sucesso! Copiado.</span>`;
           lucide.createIcons();
 
           setTimeout(() => {
-            btn.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
+            btn.className =
+              "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
             btn.innerHTML = conteudoOriginal;
             btn.disabled = false;
             lucide.createIcons();
           }, 4000);
-
         } catch (e) {
           console.error(e);
           alert("Erro: " + e.message);
@@ -676,8 +830,10 @@ Fico no aguardo para confirmarmos! Qualquer dúvida é só chamar. 🥰
         let url = "";
         let method = "PUT";
 
-        if (acao === "aprovar") url = `/api/admin/agenda/aprovar/${pedidoAtual.id}`;
-        if (acao === "concluir") url = `/api/admin/agenda/concluir/${pedidoAtual.id}`;
+        if (acao === "aprovar")
+          url = `/api/admin/agenda/aprovar/${pedidoAtual.id}`;
+        if (acao === "concluir")
+          url = `/api/admin/agenda/concluir/${pedidoAtual.id}`;
         if (acao === "excluir") {
           url = `/api/admin/pedidos/${pedidoAtual.id}`;
           method = "DELETE";

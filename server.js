@@ -176,12 +176,10 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
     const vTotal = vBase + vExtras;
 
     if (vTotal <= 0) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "O valor total do pedido (Itens + Extras) deve ser maior que zero.",
-        });
+      return res.status(400).json({
+        error:
+          "O valor total do pedido (Itens + Extras) deve ser maior que zero.",
+      });
     }
 
     const nome = r[0].nome.split(" ")[0];
@@ -1251,28 +1249,38 @@ app.post("/api/orcamento-pegue-monte", async (req, res) => {
       telefone,
       email,
       data_festa,
+      horario,
+      endereco,
       pacote_id,
       nome_pacote,
       valor_pacote,
     } = req.body;
-    const [result] = await db.query(
-      `INSERT INTO orcamentos (nome, whatsapp, email, data_festa, modelo_barraca, status_pagamento, valor_final, tema) VALUES (?, ?, ?, ?, ?, 'pendente', ?, ?)`,
-      [
-        nome,
-        telefone,
-        email || null,
-        data_festa,
-        "PEGUE E MONTE",
-        valor_pacote,
-        `Pacote Pegue e Monte: ${nome_pacote} (ID: ${pacote_id})`,
-      ],
-    );
+
+    // O nome do pacote fica salvo no tema
+    const temaString = `Pacote: ${nome_pacote} (ID: ${pacote_id})`;
+
+    // Inserindo com endereço e horário agora
+    const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, horario, data_festa, modelo_barraca, status_pagamento, valor_final, tema) VALUES (?, ?, ?, ?, ?, ?, ?, 'pendente', ?, ?)`;
+    const values = [
+      nome,
+      telefone,
+      email || null,
+      endereco,
+      horario,
+      data_festa,
+      "PEGUE E MONTE",
+      valor_pacote,
+      temaString,
+    ];
+
+    const [result] = await db.query(sql, values);
     const linkMP = await criarLinkMP(
       `Pegue e Monte - ${nome_pacote}`,
       valor_pacote,
       result.insertId,
       "PEGUE_MONTE",
     );
+
     res
       .status(201)
       .json({
@@ -1281,6 +1289,7 @@ app.post("/api/orcamento-pegue-monte", async (req, res) => {
         link_pagamento: linkMP,
       });
   } catch (e) {
+    console.error(e);
     res
       .status(500)
       .json({ error: "Erro ao registrar o pedido pegue e monte." });

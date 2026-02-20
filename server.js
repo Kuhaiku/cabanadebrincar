@@ -16,10 +16,8 @@ const PORT = process.env.PORT || 3000;
 
 // --- 1. CONFIGURAÇÕES & OTIMIZAÇÃO ---
 
-// Cache de imagens estáticas (1 dia)
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(express.static("public", { maxAge: oneDay }));
-
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -28,48 +26,6 @@ const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
 });
-// --- FUNÇÃO PARA ENVIAR E-MAIL NO ATO DA RESERVA (PEGUE E MONTE) ---
-async function enviarEmailReservaPegueMonte(email, nome, nome_pacote, data_festa, horario, linkMP) {
-  if (!email || email.length < 5) return;
-  
-  let dataFormatada = new Date(data_festa + 'T00:00:00').toLocaleDateString('pt-BR');
-
-  let corpoHtml = `
-    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #f1f5f9; padding: 20px; border-radius: 10px;">
-      <h2 style="color: #ec4899; margin-top: 0;">Olá, ${nome}! ⛺</h2>
-      <p>Recebemos o seu pedido de reserva para o formato <strong>Pegue e Monte</strong>.</p>
-      
-      <div style="background: #fdf2f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 0 0 10px 0;"><strong>📦 Pacote Escolhido:</strong> ${nome_pacote}</p>
-          <p style="margin: 0 0 10px 0;"><strong>📅 Data da Retirada/Festa:</strong> ${dataFormatada}</p>
-          <p style="margin: 0;"><strong>⏰ Horário:</strong> ${horario || 'Não informado'}</p>
-      </div>
-      
-      <p>Para confirmar sua reserva e bloquearmos a data exclusivamente para você, conclua o pagamento pelo link seguro do Mercado Pago:</p>
-      
-      <div style="text-align: center; margin: 30px 0;">
-          <a href="${linkMP}" style="background: #ec4899; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Pagar e Confirmar Reserva</a>
-      </div>
-      
-      <p style="font-size: 12px; color: #64748b;">Se você já realizou o pagamento, desconsidere. Enviaremos outro e-mail assim que for aprovado!</p>
-      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;">
-      <small style="color: #94a3b8; font-weight: bold;">Cabana de Brincar</small>
-    </div>
-  `;
-
-  try {
-    await transporter.sendMail({
-      from: `"Cabana de Brincar" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Sua Reserva: Pegue e Monte ⛺",
-      html: corpoHtml,
-    });
-    console.log(`✅ E-mail de reserva enviado para: ${email}`);
-  } catch (err) {
-    console.error("❌ Erro ao enviar e-mail:", err.message);
-  }
-}
-
 
 // Mercado Pago
 const mpClient = new MercadoPagoConfig({
@@ -118,7 +74,6 @@ setInterval(
       console.log(
         "🔄 Verificando pacotes Pegue e Monte para liberação automática...",
       );
-      // Busca pedidos Pegue e Monte cuja data da festa foi há 2 dias ou mais, e que ainda não foram concluídos
       const [pedidos] = await db.query(`
       SELECT id, tema FROM orcamentos 
       WHERE modelo_barraca = 'PEGUE E MONTE' 
@@ -127,16 +82,13 @@ setInterval(
     `);
 
       for (const pedido of pedidos) {
-        // Extrai o ID do pacote salvo no tema
         const match = pedido.tema ? pedido.tema.match(/ID: (\d+)/) : null;
         if (match && match[1]) {
           const idDoPacote = match[1];
-          // Libera o pacote no banco
           await db.query(
             "UPDATE pacotes_pegue_monte SET status = 'liberado' WHERE id = ?",
             [idDoPacote],
           );
-          // Marca o pedido como concluído para não processar novamente e sair da agenda
           await db.query(
             "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?",
             [pedido.id],
@@ -154,7 +106,7 @@ setInterval(
     }
   },
   1000 * 60 * 60 * 12,
-); // Executa a cada 12 horas
+);
 
 // Middleware de Autenticação Admin
 function checkAuth(req, res, next) {
@@ -164,9 +116,137 @@ function checkAuth(req, res, next) {
   next();
 }
 
-// --- 3. FUNÇÕES AUXILIARES ---
+// --- 3. FUNÇÕES DE E-MAIL (CORRIGIDAS E COM DETALHES) ---
 
-// Agora aceita 'referenciaPersonalizada' para sabermos se é SINAL, RESTANTE ou INTEGRAL
+// E-MAIL INICIAL (PEGUE E MONTE) - Quando o cliente clica em "Solicitar Reserva"
+async function enviarEmailReservaPegueMonte(
+  pedidoId,
+  email,
+  nome,
+  nome_pacote,
+  data_festa,
+  horario,
+  endereco,
+  valor_pacote,
+  linkMP,
+) {
+  if (!email || email.length < 5) return;
+
+  let dataFormatada = new Date(data_festa + "T00:00:00").toLocaleDateString(
+    "pt-BR",
+  );
+
+  let corpoHtml = `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #f1f5f9; padding: 20px; border-radius: 10px;">
+      <h2 style="color: #ec4899; margin-top: 0;">Olá, ${nome}! ⛺</h2>
+      <p>Recebemos o seu pedido de reserva para o formato <strong>Pegue e Monte</strong>.</p>
+      
+      <div style="background: #fdf2f8; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #fce7f3;">
+          <h3 style="margin-top: 0; color: #db2777; border-bottom: 1px solid #fbcfe8; padding-bottom: 5px;">Detalhes do Pedido #${pedidoId}</h3>
+          <p style="margin: 5px 0;"><strong>📦 Pacote:</strong> ${nome_pacote}</p>
+          <p style="margin: 5px 0;"><strong>📅 Data da Retirada:</strong> ${dataFormatada}</p>
+          <p style="margin: 5px 0;"><strong>⏰ Horário:</strong> ${horario || "Não informado"}</p>
+          <p style="margin: 5px 0;"><strong>📍 Endereço de Cadastro:</strong> ${endereco || "Não informado"}</p>
+          <p style="margin: 15px 0 5px 0; font-size: 16px;"><strong>💰 Valor a Pagar:</strong> R$ ${Number(valor_pacote).toFixed(2).replace(".", ",")}</p>
+      </div>
+      
+      <p>Para confirmar sua reserva e bloquearmos os itens exclusivamente para você, conclua o pagamento pelo link seguro do Mercado Pago:</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+          <a href="${linkMP}" style="background: #ec4899; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Pagar e Garantir Reserva</a>
+      </div>
+      
+      <p style="font-size: 13px; color: #64748b; text-align: center;">Assim que o pagamento for aprovado, você receberá um e-mail de <strong>Reserva Garantida</strong>!</p>
+      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+      <small style="color: #94a3b8; font-weight: bold;">Equipe Cabana de Brincar</small>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Cabana de Brincar" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Aguardando Pagamento: Pegue e Monte ⛺",
+      html: corpoHtml,
+    });
+    console.log(`✅ E-mail de solicitação enviado para: ${email}`);
+  } catch (err) {
+    console.error("❌ Erro ao enviar e-mail de solicitação:", err.message);
+  }
+}
+
+// E-MAIL DE PAGAMENTO APROVADO (RESERVA GARANTIDA) - Disparado pelo Webhook
+async function enviarEmailConfirmacao(pedido, valorPago, tipoPagamento) {
+  if (!pedido.email || pedido.email.length < 5) return;
+
+  const valorTotal =
+    parseFloat(pedido.valor_final || 0) +
+    parseFloat(pedido.valor_itens_extras || 0);
+  const saldoDevedor = valorTotal - valorPago;
+  const isQuitado = saldoDevedor <= 1.0;
+
+  let dataFormatada = "Data não informada";
+  if (pedido.data_festa) {
+    let dStr = pedido.data_festa.includes("T")
+      ? pedido.data_festa.split("T")[0]
+      : pedido.data_festa;
+    dataFormatada = new Date(dStr + "T00:00:00").toLocaleDateString("pt-BR");
+  }
+
+  let assunto = "Reserva Garantida! Pagamento Aprovado ⛺";
+  let corpoHtml = `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px;">
+      <h2 style="color: #10b981; margin-top: 0;">Pagamento Aprovado! 🎉</h2>
+      <p>Olá, <strong>${pedido.nome.split(" ")[0]}</strong>! Que alegria ter você com a gente. Recebemos a confirmação do seu pagamento de <strong>R$ ${Number(valorPago).toFixed(2).replace(".", ",")}</strong>.</p>
+  `;
+
+  if (
+    isQuitado ||
+    tipoPagamento === "INTEGRAL" ||
+    tipoPagamento === "PEGUE_MONTE"
+  ) {
+    corpoHtml += `<div style="background: #d1fae5; color: #065f46; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
+                    <p style="margin: 0; font-size: 16px;"><strong>✅ Sua reserva está 100% GARANTIDA E QUITADA!</strong></p>
+                  </div>`;
+  } else {
+    corpoHtml += `<div style="background: #fef3c7; color: #92400e; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
+                    <p style="margin: 0; font-size: 16px;"><strong>✅ Reserva GARANTIDA (Sinal Pago)!</strong></p>
+                    <p style="margin: 5px 0 0 0; font-size: 14px;">Restante a pagar até o dia do evento: R$ ${Number(saldoDevedor).toFixed(2).replace(".", ",")}</p>
+                  </div>`;
+  }
+
+  corpoHtml += `
+      <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+          <h3 style="margin-top: 0; color: #475569; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">Resumo do seu Pedido #${pedido.id}</h3>
+          <p style="margin: 5px 0;"><strong>📅 Data do Evento:</strong> ${dataFormatada}</p>
+          <p style="margin: 5px 0;"><strong>⏰ Horário:</strong> ${pedido.horario || "Não informado"}</p>
+          <p style="margin: 5px 0;"><strong>📍 Endereço:</strong> ${pedido.endereco || "Não informado"}</p>
+          <p style="margin: 5px 0;"><strong>🎪 Serviço Contratado:</strong> ${pedido.modelo_barraca} ${pedido.qtd_barracas > 0 ? `(${pedido.qtd_barracas}x)` : ""}</p>
+          <p style="margin: 5px 0;"><strong>🎨 Tema/Pacote:</strong> ${pedido.tema || "A definir"}</p>
+          <p style="margin: 15px 0 5px 0; font-size: 16px;"><strong>💰 Valor Total da Festa:</strong> R$ ${valorTotal.toFixed(2).replace(".", ",")}</p>
+      </div>
+      
+      <p>Já estamos separando tudo com muito carinho para o seu evento. Qualquer dúvida, é só nos chamar no WhatsApp!</p>
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+      <small style="color: #94a3b8; font-weight: bold;">Equipe Cabana de Brincar</small>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Cabana de Brincar" <${process.env.EMAIL_USER}>`,
+      to: pedido.email,
+      subject: assunto,
+      html: corpoHtml,
+    });
+    console.log(`✅ E-mail de Reserva Garantida enviado para: ${pedido.email}`);
+  } catch (err) {
+    console.error("❌ Erro ao enviar e-mail de garantia:", err.message);
+  }
+}
+
+// --- 4. LINKS E INTEGRAÇÕES ---
+
 async function criarLinkMP(titulo, valor, pedidoId, tipoPagamento) {
   try {
     const preference = new Preference(mpClient);
@@ -174,7 +254,6 @@ async function criarLinkMP(titulo, valor, pedidoId, tipoPagamento) {
     domain = domain.replace(/\/$/, "");
     if (!domain.startsWith("http")) domain = `https://${domain}`;
 
-    // Cria uma referência composta: ID_TIPO (ex: 55_SINAL)
     const externalRef = `${pedidoId}__${tipoPagamento}`;
 
     const result = await preference.create({
@@ -187,7 +266,7 @@ async function criarLinkMP(titulo, valor, pedidoId, tipoPagamento) {
             currency_id: "BRL",
           },
         ],
-        external_reference: externalRef, // ISSO É O SEGREDO DA AUTOMAÇÃO
+        external_reference: externalRef,
         back_urls: {
           success: `${domain}/sucesso.html`,
           failure: `${domain}/index.html`,
@@ -203,7 +282,6 @@ async function criarLinkMP(titulo, valor, pedidoId, tipoPagamento) {
   }
 }
 
-// --- ROTA DE GERAÇÃO DE LINKS (Atualizada para 50% e 5% OFF) ---
 app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
   try {
     const [r] = await db.query(
@@ -214,18 +292,12 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
 
     const vBase = parseFloat(r[0].valor_final || 0);
     const vExtras = parseFloat(r[0].valor_itens_extras || 0);
-
     const vTotal = vBase + vExtras;
 
-    if (vTotal <= 0) {
-      return res.status(400).json({
-        error:
-          "O valor total do pedido (Itens + Extras) deve ser maior que zero.",
-      });
-    }
+    if (vTotal <= 0)
+      return res.status(400).json({ error: "Valor total inválido." });
 
     const nome = r[0].nome.split(" ")[0];
-
     const valSinal = (vTotal * 0.5).toFixed(2);
     const linkReserva = await criarLinkMP(
       `Sinal Reserva - ${nome}`,
@@ -259,68 +331,35 @@ app.post("/api/admin/gerar-links-mp/:id", checkAuth, async (req, res) => {
       linkIntegral,
     });
   } catch (e) {
-    console.error("Erro ao gerar links:", e);
     res.status(500).json({ error: e.message });
   }
 });
 
-async function enviarEmailConfirmacao(
-  email,
-  nome,
-  valorPago,
-  valorTotal,
-  linkRestante,
-) {
-  if (!email || email.length < 5) return;
-  const saldoDevedor = valorTotal - valorPago;
-  const isQuitado = saldoDevedor <= 1.0;
-
-  let assunto = "Pagamento Confirmado - Cabana de Brincar ⛺";
-  let corpoHtml = `
-    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
-      <h2 style="color: #6C63FF;">Olá, ${nome}! 🎉</h2>
-      <p>Recebemos a confirmação do seu pagamento de <strong>R$ ${Number(valorPago).toFixed(2)}</strong>.</p>
-  `;
-
-  if (isQuitado) {
-    corpoHtml += `<p style="color: green; font-weight: bold;">✅ Sua reserva está 100% quitada!</p>`;
-  } else {
-    corpoHtml += `
-      <p style="color: orange; font-weight: bold;">✅ Reserva Garantida (Sinal)!</p>
-      <p>Restante a Pagar: <strong>R$ ${Number(saldoDevedor).toFixed(2)}</strong></p>
-      <a href="${linkRestante}" style="background: #ff6b6b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Pagar Restante</a>
-    `;
-  }
-  corpoHtml += `<br><br><hr><small>Cabana de Brincar</small></div>`;
-
-  try {
-    await transporter.sendMail({
-      from: `"Cabana de Brincar" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: assunto,
-      html: corpoHtml,
-    });
-  } catch (err) {
-    console.error("Erro email:", err.message);
-  }
-}
-
-// --- 4. WEBHOOK (MERCADO PAGO - ATUALIZADO) ---
+// --- 5. WEBHOOK (MERCADO PAGO - AGORA COM LOGS E EMAIL ATUALIZADO) ---
 app.post("/api/webhook", async (req, res) => {
   res.status(200).send("OK");
   const id = req.body?.data?.id || req.body?.id || req.query.id;
+
+  if (id) {
+    console.log(`🔔 [WEBHOOK] Notificação recebida do Mercado Pago! ID: ${id}`);
+  }
 
   if ((req.body?.type === "payment" || req.query.topic === "payment") && id) {
     try {
       const resp = await fetch(
         `https://api.mercadopago.com/v1/payments/${id}`,
-        { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } },
+        {
+          headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+        },
       );
 
       if (resp.ok) {
         const payment = await resp.json();
 
         if (payment.status === "approved") {
+          console.log(
+            `✅ [WEBHOOK] Pagamento Aprovado pelo Mercado Pago! ID: ${id}`,
+          );
           const reference = payment.external_reference || "";
           const [pedidoIdStr, tipoPagamento] = reference.split("__");
           const pedidoId = parseInt(pedidoIdStr);
@@ -339,7 +378,6 @@ app.post("/api/webhook", async (req, res) => {
             "SELECT id FROM pagamentos_orcamento WHERE orcamento_id = ? AND tipo = ?",
             [pedidoId, tipoPagamento],
           );
-
           if (pagamentoExistente.length > 0) return;
 
           await db.query(
@@ -354,9 +392,8 @@ app.post("/api/webhook", async (req, res) => {
             tipoPagamento === "INTEGRAL" ||
             tipoPagamento === "RESTANTE" ||
             tipoPagamento === "PEGUE_MONTE"
-          ) {
+          )
             novoStatusPagamento = "pago";
-          }
 
           if (
             tipoPagamento === "SINAL" ||
@@ -401,15 +438,9 @@ app.post("/api/webhook", async (req, res) => {
             [tituloLancamento, valorPago],
           );
 
-          const valorTotal = parseFloat(pedido.valor_final || 0);
+          // --- ENVIA O E-MAIL CORRETO DE COMPROVANTE ---
           if (pedido.email) {
-            enviarEmailConfirmacao(
-              pedido.email,
-              pedido.nome,
-              valorPago,
-              valorTotal,
-              "#",
-            );
+            enviarEmailConfirmacao(pedido, valorPago, tipoPagamento);
           }
         }
       }
@@ -420,7 +451,7 @@ app.post("/api/webhook", async (req, res) => {
 });
 
 // =========================================================================
-// --- 5. NOVAS ROTAS: ALIMENTAÇÃO & CARDÁPIOS ---
+// --- ROTAS DO SISTEMA (ALIMENTAÇÃO, CARDÁPIOS, ADMIN, ETC) ---
 // =========================================================================
 
 app.get("/api/alimentos", async (req, res) => {
@@ -642,10 +673,6 @@ app.delete("/api/admin/cardapios/:id", checkAuth, async (req, res) => {
   }
 });
 
-// =========================================================================
-// --- 6. ROTAS PÚBLICAS & ADMIN ANTIGAS ---
-// =========================================================================
-
 app.post("/api/orcamento", async (req, res) => {
   const data = req.body;
   const qtdCriancas = parseInt(data.qtd_criancas) || 0;
@@ -814,15 +841,43 @@ app.put("/api/admin/agenda/aprovar/:id", checkAuth, async (req, res) => {
   }
 });
 
+// --- ROTA DE CONCLUIR PEDIDO (Libera Pegue e Monte) ---
 app.put("/api/admin/agenda/concluir/:id", checkAuth, async (req, res) => {
   try {
-    await db.query(
-      "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?",
-      [req.params.id],
+    const pedidoId = req.params.id;
+    const [pedidos] = await db.query(
+      "SELECT modelo_barraca, tema FROM orcamentos WHERE id = ?",
+      [pedidoId],
     );
+
+    if (pedidos.length > 0) {
+      const pedido = pedidos[0];
+      if (pedido.modelo_barraca === "PEGUE E MONTE" && pedido.tema) {
+        const match = pedido.tema.match(/ID: (\d+)/);
+        if (match && match[1]) {
+          const idDoPacote = match[1];
+          await db.query(
+            "UPDATE pacotes_pegue_monte SET status = 'liberado' WHERE id = ?",
+            [idDoPacote],
+          );
+        }
+      }
+    }
+
+    if (req.body && req.body.valor_final !== undefined) {
+      await db.query(
+        "UPDATE orcamentos SET status_agenda = 'concluido', valor_final = ? WHERE id = ?",
+        [req.body.valor_final, pedidoId],
+      );
+    } else {
+      await db.query(
+        "UPDATE orcamentos SET status_agenda = 'concluido' WHERE id = ?",
+        [pedidoId],
+      );
+    }
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e });
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -843,12 +898,32 @@ app.put("/api/admin/pedidos/:id/financeiro", checkAuth, async (req, res) => {
   }
 });
 
+// --- ROTA DE EXCLUIR PEDIDO (Libera Pegue e Monte) ---
 app.delete("/api/admin/pedidos/:id", checkAuth, async (req, res) => {
   try {
-    await db.query("DELETE FROM orcamentos WHERE id = ?", [req.params.id]);
+    const pedidoId = req.params.id;
+    const [pedidos] = await db.query(
+      "SELECT modelo_barraca, tema FROM orcamentos WHERE id = ?",
+      [pedidoId],
+    );
+
+    if (pedidos.length > 0) {
+      const pedido = pedidos[0];
+      if (pedido.modelo_barraca === "PEGUE E MONTE" && pedido.tema) {
+        const match = pedido.tema.match(/ID: (\d+)/);
+        if (match && match[1]) {
+          const idDoPacote = match[1];
+          await db.query(
+            "UPDATE pacotes_pegue_monte SET status = 'liberado' WHERE id = ?",
+            [idDoPacote],
+          );
+        }
+      }
+    }
+    await db.query("DELETE FROM orcamentos WHERE id = ?", [pedidoId]);
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e });
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -1286,25 +1361,67 @@ app.delete("/api/admin/pegue-monte/:id", checkAuth, async (req, res) => {
 
 app.post("/api/orcamento-pegue-monte", async (req, res) => {
   try {
-    const { nome, telefone, email, data_festa, horario, endereco, pacote_id, nome_pacote, valor_pacote } = req.body;
-    
+    const {
+      nome,
+      telefone,
+      email,
+      data_festa,
+      horario,
+      endereco,
+      pacote_id,
+      nome_pacote,
+      valor_pacote,
+    } = req.body;
+
     const temaString = `Pacote: ${nome_pacote} (ID: ${pacote_id})`;
 
     const sql = `INSERT INTO orcamentos (nome, whatsapp, email, endereco, horario, data_festa, modelo_barraca, status_pagamento, valor_final, tema) VALUES (?, ?, ?, ?, ?, ?, ?, 'pendente', ?, ?)`;
-    const values = [nome, telefone, email || null, endereco, horario, data_festa, 'PEGUE E MONTE', valor_pacote, temaString];
+    const values = [
+      nome,
+      telefone,
+      email || null,
+      endereco,
+      horario,
+      data_festa,
+      "PEGUE E MONTE",
+      valor_pacote,
+      temaString,
+    ];
 
     const [result] = await db.query(sql, values);
-    const linkMP = await criarLinkMP(`Pegue e Monte - ${nome_pacote}`, valor_pacote, result.insertId, "PEGUE_MONTE");
-    
-    // --- CHAMA O E-MAIL AQUI ---
+    const linkMP = await criarLinkMP(
+      `Pegue e Monte - ${nome_pacote}`,
+      valor_pacote,
+      result.insertId,
+      "PEGUE_MONTE",
+    );
+
     if (email) {
-        enviarEmailReservaPegueMonte(email, nome, nome_pacote, data_festa, horario, linkMP);
+      enviarEmailReservaPegueMonte(
+        result.insertId,
+        email,
+        nome,
+        nome_pacote,
+        data_festa,
+        horario,
+        endereco,
+        valor_pacote,
+        linkMP,
+      );
     }
 
-    res.status(201).json({ success: true, pedido_id: result.insertId, link_pagamento: linkMP });
-  } catch (e) { 
+    res
+      .status(201)
+      .json({
+        success: true,
+        pedido_id: result.insertId,
+        link_pagamento: linkMP,
+      });
+  } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "Erro ao registrar o pedido pegue e monte." }); 
+    res
+      .status(500)
+      .json({ error: "Erro ao registrar o pedido pegue e monte." });
   }
 });
 

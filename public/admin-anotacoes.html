@@ -3,102 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anotações - Cabana de Brincar</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f4f9; margin: 0; padding: 20px; color: #333; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; background-color: #6C63FF; font-weight: bold; }
-        .btn:hover { background-color: #5750d1; }
-        
-        /* Formulário */
-        .form-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px; max-width: 600px; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-        textarea { resize: vertical; min-height: 80px; }
-        .color-picker { display: flex; gap: 10px; align-items: center; }
-        .color-option { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-        .color-option.selected { border-color: #333; }
-        
-        /* Grid de Notas */
-        .notas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .nota-card { padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; transition: transform 0.2s; white-space: pre-wrap; word-wrap: break-word; }
-        .nota-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .nota-titulo { font-weight: bold; margin-bottom: 10px; font-size: 16px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px; }
-        .nota-data { font-size: 11px; color: #666; margin-top: 15px; text-align: right; }
-        .btn-excluir { position: absolute; top: 10px; right: 10px; background: rgba(255, 0, 0, 0.1); color: red; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; }
-        .btn-excluir:hover { background: red; color: white; }
-    </style>
+    <title>Anotações | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-
-    <div class="header">
-        <h2>📌 Minhas Anotações</h2>
-        <button class="btn" onclick="window.location.href='painel.html'">Voltar ao Painel</button>
-    </div>
-
-    <div class="form-container">
-        <input type="text" id="nota-titulo" placeholder="Título da anotação (opcional)">
-        <textarea id="nota-conteudo" placeholder="Escreva sua anotação aqui..." required></textarea>
+<body class="bg-slate-50 min-h-screen p-6 text-slate-800">
+    <div class="max-w-6xl mx-auto">
         
-        <div class="color-picker" id="color-picker">
-            <span>Cor:</span>
-            <div class="color-option selected" style="background-color: #ffffff;" data-color="#ffffff"></div>
-            <div class="color-option" style="background-color: #fff475;" data-color="#fff475"></div> <div class="color-option" style="background-color: #ccff90;" data-color="#ccff90"></div> <div class="color-option" style="background-color: #fbbc04;" data-color="#fbbc04"></div> <div class="color-option" style="background-color: #fdcfe8;" data-color="#fdcfe8"></div> <div class="color-option" style="background-color: #cbf0f8;" data-color="#cbf0f8"></div> </div>
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-2">
+                    <div class="bg-yellow-100 p-2 rounded-xl text-yellow-600">
+                        <i data-lucide="sticky-note" class="w-6 h-6"></i>
+                    </div>
+                    Minhas Anotações
+                </h1>
+                <p class="text-slate-500 mt-1">Gerencie seus lembretes e ideias</p>
+            </div>
+            <a href="painel.html" class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold py-2 px-4 rounded-xl transition-all flex items-center gap-2 shadow-sm">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Painel
+            </a>
+        </header>
 
-        <button class="btn" onclick="salvarAnotacao()">Salvar Anotação</button>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-4">Nova Anotação</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <input type="text" id="nota-titulo" placeholder="Título (opcional)" class="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all">
+                        </div>
+                        <div>
+                            <textarea id="nota-conteudo" placeholder="Escreva sua anotação aqui..." rows="5" class="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent resize-none transition-all" required></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 mb-2">Cor da nota:</label>
+                            <div class="flex gap-3" id="color-picker">
+                                <button class="color-option w-8 h-8 rounded-full border-2 border-slate-800 shadow-sm focus:outline-none" style="background-color: #ffffff;" data-color="#ffffff"></button>
+                                <button class="color-option w-8 h-8 rounded-full border-2 border-transparent shadow-sm hover:scale-110 transition-transform focus:outline-none" style="background-color: #fef08a;" data-color="#fef08a"></button> <button class="color-option w-8 h-8 rounded-full border-2 border-transparent shadow-sm hover:scale-110 transition-transform focus:outline-none" style="background-color: #bbf7d0;" data-color="#bbf7d0"></button> <button class="color-option w-8 h-8 rounded-full border-2 border-transparent shadow-sm hover:scale-110 transition-transform focus:outline-none" style="background-color: #fed7aa;" data-color="#fed7aa"></button> <button class="color-option w-8 h-8 rounded-full border-2 border-transparent shadow-sm hover:scale-110 transition-transform focus:outline-none" style="background-color: #fbcfe8;" data-color="#fbcfe8"></button> <button class="color-option w-8 h-8 rounded-full border-2 border-transparent shadow-sm hover:scale-110 transition-transform focus:outline-none" style="background-color: #bfdbfe;" data-color="#bfdbfe"></button> </div>
+                        </div>
+
+                        <button onclick="salvarAnotacao()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-3 rounded-xl transition-all flex justify-center items-center gap-2 mt-2">
+                            <i data-lucide="plus" class="w-5 h-5"></i> Salvar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div id="container-notas" class="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-max">
+                    </div>
+            </div>
+            
+        </div>
     </div>
-
-    <div class="notas-grid" id="container-notas"></div>
 
     <script>
-        const adminPass = localStorage.getItem('admin_pass');
+        // Inicializa os ícones do Lucide
+        lucide.createIcons();
+
+        // 1. VERIFICAÇÃO DE LOGIN (Integrado com o painel.html)
+        const adminPass = localStorage.getItem('cabana_admin_token');
         if (!adminPass) {
-            alert('Acesso negado.');
-            window.location.href = 'index.html';
+            alert('Acesso negado. Por favor, faça login.');
+            window.location.href = 'painel.html';
         }
 
         let corSelecionada = '#ffffff';
 
-        // Lógica para selecionar cor
-        document.querySelectorAll('.color-option').forEach(el => {
-            el.addEventListener('click', (e) => {
-                document.querySelectorAll('.color-option').forEach(c => c.classList.remove('selected'));
-                e.target.classList.add('selected');
+        // 2. LÓGICA DO SELETOR DE CORES
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Remove a borda de seleção de todas as cores
+                document.querySelectorAll('.color-option').forEach(c => {
+                    c.classList.remove('border-slate-800');
+                    c.classList.add('border-transparent');
+                });
+                // Adiciona a borda na cor clicada
+                e.target.classList.remove('border-transparent');
+                e.target.classList.add('border-slate-800');
+                
                 corSelecionada = e.target.getAttribute('data-color');
             });
         });
 
+        // 3. CARREGAR ANOTAÇÕES DO BANCO
         async function carregarAnotacoes() {
             try {
                 const res = await fetch('/api/admin/anotacoes', {
                     headers: { 'x-admin-password': adminPass }
                 });
-                const notas = await res.json();
                 
+                if (!res.ok) throw new Error('Falha de autenticação ao carregar as notas.');
+                
+                const notas = await res.json();
                 const container = document.getElementById('container-notas');
                 container.innerHTML = '';
 
+                if (notas.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full flex flex-col items-center justify-center text-slate-400 py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
+                            <i data-lucide="inbox" class="w-12 h-12 mb-3 opacity-50"></i>
+                            <p>Nenhuma anotação encontrada.</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
                 notas.forEach(nota => {
-                    const dataFormatada = new Date(nota.data_criacao).toLocaleString('pt-BR');
+                    const dataFormatada = new Date(nota.data_criacao).toLocaleString('pt-BR', {
+                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'
+                    });
+                    
+                    // Proteção simples contra quebra de HTML (XSS)
+                    const safeTitulo = nota.titulo ? nota.titulo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+                    const safeConteudo = nota.conteudo ? nota.conteudo.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+
                     container.innerHTML += `
-                        <div class="nota-card" style="background-color: ${nota.cor};">
-                            <button class="btn-excluir" onclick="excluirAnotacao(${nota.id})">✖</button>
-                            ${nota.titulo ? `<div class="nota-titulo">${nota.titulo}</div>` : ''}
-                            <div class="nota-conteudo">${nota.conteudo}</div>
-                            <div class="nota-data">${dataFormatada}</div>
+                        <div class="relative p-5 rounded-2xl shadow-sm border border-slate-200 transition-transform hover:-translate-y-1 group flex flex-col justify-between" style="background-color: ${nota.cor}; min-height: 150px;">
+                            
+                            <button onclick="excluirAnotacao(${nota.id})" class="absolute top-3 right-3 text-red-400 hover:text-red-600 hover:bg-white/50 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" title="Excluir Anotação">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                            
+                            <div>
+                                ${safeTitulo ? `<h3 class="font-bold text-slate-800 mb-2 border-b border-slate-800/10 pb-2 pr-6">${safeTitulo}</h3>` : ''}
+                                <div class="text-slate-700 whitespace-pre-wrap break-words text-sm mt-2">${safeConteudo}</div>
+                            </div>
+                            
+                            <div class="mt-4 text-xs text-slate-500/80 text-right font-medium">
+                                ${dataFormatada}
+                            </div>
                         </div>
                     `;
                 });
+                
+                lucide.createIcons();
             } catch (err) {
                 console.error(err);
             }
         }
 
+        // 4. SALVAR NOVA ANOTAÇÃO
         async function salvarAnotacao() {
             const titulo = document.getElementById('nota-titulo').value;
             const conteudo = document.getElementById('nota-conteudo').value;
 
-            if (!conteudo.trim()) return alert('O conteúdo da anotação não pode estar vazio.');
+            if (!conteudo.trim()) {
+                alert('O conteúdo da anotação não pode estar vazio.');
+                return;
+            }
 
             try {
                 const res = await fetch('/api/admin/anotacoes', {
@@ -111,31 +169,41 @@
                 });
 
                 if (res.ok) {
+                    // Limpa os campos após salvar
                     document.getElementById('nota-titulo').value = '';
                     document.getElementById('nota-conteudo').value = '';
+                    
+                    // Recarrega a listagem
                     carregarAnotacoes();
                 } else {
-                    alert('Erro ao salvar anotação.');
+                    alert('Erro ao salvar anotação. Verifique a conexão.');
                 }
             } catch (err) {
                 console.error(err);
             }
         }
 
+        // 5. EXCLUIR ANOTAÇÃO
         async function excluirAnotacao(id) {
             if (!confirm('Tem certeza que deseja apagar esta anotação?')) return;
+            
             try {
                 const res = await fetch(`/api/admin/anotacoes/${id}`, {
                     method: 'DELETE',
                     headers: { 'x-admin-password': adminPass }
                 });
-                if (res.ok) carregarAnotacoes();
+                
+                if (res.ok) {
+                    carregarAnotacoes();
+                } else {
+                    alert('Erro ao excluir anotação.');
+                }
             } catch (err) {
                 console.error(err);
             }
         }
 
-        // Inicializa a página
+        // Executa a carga inicial das notas
         carregarAnotacoes();
     </script>
 </body>

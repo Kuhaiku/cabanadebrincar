@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contrato Jurídico | Cabana de Brincar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:wght@400;700&display=swap');
+        
+        body { background-color: #f1f5f9; font-family: 'Arial', sans-serif; }
+        
+        /* Formato rigoroso de folha A4 */
+        .a4-page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 40px auto;
+            padding: 25mm 20mm;
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2);
+            font-family: 'Times New Roman', Times, serif; /* Fonte padrão jurídica */
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            outline: none;
+            text-align: justify;
+        }
+
+        .a4-page:focus { box-shadow: 0 0 0 3px #3b82f6; }
+
+        /* Estilização interna do Contrato */
+        .a4-page h1 { font-size: 14pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 24pt; }
+        .a4-page h2 { font-size: 12pt; font-weight: bold; text-transform: uppercase; margin-top: 18pt; margin-bottom: 8pt; text-decoration: underline; }
+        .a4-page p { margin-bottom: 10pt; text-indent: 20mm; } /* Parágrafos com recuo */
+        .a4-page ul { margin-bottom: 10pt; margin-left: 20mm; list-style-type: disc; }
+        .a4-page li { margin-bottom: 4pt; }
+        .a4-page .destaque { font-weight: bold; }
+        
+        .assinaturas { margin-top: 50pt; width: 100%; text-align: center; page-break-inside: avoid; }
+        .assinaturas td { width: 50%; padding: 10pt; vertical-align: bottom; }
+        .linha-ass { border-top: 1px solid #000; margin: 0 20pt; padding-top: 5pt; font-weight: bold; font-size: 11pt; text-transform: uppercase; }
+
+        @media print {
+            body { background-color: white; }
+            .a4-page { margin: 0; padding: 15mm; box-shadow: none; width: 100%; min-height: auto; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <div class="no-print bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <a href="painel.html" class="p-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <div class="flex-1 md:w-[450px]">
+                    <select id="selectPedido" onchange="gerarContrato()" class="w-full p-2.5 rounded-lg border-0 bg-slate-100 font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Selecione um pedido para redigir o contrato...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span class="text-slate-400 text-xs mr-2 hidden md:inline"><i data-lucide="edit-2" class="w-3 h-3 inline"></i> Clique no texto para editar livremente</span>
+                <button onclick="window.print()" id="btnImprimir" disabled class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors disabled:opacity-50">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Contrato
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="areaContrato" class="a4-page hidden" contenteditable="true" spellcheck="false">
+        </div>
+
+    <script>
+        const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
+        if (!ADMIN_TOKEN) window.location.href = "painel.html";
+
+        let listaPedidos = [];
+
+        async function carregarPedidos() {
+            try {
+                const response = await fetch("/api/admin/pedidos", { headers: { "x-admin-password": ADMIN_TOKEN } });
+                if (!response.ok) throw new Error("Falha ao carregar");
+                
+                const pedidos = await response.json();
+                listaPedidos = pedidos.filter(p => p.status !== 'cancelado');
+                
+                const select = document.getElementById("selectPedido");
+                
+                listaPedidos.forEach(p => {
+                    let dFesta = "Data N/I";
+                    if(p.data_festa) {
+                        let dStr = p.data_festa.includes('T') ? p.data_festa.split('T')[0] : p.data_festa;
+                        dFesta = new Date(dStr + 'T00:00:00').toLocaleDateString("pt-BR");
+                    }
+                    select.insertAdjacentHTML('beforeend', `<option value="${p.id}">Pedido #${p.id} - ${p.nome} (${dFesta})</option>`);
+                });
+            } catch (error) {
+                alert("Erro de conexão ao buscar pedidos.");
+            }
+        }
+
+        function parseSeguro(dado) {
+            if (!dado) return null;
+            if (typeof dado === "object") return dado;
+            try { return JSON.parse(dado); } catch (e) { return [dado]; }
+        }
+
+        function gerarContrato() {
+            const id = document.getElementById("selectPedido").value;
+            const pagina = document.getElementById("areaContrato");
+            const btn = document.getElementById("btnImprimir");
+
+            if (!id) {
+                pagina.classList.add("hidden");
+                btn.disabled = true;
+                return;
+            }
+
+            const pedido = listaPedidos.find(p => p.id == id);
+            if (!pedido) return;
+
+            pagina.classList.remove("hidden");
+            btn.disabled = false;
+
+            // --- PROCESSAMENTO DE DADOS ---
+            let dataFesta = "___/___/_____";
+            if (pedido.data_festa) {
+                let d = pedido.data_festa.includes('T') ? pedido.data_festa.split('T')[0] : pedido.data_festa;
+                dataFesta = new Date(d + 'T00:00:00').toLocaleDateString("pt-BR");
+            }
+
+            const total = parseFloat(pedido.valor_final || 0) + parseFloat(pedido.valor_itens_extras || 0);
+            const valorFormatado = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            // CONTEÚDO (BENS LOCADOS)
+            const itensPadrao = parseSeguro(pedido.itens_padrao);
+            let htmlBens = Array.isArray(itensPadrao) && itensPadrao.length > 0 
+                ? itensPadrao.map(i => `<li>${i}</li>`).join('') 
+                : "<li>Estrutura padrão correspondente ao modelo contratado.</li>";
+            
+            if (pedido.itens_adicionais || pedido.descricao_itens_extras) {
+                htmlBens += `<li><span class="destaque">Itens Adicionais/Extras:</span> ${pedido.itens_adicionais || ""} ${pedido.descricao_itens_extras || ""}</li>`;
+            }
+
+            // ALIMENTAÇÃO E INGREDIENTES
+            const alim = parseSeguro(pedido.alimentacao);
+            let htmlAlim = "";
+            let temAlimentacao = false;
+
+            if (alim) {
+                if (Array.isArray(alim) && alim.length > 0) {
+                    htmlAlim = alim.map(i => `<li>${i}</li>`).join('');
+                    temAlimentacao = true;
+                } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
+                    if (alim.combo) htmlAlim += `<li>${alim.combo.titulo}</li>`;
+                    if (alim.extras) alim.extras.forEach(e => htmlAlim += `<li>${e.qtd}x ${e.nome}</li>`);
+                    temAlimentacao = true;
+                }
+            }
+            if (!temAlimentacao) htmlAlim = "<li>Nenhuma alimentação ou buffet foi contratado para este evento.</li>";
+
+            const alergiasText = pedido.alergias ? pedido.alergias.toUpperCase() : "NENHUMA RESTRIÇÃO INFORMADA PELO CONTRATANTE";
+
+            // --- REDAÇÃO JURÍDICA ---
+            const template = `
+                <h1>Instrumento Particular de Prestação de Serviços de Locação e Fornecimento</h1>
+
+                <p>Pelo presente instrumento particular, de um lado, a <span class="destaque">CABANA DE BRINCAR</span>, doravante denominada simplesmente <span class="destaque">CONTRATADA</span>, e de outro lado, o(a) Sr(a). <span class="destaque">${pedido.nome.toUpperCase()}</span>, portador(a) do CPF/CNPJ nº _____________________, telefone/WhatsApp ${pedido.whatsapp}, e-mail ${pedido.email || "_____________________"}, doravante denominado(a) simplesmente <span class="destaque">CONTRATANTE</span>, celebram o presente contrato mediante as cláusulas e condições a seguir dispostas:</p>
+
+                <h2>Cláusula Primeira – Do Objeto e do Evento</h2>
+                <p>O presente contrato tem por objeto a prestação de serviços de locação de estrutura decorativa e/ou recreativa infantil, bem como fornecimento de itens especificados neste instrumento, para o evento a ser realizado nos seguintes moldes:</p>
+                <ul>
+                    <li><span class="destaque">Data do Evento:</span> ${dataFesta}</li>
+                    <li><span class="destaque">Horário de Início/Montagem:</span> ${pedido.horario || "A combinar"}</li>
+                    <li><span class="destaque">Local da Execução:</span> ${pedido.endereco || "______________________________________________________"}</li>
+                    <li><span class="destaque">Público Estimado:</span> ${pedido.qtd_criancas || "___"} crianças.</li>
+                </ul>
+
+                <h2>Cláusula Segunda – Da Declaração de Conteúdo e Bens Locados</h2>
+                <p>A CONTRATADA compromete-se a entregar, montar e disponibilizar, sob o regime de locação temporária, a seguinte estrutura (Modelo: ${pedido.modelo_barraca || "N/A"} - ${pedido.qtd_barracas || 1} unidades / Tema: ${pedido.tema || "A definir"}):</p>
+                <ul>
+                    ${htmlBens}
+                </ul>
+                <p>Parágrafo Primeiro: O CONTRATANTE reconhece que todos os bens descritos acima são de propriedade exclusiva da CONTRATADA, sendo entregues em perfeito estado de conservação, limpeza e funcionamento no ato da montagem.</p>
+                <p>Parágrafo Segundo: Fica o CONTRATANTE expressamente responsável pela guarda e zelo de todos os materiais durante o período da locação. Em caso de avarias, rasgos, quebras, manchas irreversíveis ou extravio de qualquer item (incluindo tecidos, suportes, colchões e adereços), o CONTRATANTE obriga-se a ressarcir a CONTRATADA no valor integral de mercado para reposição imediata do bem danificado.</p>
+
+                <h2>Cláusula Terceira – Do Fornecimento de Alimentação e Termo de Anuência</h2>
+                <p>Neste ato, fica declarada a contratação dos seguintes itens de alimentação, que serão fornecidos pela CONTRATADA:</p>
+                <ul>
+                    ${htmlAlim}
+                </ul>
+                <p>Parágrafo Primeiro (<span class="destaque">Das Alergias e Restrições</span>): O CONTRATANTE declara oficialmente à CONTRATADA as seguintes restrições alimentares ou alergias referentes aos participantes do evento: <span class="destaque">${alergiasText}</span>.</p>
+                <p>Parágrafo Segundo (<span class="destaque">Isenção de Responsabilidade</span>): O CONTRATANTE atesta estar plenamente ciente da natureza dos alimentos, cardápios e ingredientes que serão fornecidos. Ao assinar este contrato, o CONTRATANTE assume inteira e exclusiva responsabilidade por qualquer reação alérgica, intolerância ou complicação de saúde que venha a ocorrer com qualquer participante ou convidado decorrente do consumo dos itens servidos, isentando a CONTRATADA de qualquer responsabilidade civil, moral ou médica, bem como de eventuais indenizações, uma vez que o fornecimento se dá sob aprovação e ciência estrita do CONTRATANTE.</p>
+
+                <h2>Cláusula Quarta – Da Remuneração e Condições de Pagamento</h2>
+                <p>Pela prestação dos serviços e locações descritos, o CONTRATANTE pagará à CONTRATADA o valor total e irreajustável de <span class="destaque">${valorFormatado}</span>.</p>
+                <p>Parágrafo Único: Em caso de cancelamento unilateral por parte do CONTRATANTE com prazo inferior a 07 (sete) dias da data estipulada para o evento, o valor pago a título de sinal ou garantia de reserva não será restituído, revertendo-se em favor da CONTRATADA a título de multa compensatória e cobertura de custos logísticos e bloqueio de agenda.</p>
+
+                <h2>Cláusula Quinta – Do Foro</h2>
+                <p>As partes elegem o foro da Comarca da cidade sede da CONTRATADA para dirimir quaisquer dúvidas ou controvérsias oriundas da execução deste instrumento, renunciando a qualquer outro por mais privilegiado que seja.</p>
+
+                <p style="text-align: center; margin-top: 30pt;">E, por estarem assim justos e contratados, assinam o presente em 02 (duas) vias de igual teor e forma.</p>
+                <p style="text-align: right; margin-top: 20pt;">Data: ____ de ________________ de 20____.</p>
+
+                <table class="assinaturas">
+                    <tr>
+                        <td>
+                            <div class="linha-ass">${pedido.nome}</div>
+                            <span style="font-size: 10pt;">CONTRATANTE</span><br>
+                            <span style="font-size: 10pt;">CPF: _____________________</span>
+                        </td>
+                        <td>
+                            <div class="linha-ass">Cabana de Brincar</div>
+                            <span style="font-size: 10pt;">CONTRATADA</span><br>
+                            <span style="font-size: 10pt;">CNPJ: _____________________</span>
+                        </td>
+                    </tr>
+                </table>
+            `;
+
+            pagina.innerHTML = template;
+        }
+
+        carregarPedidos();
+        lucide.createIcons();
+    </script>
+</body>
+</html>

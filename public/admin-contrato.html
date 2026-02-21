@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gerador de Contratos | Cabana de Brincar</title>
+    <title>Editor de Contratos | Cabana de Brincar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
-        body { font-family: 'Quicksand', sans-serif; background-color: #f8fafc; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         
-        /* Formatação específica para a folha A4 */
+        /* Folha A4 e Editor */
         .a4-page {
             background: white;
             width: 210mm;
@@ -19,148 +19,99 @@
             padding: 20mm;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
             color: #1e293b;
-            font-family: Arial, sans-serif;
+            font-size: 14px;
             line-height: 1.6;
-        }
-
-        /* Feedback visual para áreas editáveis */
-        .editavel {
-            transition: all 0.2s;
-            border-radius: 4px;
-            padding: 0 4px;
-            margin: 0 -4px;
             outline: none;
         }
-        .editavel:hover {
-            background-color: #fef08a; /* Amarelo suave */
-            cursor: text;
-            box-shadow: 0 0 0 1px #eab308 dashed;
-        }
-        .editavel:focus {
-            background-color: #ffffff;
-            box-shadow: 0 0 0 2px #ec4899; /* Rosa Cabana */
-        }
         
+        .a4-page:focus {
+            box-shadow: 0 0 0 2px #ec4899, 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        /* Estilos internos do editor para manter o formato do Word */
+        .editor-content h1 { font-size: 24px; font-weight: bold; margin-bottom: 16px; text-transform: uppercase; text-align: center; }
+        .editor-content h2 { font-size: 16px; font-weight: bold; margin-top: 24px; margin-bottom: 8px; background-color: #f1f5f9; padding: 6px; text-transform: uppercase; }
+        .editor-content p { margin-bottom: 8px; }
+        .editor-content ul { list-style-type: disc; margin-left: 24px; margin-bottom: 16px; }
+        .editor-content li { margin-bottom: 4px; }
+        .editor-content table { width: 100%; margin-top: 32px; border-collapse: collapse; text-align: center; }
+        .editor-content td { padding: 8px; width: 50%; vertical-align: bottom; }
+        .editor-content .assinatura-linha { border-top: 1px solid #000; padding-top: 4px; font-weight: bold; text-transform: uppercase; }
+
+        /* Estilo dos botões da barra de ferramentas */
+        .toolbar-btn {
+            padding: 6px;
+            border-radius: 6px;
+            color: #475569;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toolbar-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+
         @media print {
             body { background-color: white; }
             .a4-page { margin: 0; padding: 15mm; box-shadow: none; width: 100%; min-height: auto; }
             .no-print { display: none !important; }
-            /* Remove marcações visuais na impressão */
-            .editavel { padding: 0; margin: 0; box-shadow: none !important; background: transparent !important; }
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
-    <div class="no-print bg-white border-b border-slate-200 shadow-sm p-4 sticky top-0 z-50">
+    <div class="no-print bg-white border-b border-slate-200 p-4 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4 w-full md:w-auto">
-                <a href="painel.html" class="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors" title="Voltar ao Painel">
+                <a href="painel.html" class="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
-                <div class="flex-1 md:w-96">
-                    <label class="text-xs font-bold text-slate-500 uppercase block mb-1">Selecione o Pedido</label>
-                    <select id="selectPedido" onchange="renderizarContrato()" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-700 outline-none focus:border-pink-500">
-                        <option value="">Carregando pedidos...</option>
+                <div class="flex-1 md:w-[400px]">
+                    <select id="selectPedido" onchange="gerarRascunho()" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-700 outline-none focus:border-pink-500 text-sm">
+                        <option value="">Selecione um pedido para carregar os dados...</option>
                     </select>
                 </div>
             </div>
             
             <div class="flex items-center gap-3">
-                <button id="btnRestaurar" onclick="renderizarContrato()" disabled class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed hidden md:flex" title="Desfazer alterações manuais">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restaurar Original
+                <button id="btnRestaurar" onclick="gerarRascunho()" disabled class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 text-sm">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Recarregar Dados
                 </button>
-                <button id="btnImprimir" onclick="window.print()" disabled class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i data-lucide="printer" class="w-5 h-5"></i> Imprimir / PDF
+                <button id="btnImprimir" onclick="window.print()" disabled class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 text-sm shadow-md">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Salvar PDF / Imprimir
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="avisoEdicao" class="no-print hidden bg-blue-50 border-b border-blue-100 p-3 text-center text-blue-700 text-sm font-bold flex justify-center items-center gap-2 shadow-inner">
-        <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
-        Passe o mouse e clique em qualquer texto destacado de amarelo para editar antes de imprimir!
-    </div>
-
-    <div id="estadoVazio" class="no-print flex flex-col items-center justify-center mt-20 text-slate-400">
-        <i data-lucide="file-edit" class="w-16 h-16 mb-4 text-slate-300"></i>
-        <h2 class="text-xl font-bold text-slate-500">Nenhum contrato gerado</h2>
-        <p>Selecione um pedido na barra superior para visualizar e editar o contrato.</p>
-    </div>
-
-    <div id="areaContrato" class="a4-page hidden text-sm">
-        
-        <div class="text-center mb-8 border-b-2 border-slate-800 pb-4">
-            <h1 class="text-2xl font-bold uppercase tracking-wider editavel" contenteditable="true">Contrato de Prestação de Serviços e Locação</h1>
-            <p class="text-slate-600 mt-1 font-bold editavel" contenteditable="true">Cabana de Brincar - Eventos Infantis</p>
-        </div>
-
-        <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">1. Identificação das Partes</h2>
-            <p><strong>CONTRATADA:</strong> <span class="editavel" contenteditable="true">Cabana de Brincar, doravante denominada simplesmente CONTRATADA.</span></p>
-            <p><strong>CONTRATANTE:</strong> <span id="c_nome" class="uppercase font-bold border-b border-slate-300 editavel" contenteditable="true"></span></p>
-            <p><strong>CPF/CNPJ:</strong> <span class="editavel" contenteditable="true">____________________________________</span></p>
-            <p><strong>WhatsApp:</strong> <span id="c_whatsapp" class="editavel" contenteditable="true"></span></p>
-            <p><strong>E-mail:</strong> <span id="c_email" class="editavel" contenteditable="true"></span></p>
-        </div>
-
-        <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">2. Objeto e Dados do Evento</h2>
-            <p class="editavel" contenteditable="true">O presente contrato tem como objeto a locação de estrutura e serviços de decoração infantil, conforme especificações:</p>
-            <div class="pl-4 mt-2 grid grid-cols-2 gap-2">
-                <p><strong>Data do Evento:</strong> <span id="c_data" class="editavel" contenteditable="true"></span></p>
-                <p><strong>Horário de Início:</strong> <span id="c_horario" class="editavel" contenteditable="true"></span></p>
-                <p class="col-span-2"><strong>Local da Montagem:</strong> <span id="c_endereco" class="editavel" contenteditable="true"></span></p>
-            </div>
-        </div>
-
-        <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">3. Estrutura e Serviços Contratados</h2>
-            <ul class="list-disc pl-8 space-y-1">
-                <li><strong>Modelo:</strong> <span id="c_modelo" class="editavel" contenteditable="true"></span></li>
-                <li><strong>Quantidade:</strong> <span id="c_qtd" class="editavel" contenteditable="true"></span> unidade(s)</li>
-                <li><strong>Tema / Pacote:</strong> <span id="c_tema" class="editavel" contenteditable="true"></span></li>
-                <li><strong>Alimentação:</strong> <span id="c_alimentacao" class="editavel" contenteditable="true"></span></li>
-                <li><strong>Observações / Extras:</strong> <span id="c_obs" class="editavel" contenteditable="true"></span></li>
-            </ul>
-        </div>
-
-        <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">4. Valores e Condições de Pagamento</h2>
-            <p>O valor total acordado para a prestação dos serviços descritos é de <strong>R$ <span id="c_valor_total" class="editavel" contenteditable="true"></span></strong>.</p>
-            <p><strong>Status atual do pagamento no sistema:</strong> <span id="c_status_pagamento" class="uppercase font-bold editavel" contenteditable="true"></span>.</p>
-        </div>
-
-        <div class="mb-8 space-y-3 text-justify text-xs">
-            <h2 class="font-bold uppercase bg-slate-100 p-2 text-sm text-left editavel" contenteditable="true">5. Cláusulas Gerais e Responsabilidades</h2>
-            
-            <div class="editavel" contenteditable="true">
-                <p class="mb-2"><strong>5.1.</strong> A CONTRATADA compromete-se a entregar, montar e desmontar os equipamentos no local, data e horários estabelecidos neste contrato.</p>
-                <p class="mb-2"><strong>5.2.</strong> O CONTRATANTE declara ter inspecionado os equipamentos no momento da montagem, recebendo-os em perfeitas condições de uso e higiene.</p>
-                <p class="mb-2"><strong>5.3.</strong> É de inteira responsabilidade do CONTRATANTE a guarda e zelo pelos materiais locados durante todo o período do evento. Em caso de danos, manchas irreversíveis, quebras ou extravios de qualquer item, o CONTRATANTE deverá ressarcir a CONTRATADA pelo valor de reposição no mercado.</p>
-                <p><strong>5.4.</strong> Em caso de cancelamento por parte do CONTRATANTE com menos de 7 (sete) dias de antecedência da data do evento, o valor pago a título de sinal (reserva de data) não será reembolsado, a fim de cobrir custos logísticos e bloqueio de agenda.</p>
-            </div>
-        </div>
-
-        <div class="mt-20 grid grid-cols-2 gap-12 text-center break-inside-avoid">
-            <div>
-                <div class="border-t border-black pt-2">
-                    <p class="font-bold uppercase editavel" id="c_nome_assinatura" contenteditable="true"></p>
-                    <p class="text-xs mt-1 editavel" contenteditable="true">CONTRATANTE</p>
-                </div>
-            </div>
-            <div>
-                <div class="border-t border-black pt-2">
-                    <p class="font-bold uppercase editavel" contenteditable="true">Cabana de Brincar</p>
-                    <p class="text-xs mt-1 editavel" contenteditable="true">CONTRATADA</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-12 text-center text-sm break-inside-avoid">
-            <p class="editavel" contenteditable="true">Local e Data: _________________________, ____ de ________________ de ________.</p>
+    <div id="editorToolbar" class="no-print bg-slate-50 border-b border-slate-200 p-2 sticky top-[73px] z-40 hidden shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center gap-1">
+            <button class="toolbar-btn" onclick="formatar('bold')" title="Negrito"><i data-lucide="bold" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('italic')" title="Itálico"><i data-lucide="italic" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('underline')" title="Sublinhado"><i data-lucide="underline" class="w-4 h-4"></i></button>
+            <div class="w-px h-6 bg-slate-300 mx-1"></div>
+            <button class="toolbar-btn" onclick="formatar('justifyLeft')" title="Alinhar à Esquerda"><i data-lucide="align-left" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('justifyCenter')" title="Centralizar"><i data-lucide="align-center" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('justifyRight')" title="Alinhar à Direita"><i data-lucide="align-right" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('justifyFull')" title="Justificar"><i data-lucide="align-justify" class="w-4 h-4"></i></button>
+            <div class="w-px h-6 bg-slate-300 mx-1"></div>
+            <button class="toolbar-btn" onclick="formatar('insertUnorderedList')" title="Lista"><i data-lucide="list" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('formatBlock', 'H2')" title="Título de Seção (Fundo Cinza)"><i data-lucide="heading-2" class="w-4 h-4"></i></button>
+            <div class="w-px h-6 bg-slate-300 mx-1"></div>
+            <button class="toolbar-btn text-red-500 hover:text-red-700 hover:bg-red-50" onclick="limparEditor()" title="Apagar tudo"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+            <span class="ml-auto text-xs font-bold text-pink-600 flex items-center gap-1">
+                <i data-lucide="edit-3" class="w-3 h-3"></i> O documento é 100% editável
+            </span>
         </div>
     </div>
+
+    <div id="estadoVazio" class="no-print flex-1 flex flex-col items-center justify-center mt-20 text-slate-400">
+        <i data-lucide="file-text" class="w-16 h-16 mb-4 text-slate-300"></i>
+        <h2 class="text-xl font-bold text-slate-500">Editor de Contratos</h2>
+        <p>Selecione um pedido para gerar o documento base ou digite do zero.</p>
+    </div>
+
+    <div id="areaContrato" class="a4-page editor-content hidden" contenteditable="true" spellcheck="false">
+        </div>
 
     <script>
         const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
@@ -168,7 +119,19 @@
 
         let listaPedidos = [];
 
-        // Busca pedidos do banco em "estado zero"
+        // Comandos do Editor WYSIWYG
+        function formatar(comando, valor = null) {
+            document.execCommand(comando, false, valor);
+            document.getElementById("areaContrato").focus();
+        }
+
+        function limparEditor() {
+            if(confirm("Tem certeza que deseja apagar todo o conteúdo atual?")) {
+                document.getElementById("areaContrato").innerHTML = "<p><br></p>";
+                document.getElementById("areaContrato").focus();
+            }
+        }
+
         async function carregarPedidos() {
             try {
                 const response = await fetch("/api/admin/pedidos", {
@@ -181,7 +144,6 @@
                 listaPedidos = pedidosBrutos.filter(p => p.status !== 'cancelado');
                 
                 const select = document.getElementById("selectPedido");
-                select.innerHTML = '<option value="">Selecione um pedido para gerar o contrato...</option>';
                 
                 listaPedidos.forEach(p => {
                     let dataFesta = "Data N/I";
@@ -189,7 +151,6 @@
                         let dStr = p.data_festa.includes('T') ? p.data_festa.split('T')[0] : p.data_festa;
                         dataFesta = new Date(dStr + 'T00:00:00').toLocaleDateString("pt-BR");
                     }
-                    
                     const option = document.createElement("option");
                     option.value = p.id;
                     option.textContent = `#${p.id} - ${p.nome} (${dataFesta})`;
@@ -198,91 +159,144 @@
 
             } catch (error) {
                 console.error(error);
-                document.getElementById("selectPedido").innerHTML = '<option value="">Erro ao carregar pedidos</option>';
+                alert("Erro ao carregar dados do estado zero.");
             }
         }
 
-        // Puxa os dados e preenche na tela
-        function renderizarContrato() {
+        function parseSeguro(dado) {
+            if (!dado) return null;
+            if (typeof dado === "object") return dado;
+            try { return JSON.parse(dado); } catch (e) { return [dado]; }
+        }
+
+        function gerarRascunho() {
             const idSelecionado = document.getElementById("selectPedido").value;
             const areaContrato = document.getElementById("areaContrato");
             const estadoVazio = document.getElementById("estadoVazio");
-            const avisoEdicao = document.getElementById("avisoEdicao");
-            const btnImprimir = document.getElementById("btnImprimir");
-            const btnRestaurar = document.getElementById("btnRestaurar");
+            const toolbar = document.getElementById("editorToolbar");
+            
+            document.getElementById("btnImprimir").disabled = !idSelecionado;
+            document.getElementById("btnRestaurar").disabled = !idSelecionado;
 
             if (!idSelecionado) {
                 areaContrato.classList.add("hidden");
                 estadoVazio.classList.remove("hidden");
-                avisoEdicao.classList.add("hidden");
-                btnImprimir.disabled = true;
-                btnRestaurar.disabled = true;
+                toolbar.classList.add("hidden");
                 return;
             }
 
             const pedido = listaPedidos.find(p => p.id == idSelecionado);
             if (!pedido) return;
 
-            // Exibe interface de contrato
             areaContrato.classList.remove("hidden");
             estadoVazio.classList.add("hidden");
-            avisoEdicao.classList.remove("hidden");
-            btnImprimir.disabled = false;
-            btnRestaurar.disabled = false;
+            toolbar.classList.remove("hidden");
 
-            // Formatações
-            const formatarData = (dataStr) => {
-                if (!dataStr) return "A definir";
-                let d = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
-                return new Date(d + 'T00:00:00').toLocaleDateString("pt-BR");
-            };
+            // Formatação de Datas
+            let dataFormatada = "A definir";
+            if (pedido.data_festa) {
+                let d = pedido.data_festa.includes('T') ? pedido.data_festa.split('T')[0] : pedido.data_festa;
+                dataFormatada = new Date(d + 'T00:00:00').toLocaleDateString("pt-BR");
+            }
+            
+            // Tratamento de Arrays JSON
+            const itensPadrao = parseSeguro(pedido.itens_padrao);
+            let htmlItensPadrao = Array.isArray(itensPadrao) && itensPadrao.length > 0 
+                ? itensPadrao.map(i => `<li>${i}</li>`).join('') 
+                : "<li>Itens padrão da estrutura locada.</li>";
 
-            const formatarArray = (jsonStr) => {
-                if (!jsonStr) return 'Nenhuma';
-                try {
-                    const obj = JSON.parse(jsonStr);
-                    if (Array.isArray(obj)) return obj.length > 0 ? obj.join(', ') : 'Nenhuma';
-                    if (obj.combo || (obj.extras && obj.extras.length > 0)) {
-                        let texto = obj.combo ? obj.combo.titulo + ". " : "";
-                        if (obj.extras) {
-                            texto += "Extras: " + obj.extras.map(e => `${e.qtd}x ${e.nome}`).join(", ");
-                        }
-                        return texto;
-                    }
-                    return jsonStr;
-                } catch {
-                    return jsonStr;
+            const alim = parseSeguro(pedido.alimentacao);
+            let htmlAlimentacao = "<li>Nenhuma alimentação contratada.</li>";
+            if (alim) {
+                if (Array.isArray(alim) && alim.length > 0) {
+                    htmlAlimentacao = alim.map(i => `<li>${i}</li>`).join('');
+                } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
+                    htmlAlimentacao = "";
+                    if (alim.combo) htmlAlimentacao += `<li>Combo: ${alim.combo.titulo}</li>`;
+                    if (alim.extras) alim.extras.forEach(e => htmlAlimentacao += `<li>Extra: ${e.qtd}x ${e.nome}</li>`);
                 }
-            };
+            }
 
-            // Preenche DOM
-            document.getElementById("c_nome").textContent = pedido.nome || "";
-            document.getElementById("c_nome_assinatura").textContent = pedido.nome || "";
-            document.getElementById("c_whatsapp").textContent = pedido.whatsapp || "";
-            document.getElementById("c_email").textContent = pedido.email || "Não informado";
-            document.getElementById("c_endereco").textContent = pedido.endereco || "Não informado";
-            
-            document.getElementById("c_data").textContent = formatarData(pedido.data_festa);
-            document.getElementById("c_horario").textContent = pedido.horario || "A combinar";
-            
-            document.getElementById("c_modelo").textContent = pedido.modelo_barraca || "PEGUE E MONTE";
-            document.getElementById("c_qtd").textContent = pedido.qtd_barracas || "1";
-            document.getElementById("c_tema").textContent = pedido.tema || "A definir";
-            
-            document.getElementById("c_alimentacao").textContent = formatarArray(pedido.alimentacao);
-            
-            let obsText = pedido.itens_adicionais || "";
-            if (pedido.descricao_itens_extras) obsText += ` | Extras: ${pedido.descricao_itens_extras}`;
-            document.getElementById("c_obs").textContent = obsText || "Nenhuma";
+            // Tratamento de Valores Extras
+            let textoExtras = pedido.itens_adicionais || "";
+            if (pedido.descricao_itens_extras) textoExtras += (textoExtras ? " | " : "") + pedido.descricao_itens_extras;
+            if (!textoExtras) textoExtras = "Nenhum item adicional registrado.";
 
-            const valorTotal = parseFloat(pedido.valor_final || 0) + parseFloat(pedido.valor_itens_extras || 0);
-            document.getElementById("c_valor_total").textContent = valorTotal.toFixed(2).replace(".", ",");
-            
-            const statusPagMap = { 'pago': 'Pago Integralmente', 'parcial': 'Sinal Pago (Parcial)', 'pendente': 'Pendente' };
-            document.getElementById("c_status_pagamento").textContent = statusPagMap[pedido.status_pagamento] || pedido.status_pagamento || "Pendente";
+            const valorTotal = (parseFloat(pedido.valor_final || 0) + parseFloat(pedido.valor_itens_extras || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            const statusPagMap = { 'pago': 'Pago Integralmente', 'parcial': 'Sinal Pago', 'pendente': 'Pendente' };
+            const statusPag = statusPagMap[pedido.status_pagamento] || "Pendente";
+
+            // CONSTRUÇÃO DO DOCUMENTO HTML INJETADO NO EDITOR
+            const templateHtml = `
+                <h1>Contrato de Prestação de Serviços e Locação</h1>
+                
+                <h2>1. Identificação das Partes</h2>
+                <p><strong>CONTRATADA:</strong> Cabana de Brincar - Eventos Infantis.</p>
+                <p><strong>CONTRATANTE:</strong> ${pedido.nome}</p>
+                <p><strong>CPF/CNPJ:</strong> ____________________________________</p>
+                <p><strong>WhatsApp:</strong> ${pedido.whatsapp}</p>
+                <p><strong>E-mail:</strong> ${pedido.email || "Não informado"}</p>
+
+                <h2>2. Objeto e Dados do Evento</h2>
+                <p>O presente contrato tem como objeto a locação de estrutura e serviços de decoração infantil, conforme as especificações detalhadas abaixo:</p>
+                <ul>
+                    <li><strong>Data do Evento:</strong> ${dataFormatada}</li>
+                    <li><strong>Horário de Início:</strong> ${pedido.horario || "A combinar"}</li>
+                    <li><strong>Local da Montagem:</strong> ${pedido.endereco || "Não informado"}</li>
+                </ul>
+
+                <h2>3. Perfil do Evento</h2>
+                <ul>
+                    <li><strong>Público:</strong> ${pedido.qtd_criancas || "N/I"} crianças (Faixa etária: ${pedido.faixa_etaria || "N/I"})</li>
+                    <li><strong>Alergias / Restrições Informadas:</strong> <span style="color: red; font-weight: bold;">${pedido.alergias || "Nenhuma registrada"}</span></li>
+                </ul>
+
+                <h2>4. Estrutura e Serviços Contratados</h2>
+                <p><strong>Locação Base:</strong> ${pedido.modelo_barraca || "Pegue e Monte"} (${pedido.qtd_barracas || 1} unidades)</p>
+                <p><strong>Tema/Paleta de Cores:</strong> ${pedido.tema || "A definir"} / Cores: ${pedido.cores || "Padrão do tema"}</p>
+                
+                <p><strong>Itens Inclusos na Estrutura:</strong></p>
+                <ul>${htmlItensPadrao}</ul>
+
+                <p><strong>Itens Adicionais / Logística / Extras:</strong></p>
+                <ul><li>${textoExtras}</li></ul>
+
+                <p><strong>Alimentação Contratada:</strong></p>
+                <ul>${htmlAlimentacao}</ul>
+
+                <h2>5. Valores e Condições de Pagamento</h2>
+                <p>O valor total acordado para a prestação dos serviços acima descritos é de <strong>${valorTotal}</strong>.</p>
+                <p><strong>Status do pagamento:</strong> ${statusPag}.</p>
+
+                <h2>6. Cláusulas Gerais e Responsabilidades</h2>
+                <p><strong>6.1.</strong> A CONTRATADA compromete-se a entregar, montar e desmontar os equipamentos no local, data e horários estabelecidos neste contrato.</p>
+                <p><strong>6.2.</strong> O CONTRATANTE declara ter inspecionado os equipamentos no momento da montagem, recebendo-os em perfeitas condições de uso e higiene.</p>
+                <p><strong>6.3.</strong> É de inteira responsabilidade do CONTRATANTE a guarda e zelo pelos materiais locados durante todo o período do evento. Em caso de danos, manchas irreversíveis, quebras ou extravios de qualquer item (tendas, colchões, roupas de cama, decoração, etc.), o CONTRATANTE deverá ressarcir a CONTRATADA pelo valor de reposição do item no mercado.</p>
+                <p><strong>6.4.</strong> Em caso de cancelamento por parte do CONTRATANTE com menos de 7 (sete) dias de antecedência da data do evento, o valor pago a título de sinal (reserva de data) não será reembolsado, destinado à cobertura de custos logísticos prévios e bloqueio de agenda.</p>
+
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <br><br>
+                                <div class="assinatura-linha">${pedido.nome}</div>
+                                <span style="font-size: 12px; font-weight: normal;">CONTRATANTE</span>
+                            </td>
+                            <td>
+                                <br><br>
+                                <div class="assinatura-linha">Cabana de Brincar</div>
+                                <span style="font-size: 12px; font-weight: normal;">CONTRATADA</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="text-align: center; margin-top: 40px;">Local e Data: _________________________, ____ de ________________ de ________.</p>
+            `;
+
+            areaContrato.innerHTML = templateHtml;
         }
 
-        // Inicializa
         carregarPedidos();
         lucide.createIcons();
     </script>

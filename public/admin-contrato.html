@@ -25,12 +25,7 @@
             outline: none;
         }
 
-        .a4-page h1 { font-size: 14pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 20pt; }
-        .a4-page h2 { font-size: 12pt; font-weight: bold; text-transform: uppercase; margin-top: 15pt; margin-bottom: 5pt; text-decoration: underline; }
-        .a4-page p { margin-bottom: 8pt; text-align: justify; }
-        .a4-page ul { margin-bottom: 8pt; padding-left: 20pt; list-style-type: disc; }
-        .a4-page li { margin-bottom: 3pt; }
-
+        /* Tags dinâmicas (visuais) */
         .variavel-tag {
             background: #fef08a;
             color: #ca8a04;
@@ -43,6 +38,19 @@
             transition: all 0.2s;
         }
         .variavel-tag:hover { background: #fde047; }
+
+        /* Botões da Toolbar */
+        .toolbar-btn {
+            padding: 6px;
+            border-radius: 6px;
+            color: #475569;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toolbar-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+        .toolbar-divider { width: 1px; height: 24px; background-color: #cbd5e1; margin: 0 4px; }
 
         @media print {
             body { background: white; }
@@ -73,6 +81,40 @@
         </div>
     </div>
 
+    <div class="no-print bg-slate-50 border-b border-slate-200 p-2 shrink-0 z-40 flex justify-center shadow-sm">
+        <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+            <button class="toolbar-btn" onclick="formatar('bold')" title="Negrito (Ctrl+B)"><i data-lucide="bold" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('italic')" title="Itálico (Ctrl+I)"><i data-lucide="italic" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('underline')" title="Sublinhado (Ctrl+U)"><i data-lucide="underline" class="w-4 h-4"></i></button>
+            
+            <div class="toolbar-divider"></div>
+            
+            <button class="toolbar-btn" onclick="formatar('justifyLeft')" title="Alinhar à Esquerda"><i data-lucide="align-left" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('justifyCenter')" title="Centralizar"><i data-lucide="align-center" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('justifyRight')" title="Alinhar à Direita"><i data-lucide="align-right" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('justifyFull')" title="Justificar"><i data-lucide="align-justify" class="w-4 h-4"></i></button>
+            
+            <div class="toolbar-divider"></div>
+            
+            <button class="toolbar-btn" onclick="formatar('insertUnorderedList')" title="Lista com Marcadores"><i data-lucide="list" class="w-4 h-4"></i></button>
+            <button class="toolbar-btn" onclick="formatar('insertOrderedList')" title="Lista Numerada"><i data-lucide="list-ordered" class="w-4 h-4"></i></button>
+            
+            <div class="toolbar-divider"></div>
+            
+            <select onchange="formatar('formatBlock', this.value); this.selectedIndex=0;" class="p-1.5 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600 outline-none cursor-pointer hover:bg-slate-100">
+                <option value="">Formato...</option>
+                <option value="H1">Título 1 (Gigante)</option>
+                <option value="H2">Título 2 (Grande)</option>
+                <option value="H3">Título 3 (Médio)</option>
+                <option value="P">Parágrafo Normal</option>
+            </select>
+            
+            <div class="toolbar-divider"></div>
+
+            <button class="toolbar-btn text-red-500 hover:text-red-700 hover:bg-red-50" onclick="formatar('removeFormat')" title="Limpar Formatação"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+        </div>
+    </div>
+
     <div id="view_emitir" class="flex-1 flex flex-col md:flex-row overflow-hidden">
         
         <aside class="no-print w-full md:w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 shadow-lg z-10 overflow-y-auto">
@@ -80,7 +122,7 @@
                 <div>
                     <label class="text-xs font-bold text-slate-500 uppercase block mb-2">1. Escolha o Modelo</label>
                     <select id="selectModeloEmitir" onchange="gerarContrato()" class="w-full p-2.5 rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-700 outline-none focus:border-blue-500">
-                        </select>
+                    </select>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-slate-500 uppercase block mb-2">2. Selecione o Cliente (Pedido)</label>
@@ -90,14 +132,14 @@
                 </div>
                 
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
-                    <i data-lucide="info" class="w-5 h-5 mb-2 text-blue-500"></i>
-                    O contrato gerado ao lado pode ser editado livremente antes da impressão. Basta clicar no texto e digitar.
+                    <i data-lucide="edit-3" class="w-5 h-5 mb-2 text-blue-500"></i>
+                    O contrato gerado pode ser editado. Use a barra de ferramentas no topo para formatar o texto antes de imprimir!
                 </div>
             </div>
         </aside>
 
         <main class="flex-1 bg-slate-200 overflow-y-auto p-4 md:p-8 flex justify-center items-start">
-            <div id="contratoPreview" class="a4-page" contenteditable="true" spellcheck="false">
+            <div id="contratoPreview" class="a4-page shadow-xl" contenteditable="true" spellcheck="false">
                 <div class="text-center text-slate-400 mt-32 no-print" contenteditable="false">
                     Selecione um Modelo e um Cliente ao lado para gerar o documento.
                 </div>
@@ -115,7 +157,7 @@
                 </button>
             </div>
             <div class="flex-1 overflow-y-auto p-2 space-y-2" id="listaModelosSalvos">
-                </div>
+            </div>
         </aside>
 
         <main class="flex-1 bg-slate-50 overflow-y-auto p-4 md:p-8 flex flex-col gap-4">
@@ -123,9 +165,9 @@
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
                 <div class="flex-1 w-full">
                     <label class="text-xs font-bold text-slate-500 uppercase block mb-1">Nome do Modelo</label>
-                    <input type="text" id="nomeModelo" class="w-full p-2.5 rounded-lg border border-slate-300 font-bold text-slate-800 outline-none focus:border-blue-500" placeholder="Ex: Contrato Padrão + Permuta">
+                    <input type="text" id="nomeModelo" class="w-full p-2.5 rounded-lg border border-slate-300 font-bold text-slate-800 outline-none focus:border-blue-500" placeholder="Ex: Contrato Permuta">
                 </div>
-                <button onclick="salvarModelo()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 w-full md:w-auto justify-center">
+                <button onclick="salvarModelo()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 w-full md:w-auto justify-center shadow-md">
                     <i data-lucide="save" class="w-4 h-4"></i> Salvar Modelo
                 </button>
                 <button onclick="excluirModelo()" id="btnExcluirModelo" class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2.5 rounded-lg font-bold flex items-center gap-2 w-full md:w-auto justify-center hidden">
@@ -134,9 +176,9 @@
             </div>
 
             <div class="flex flex-col xl:flex-row gap-4 flex-1 min-h-[500px]">
-                <div class="w-full xl:w-64 bg-white p-4 rounded-xl shadow-sm border border-slate-200 overflow-y-auto h-max">
+                <div class="w-full xl:w-64 bg-white p-4 rounded-xl shadow-sm border border-slate-200 overflow-y-auto h-max shrink-0">
                     <h3 class="font-bold text-slate-800 text-sm mb-3">Variáveis Dinâmicas</h3>
-                    <p class="text-xs text-slate-500 mb-4">Clique para copiar e cole no texto. Elas serão substituídas automaticamente na emissão.</p>
+                    <p class="text-xs text-slate-500 mb-4">Clique para copiar e cole no texto. O sistema substituirá na emissão.</p>
                     
                     <div class="space-y-4">
                         <div>
@@ -177,7 +219,7 @@
         </main>
     </div>
 
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50">
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50 pointer-events-none">
         <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
         <span id="toastMsg" class="font-bold text-sm"></span>
     </div>
@@ -190,42 +232,50 @@
         let modelos = [];
         let modeloEditandoId = null;
 
-        const modeloPadraoDefault = `
-<h1>Contrato de Prestação de Serviços</h1>
-<h2>1. Partes</h2>
-<p>CONTRATANTE: <strong>[[NOME_CLIENTE]]</strong>, telefone [[WHATSAPP]].</p>
-<p>CONTRATADA: Cabana de Brincar.</p>
+        // Função WYSIWYG (O Segredo da Barra de Ferramentas)
+        function formatar(comando, valor = null) {
+            document.execCommand(comando, false, valor);
+            
+            // Tenta manter o foco na div correta dependendo de qual aba está aberta
+            if (document.getElementById('view_emitir').classList.contains('hidden')) {
+                document.getElementById('editorModelo').focus();
+            } else {
+                document.getElementById('contratoPreview').focus();
+            }
+        }
 
-<h2>2. Evento</h2>
+        const modeloPadraoDefault = `
+<div style="text-align: center;"><b><span style="font-size: 18pt;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</span></b></div><br>
+<div><b>1. PARTES</b></div>
+<div>CONTRATANTE: <b>[[NOME_CLIENTE]]</b>, telefone [[WHATSAPP]].</div>
+<div>CONTRATADA: Cabana de Brincar.</div><br>
+<div><b>2. EVENTO</b></div>
 <ul>
     <li>Data: [[DATA_FESTA]] às [[HORARIO]]</li>
     <li>Local: [[ENDERECO]]</li>
     <li>Público: [[QTD_CRIANCAS]] crianças.</li>
-</ul>
-
-<h2>3. Bens Locados e Estrutura</h2>
-<p>Modelo: [[MODELO_BARRACA]] / Tema: [[TEMA]]</p>
-<ul>[[LISTA_BENS]]</ul>
-
-<h2>4. Alimentação e Isenção</h2>
+</ul><br>
+<div><b>3. BENS LOCADOS E ESTRUTURA</b></div>
+<div>Modelo: [[MODELO_BARRACA]] / Tema: [[TEMA]]</div>
+<ul>[[LISTA_BENS]]</ul><br>
+<div><b>4. ALIMENTAÇÃO E ISENÇÃO</b></div>
 <ul>[[LISTA_ALIMENTACAO]]</ul>
-<p>Restrições: <strong>[[ALERGIAS]]</strong>.</p>
-<p>O CONTRATANTE atesta ciência e assume responsabilidade sobre o consumo dos itens acima.</p>
-
-<h2>5. Remuneração</h2>
-<p>Valor Total: <strong>[[VALOR_TOTAL]]</strong>.</p>
-
-<p style="text-align:center; margin-top:50px;">__________________________________<br>[[NOME_CLIENTE]]</p>
+<div>Restrições e Alergias declaradas: <span style="background-color: rgb(255, 255, 0);"><b>[[ALERGIAS]]</b></span>.</div>
+<div>O CONTRATANTE atesta ciência e assume responsabilidade sobre o consumo dos itens acima descritos.</div><br>
+<div><b>5. REMUNERAÇÃO</b></div>
+<div>Valor Total: <b>[[VALOR_TOTAL]]</b>.</div>
+<br><br><br>
+<div style="text-align: center;">____________________________________________________</div>
+<div style="text-align: center;">[[NOME_CLIENTE]]</div>
         `.trim();
 
-        // 1. INICIALIZAÇÃO
+        // INICIALIZAÇÃO E ABAS
         async function iniciar() {
             carregarModelosLocais();
             await carregarPedidos();
             mudarAba('emitir');
         }
 
-        // 2. CONTROLE DE ABAS
         function mudarAba(aba) {
             document.getElementById('view_emitir').classList.add('hidden');
             document.getElementById('view_modelos').classList.add('hidden');
@@ -244,20 +294,18 @@
             }
         }
 
-        // 3. LÓGICA DE MODELOS (LOCALSTORAGE)
+        // LÓGICA DE MODELOS
         function carregarModelosLocais() {
             const salvos = localStorage.getItem('cabana_modelos_contrato');
             if (salvos) {
                 modelos = JSON.parse(salvos);
             } else {
-                modelos = [{ id: Date.now().toString(), nome: "Contrato Padrão (Sistema)", conteudo: modeloPadraoDefault }];
+                modelos = [{ id: Date.now().toString(), nome: "Contrato Padrão Jurídico", conteudo: modeloPadraoDefault }];
                 salvarNoStorage();
             }
         }
 
-        function salvarNoStorage() {
-            localStorage.setItem('cabana_modelos_contrato', JSON.stringify(modelos));
-        }
+        function salvarNoStorage() { localStorage.setItem('cabana_modelos_contrato', JSON.stringify(modelos)); }
 
         function renderizarListaModelos() {
             const container = document.getElementById('listaModelosSalvos');
@@ -270,14 +318,13 @@
 
         function atualizarSelectModelos() {
             const select = document.getElementById('selectModeloEmitir');
-            select.innerHTML = '<option value="">Selecione um Modelo...</option>' + 
-                modelos.map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+            select.innerHTML = '<option value="">Selecione um Modelo...</option>' + modelos.map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
         }
 
         function novoModelo() {
             modeloEditandoId = null;
             document.getElementById('nomeModelo').value = '';
-            document.getElementById('editorModelo').innerHTML = '<h1>Novo Contrato</h1><p>Comece a digitar aqui ou cole suas variáveis...</p>';
+            document.getElementById('editorModelo').innerHTML = '<div>Comece a digitar aqui ou cole suas variáveis...</div>';
             document.getElementById('btnExcluirModelo').classList.add('hidden');
         }
 
@@ -293,7 +340,6 @@
         function salvarModelo() {
             const nome = document.getElementById('nomeModelo').value.trim();
             const conteudo = document.getElementById('editorModelo').innerHTML;
-            
             if (!nome) return alert("Dê um nome ao modelo!");
 
             if (modeloEditandoId) {
@@ -323,7 +369,7 @@
             }
         }
 
-        // 4. LÓGICA DE EMISSÃO DE CONTRATO
+        // EMISSÃO DE CONTRATO (Lendo do Banco)
         async function carregarPedidos() {
             try {
                 const res = await fetch("/api/admin/pedidos", { headers: { "x-admin-password": ADMIN_TOKEN } });
@@ -354,21 +400,20 @@
 
             const modelo = modelos.find(m => m.id === modeloId);
             const pedido = listaPedidos.find(p => p.id == pedidoId);
-            
             if(!modelo || !pedido) return;
 
-            // Formatação de Dados
+            // Formatação do Banco de Dados
             let dataFesta = pedido.data_festa ? new Date(pedido.data_festa.split('T')[0] + 'T00:00:00').toLocaleDateString("pt-BR") : "A definir";
             const total = (parseFloat(pedido.valor_final || 0) + parseFloat(pedido.valor_itens_extras || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
             const itensPadrao = parseSeguro(pedido.itens_padrao);
             let htmlBens = Array.isArray(itensPadrao) && itensPadrao.length > 0 ? itensPadrao.map(i => `<li>${i}</li>`).join('') : "<li>Estrutura padrão do modelo.</li>";
             if (pedido.itens_adicionais || pedido.descricao_itens_extras) {
-                htmlBens += `<li><strong>Extras:</strong> ${pedido.itens_adicionais || ""} ${pedido.descricao_itens_extras || ""}</li>`;
+                htmlBens += `<li><strong>Extras/Logística:</strong> ${pedido.itens_adicionais || ""} ${pedido.descricao_itens_extras || ""}</li>`;
             }
 
             const alim = parseSeguro(pedido.alimentacao);
-            let htmlAlim = "<li>Nenhuma alimentação contratada.</li>";
+            let htmlAlim = "<li>Nenhuma alimentação contratada no sistema.</li>";
             if (alim) {
                 if (Array.isArray(alim) && alim.length > 0) htmlAlim = alim.map(i => `<li>${i}</li>`).join('');
                 else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
@@ -378,7 +423,7 @@
                 }
             }
 
-            // Substituição de Variáveis
+            // Substituição de Tags
             let resultado = modelo.conteudo;
             const mapaVariaveis = {
                 '[[NOME_CLIENTE]]': pedido.nome.toUpperCase(),
@@ -397,7 +442,6 @@
             };
 
             for (const [chave, valor] of Object.entries(mapaVariaveis)) {
-                // Regex global para substituir todas as ocorrências da variável no texto
                 const regex = new RegExp(chave.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'g');
                 resultado = resultado.replace(regex, valor);
             }
@@ -405,10 +449,10 @@
             preview.innerHTML = resultado;
         }
 
-        // 5. UTILITÁRIOS
+        // UTILITÁRIOS
         function copiarVar(texto) {
             navigator.clipboard.writeText(texto);
-            mostrarToast("Variável copiada! Cole (Ctrl+V) no editor.");
+            mostrarToast("Variável copiada! Cole (Ctrl+V) no texto.");
         }
 
         function mostrarToast(msg) {

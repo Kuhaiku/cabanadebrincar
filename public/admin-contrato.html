@@ -19,14 +19,34 @@
             padding: 20mm;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
             color: #1e293b;
-            font-family: Arial, sans-serif; /* Fonte mais formal para o documento */
+            font-family: Arial, sans-serif;
             line-height: 1.6;
+        }
+
+        /* Feedback visual para áreas editáveis */
+        .editavel {
+            transition: all 0.2s;
+            border-radius: 4px;
+            padding: 0 4px;
+            margin: 0 -4px;
+            outline: none;
+        }
+        .editavel:hover {
+            background-color: #fef08a; /* Amarelo suave */
+            cursor: text;
+            box-shadow: 0 0 0 1px #eab308 dashed;
+        }
+        .editavel:focus {
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px #ec4899; /* Rosa Cabana */
         }
         
         @media print {
             body { background-color: white; }
             .a4-page { margin: 0; padding: 15mm; box-shadow: none; width: 100%; min-height: auto; }
             .no-print { display: none !important; }
+            /* Remove marcações visuais na impressão */
+            .editavel { padding: 0; margin: 0; box-shadow: none !important; background: transparent !important; }
         }
     </style>
 </head>
@@ -46,86 +66,99 @@
                 </div>
             </div>
             
-            <button id="btnImprimir" onclick="window.print()" disabled class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <i data-lucide="printer" class="w-5 h-5"></i> Imprimir / PDF
-            </button>
+            <div class="flex items-center gap-3">
+                <button id="btnRestaurar" onclick="renderizarContrato()" disabled class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed hidden md:flex" title="Desfazer alterações manuais">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restaurar Original
+                </button>
+                <button id="btnImprimir" onclick="window.print()" disabled class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i data-lucide="printer" class="w-5 h-5"></i> Imprimir / PDF
+                </button>
+            </div>
         </div>
     </div>
 
+    <div id="avisoEdicao" class="no-print hidden bg-blue-50 border-b border-blue-100 p-3 text-center text-blue-700 text-sm font-bold flex justify-center items-center gap-2 shadow-inner">
+        <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+        Passe o mouse e clique em qualquer texto destacado de amarelo para editar antes de imprimir!
+    </div>
+
     <div id="estadoVazio" class="no-print flex flex-col items-center justify-center mt-20 text-slate-400">
-        <i data-lucide="file-signature" class="w-16 h-16 mb-4 text-slate-300"></i>
+        <i data-lucide="file-edit" class="w-16 h-16 mb-4 text-slate-300"></i>
         <h2 class="text-xl font-bold text-slate-500">Nenhum contrato gerado</h2>
-        <p>Selecione um pedido na barra superior para visualizar o contrato.</p>
+        <p>Selecione um pedido na barra superior para visualizar e editar o contrato.</p>
     </div>
 
     <div id="areaContrato" class="a4-page hidden text-sm">
         
         <div class="text-center mb-8 border-b-2 border-slate-800 pb-4">
-            <h1 class="text-2xl font-bold uppercase tracking-wider">Contrato de Prestação de Serviços e Locação</h1>
-            <p class="text-slate-600 mt-1 font-bold">Cabana de Brincar - Eventos Infantis</p>
+            <h1 class="text-2xl font-bold uppercase tracking-wider editavel" contenteditable="true">Contrato de Prestação de Serviços e Locação</h1>
+            <p class="text-slate-600 mt-1 font-bold editavel" contenteditable="true">Cabana de Brincar - Eventos Infantis</p>
         </div>
 
         <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2">1. Identificação das Partes</h2>
-            <p><strong>CONTRATADA:</strong> Cabana de Brincar, doravante denominada simplesmente CONTRATADA.</p>
-            <p><strong>CONTRATANTE:</strong> <span id="c_nome" class="uppercase font-bold border-b border-slate-300"></span></p>
-            <p><strong>CPF/CNPJ:</strong> ____________________________________ <em class="text-xs text-slate-500">(Preencher manualmente)</em></p>
-            <p><strong>WhatsApp:</strong> <span id="c_whatsapp"></span></p>
-            <p><strong>E-mail:</strong> <span id="c_email"></span></p>
+            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">1. Identificação das Partes</h2>
+            <p><strong>CONTRATADA:</strong> <span class="editavel" contenteditable="true">Cabana de Brincar, doravante denominada simplesmente CONTRATADA.</span></p>
+            <p><strong>CONTRATANTE:</strong> <span id="c_nome" class="uppercase font-bold border-b border-slate-300 editavel" contenteditable="true"></span></p>
+            <p><strong>CPF/CNPJ:</strong> <span class="editavel" contenteditable="true">____________________________________</span></p>
+            <p><strong>WhatsApp:</strong> <span id="c_whatsapp" class="editavel" contenteditable="true"></span></p>
+            <p><strong>E-mail:</strong> <span id="c_email" class="editavel" contenteditable="true"></span></p>
         </div>
 
         <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2">2. Objeto e Dados do Evento</h2>
-            <p>O presente contrato tem como objeto a locação de estrutura e serviços de decoração infantil, conforme especificações:</p>
+            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">2. Objeto e Dados do Evento</h2>
+            <p class="editavel" contenteditable="true">O presente contrato tem como objeto a locação de estrutura e serviços de decoração infantil, conforme especificações:</p>
             <div class="pl-4 mt-2 grid grid-cols-2 gap-2">
-                <p><strong>Data do Evento:</strong> <span id="c_data"></span></p>
-                <p><strong>Horário de Início:</strong> <span id="c_horario"></span></p>
-                <p class="col-span-2"><strong>Local da Montagem:</strong> <span id="c_endereco"></span></p>
+                <p><strong>Data do Evento:</strong> <span id="c_data" class="editavel" contenteditable="true"></span></p>
+                <p><strong>Horário de Início:</strong> <span id="c_horario" class="editavel" contenteditable="true"></span></p>
+                <p class="col-span-2"><strong>Local da Montagem:</strong> <span id="c_endereco" class="editavel" contenteditable="true"></span></p>
             </div>
         </div>
 
         <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2">3. Estrutura e Serviços Contratados</h2>
+            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">3. Estrutura e Serviços Contratados</h2>
             <ul class="list-disc pl-8 space-y-1">
-                <li><strong>Modelo:</strong> <span id="c_modelo"></span></li>
-                <li><strong>Quantidade:</strong> <span id="c_qtd"></span> unidade(s)</li>
-                <li><strong>Tema / Pacote:</strong> <span id="c_tema"></span></li>
-                <li><strong>Alimentação:</strong> <span id="c_alimentacao"></span></li>
-                <li><strong>Observações / Extras:</strong> <span id="c_obs"></span></li>
+                <li><strong>Modelo:</strong> <span id="c_modelo" class="editavel" contenteditable="true"></span></li>
+                <li><strong>Quantidade:</strong> <span id="c_qtd" class="editavel" contenteditable="true"></span> unidade(s)</li>
+                <li><strong>Tema / Pacote:</strong> <span id="c_tema" class="editavel" contenteditable="true"></span></li>
+                <li><strong>Alimentação:</strong> <span id="c_alimentacao" class="editavel" contenteditable="true"></span></li>
+                <li><strong>Observações / Extras:</strong> <span id="c_obs" class="editavel" contenteditable="true"></span></li>
             </ul>
         </div>
 
         <div class="mb-6 space-y-2">
-            <h2 class="font-bold uppercase bg-slate-100 p-2">4. Valores e Condições de Pagamento</h2>
-            <p>O valor total acordado para a prestação dos serviços descritos é de <strong>R$ <span id="c_valor_total"></span></strong>.</p>
-            <p><strong>Status atual do pagamento no sistema:</strong> <span id="c_status_pagamento" class="uppercase font-bold"></span>.</p>
+            <h2 class="font-bold uppercase bg-slate-100 p-2 editavel" contenteditable="true">4. Valores e Condições de Pagamento</h2>
+            <p>O valor total acordado para a prestação dos serviços descritos é de <strong>R$ <span id="c_valor_total" class="editavel" contenteditable="true"></span></strong>.</p>
+            <p><strong>Status atual do pagamento no sistema:</strong> <span id="c_status_pagamento" class="uppercase font-bold editavel" contenteditable="true"></span>.</p>
         </div>
 
         <div class="mb-8 space-y-3 text-justify text-xs">
-            <h2 class="font-bold uppercase bg-slate-100 p-2 text-sm text-left">5. Cláusulas Gerais e Responsabilidades</h2>
-            <p><strong>5.1.</strong> A CONTRATADA compromete-se a entregar, montar e desmontar os equipamentos no local, data e horários estabelecidos neste contrato.</p>
-            <p><strong>5.2.</strong> O CONTRATANTE declara ter inspecionado os equipamentos no momento da montagem, recebendo-os em perfeitas condições de uso e higiene.</p>
-            <p><strong>5.3.</strong> É de inteira responsabilidade do CONTRATANTE a guarda e zelo pelos materiais locados durante todo o período do evento. Em caso de danos, manchas irreversíveis, quebras ou extravios de qualquer item, o CONTRATANTE deverá ressarcir a CONTRATADA pelo valor de reposição no mercado.</p>
-            <p><strong>5.4.</strong> Em caso de cancelamento por parte do CONTRATANTE com menos de 7 (sete) dias de antecedência da data do evento, o valor pago a título de sinal (reserva de data) não será reembolsado, a fim de cobrir custos logísticos e bloqueio de agenda.</p>
+            <h2 class="font-bold uppercase bg-slate-100 p-2 text-sm text-left editavel" contenteditable="true">5. Cláusulas Gerais e Responsabilidades</h2>
+            
+            <div class="editavel" contenteditable="true">
+                <p class="mb-2"><strong>5.1.</strong> A CONTRATADA compromete-se a entregar, montar e desmontar os equipamentos no local, data e horários estabelecidos neste contrato.</p>
+                <p class="mb-2"><strong>5.2.</strong> O CONTRATANTE declara ter inspecionado os equipamentos no momento da montagem, recebendo-os em perfeitas condições de uso e higiene.</p>
+                <p class="mb-2"><strong>5.3.</strong> É de inteira responsabilidade do CONTRATANTE a guarda e zelo pelos materiais locados durante todo o período do evento. Em caso de danos, manchas irreversíveis, quebras ou extravios de qualquer item, o CONTRATANTE deverá ressarcir a CONTRATADA pelo valor de reposição no mercado.</p>
+                <p><strong>5.4.</strong> Em caso de cancelamento por parte do CONTRATANTE com menos de 7 (sete) dias de antecedência da data do evento, o valor pago a título de sinal (reserva de data) não será reembolsado, a fim de cobrir custos logísticos e bloqueio de agenda.</p>
+            </div>
         </div>
 
         <div class="mt-20 grid grid-cols-2 gap-12 text-center break-inside-avoid">
             <div>
                 <div class="border-t border-black pt-2">
-                    <p class="font-bold uppercase" id="c_nome_assinatura"></p>
-                    <p class="text-xs mt-1">CONTRATANTE</p>
+                    <p class="font-bold uppercase editavel" id="c_nome_assinatura" contenteditable="true"></p>
+                    <p class="text-xs mt-1 editavel" contenteditable="true">CONTRATANTE</p>
                 </div>
             </div>
             <div>
                 <div class="border-t border-black pt-2">
-                    <p class="font-bold uppercase">Cabana de Brincar</p>
-                    <p class="text-xs mt-1">CONTRATADA</p>
+                    <p class="font-bold uppercase editavel" contenteditable="true">Cabana de Brincar</p>
+                    <p class="text-xs mt-1 editavel" contenteditable="true">CONTRATADA</p>
                 </div>
             </div>
         </div>
 
         <div class="mt-12 text-center text-sm break-inside-avoid">
-            <p>Local e Data: _________________________, ____ de ________________ de ________.</p>
+            <p class="editavel" contenteditable="true">Local e Data: _________________________, ____ de ________________ de ________.</p>
         </div>
     </div>
 
@@ -135,7 +168,7 @@
 
         let listaPedidos = [];
 
-        // Inicialização
+        // Busca pedidos do banco em "estado zero"
         async function carregarPedidos() {
             try {
                 const response = await fetch("/api/admin/pedidos", {
@@ -145,15 +178,12 @@
                 if (!response.ok) throw new Error("Falha ao carregar");
                 
                 const pedidosBrutos = await response.json();
-                
-                // Filtra pedidos cancelados (opcional, mas recomendado)
                 listaPedidos = pedidosBrutos.filter(p => p.status !== 'cancelado');
                 
                 const select = document.getElementById("selectPedido");
                 select.innerHTML = '<option value="">Selecione um pedido para gerar o contrato...</option>';
                 
                 listaPedidos.forEach(p => {
-                    // Formata a data para exibir no select
                     let dataFesta = "Data N/I";
                     if(p.data_festa) {
                         let dStr = p.data_festa.includes('T') ? p.data_festa.split('T')[0] : p.data_festa;
@@ -172,29 +202,35 @@
             }
         }
 
-        // Renderiza o contrato ao selecionar
+        // Puxa os dados e preenche na tela
         function renderizarContrato() {
             const idSelecionado = document.getElementById("selectPedido").value;
             const areaContrato = document.getElementById("areaContrato");
             const estadoVazio = document.getElementById("estadoVazio");
+            const avisoEdicao = document.getElementById("avisoEdicao");
             const btnImprimir = document.getElementById("btnImprimir");
+            const btnRestaurar = document.getElementById("btnRestaurar");
 
             if (!idSelecionado) {
                 areaContrato.classList.add("hidden");
                 estadoVazio.classList.remove("hidden");
+                avisoEdicao.classList.add("hidden");
                 btnImprimir.disabled = true;
+                btnRestaurar.disabled = true;
                 return;
             }
 
             const pedido = listaPedidos.find(p => p.id == idSelecionado);
             if (!pedido) return;
 
-            // Mostrar página e ocultar estado vazio
+            // Exibe interface de contrato
             areaContrato.classList.remove("hidden");
             estadoVazio.classList.add("hidden");
+            avisoEdicao.classList.remove("hidden");
             btnImprimir.disabled = false;
+            btnRestaurar.disabled = false;
 
-            // Funções auxiliares de formatação
+            // Formatações
             const formatarData = (dataStr) => {
                 if (!dataStr) return "A definir";
                 let d = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
@@ -219,7 +255,7 @@
                 }
             };
 
-            // Injeta os dados no HTML
+            // Preenche DOM
             document.getElementById("c_nome").textContent = pedido.nome || "";
             document.getElementById("c_nome_assinatura").textContent = pedido.nome || "";
             document.getElementById("c_whatsapp").textContent = pedido.whatsapp || "";
@@ -235,21 +271,18 @@
             
             document.getElementById("c_alimentacao").textContent = formatarArray(pedido.alimentacao);
             
-            // Junta obs do cliente com extras do admin
             let obsText = pedido.itens_adicionais || "";
             if (pedido.descricao_itens_extras) obsText += ` | Extras: ${pedido.descricao_itens_extras}`;
             document.getElementById("c_obs").textContent = obsText || "Nenhuma";
 
-            // Calcula Valor
             const valorTotal = parseFloat(pedido.valor_final || 0) + parseFloat(pedido.valor_itens_extras || 0);
             document.getElementById("c_valor_total").textContent = valorTotal.toFixed(2).replace(".", ",");
             
-            // Status de pagamento
             const statusPagMap = { 'pago': 'Pago Integralmente', 'parcial': 'Sinal Pago (Parcial)', 'pendente': 'Pendente' };
             document.getElementById("c_status_pagamento").textContent = statusPagMap[pedido.status_pagamento] || pedido.status_pagamento || "Pendente";
         }
 
-        // Executa ao abrir a página
+        // Inicializa
         carregarPedidos();
         lucide.createIcons();
     </script>

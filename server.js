@@ -1523,4 +1523,98 @@ app.delete("/api/admin/anotacoes/:id", checkAuth, async (req, res) => {
   }
 });
 
+// Listar todos os modelos
+app.get("/api/admin/contratos/modelos", checkAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM modelos_contrato ORDER BY nome ASC");
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Criar novo modelo
+app.post("/api/admin/contratos/modelos", checkAuth, async (req, res) => {
+  try {
+    const { nome, conteudo } = req.body;
+    const [result] = await db.query(
+      "INSERT INTO modelos_contrato (nome, conteudo) VALUES (?, ?)",
+      [nome, conteudo]
+    );
+    res.status(201).json({ success: true, id: result.insertId });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Atualizar modelo existente
+app.put("/api/admin/contratos/modelos/:id", checkAuth, async (req, res) => {
+  try {
+    const { nome, conteudo } = req.body;
+    await db.query(
+      "UPDATE modelos_contrato SET nome = ?, conteudo = ? WHERE id = ?",
+      [nome, conteudo, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Excluir modelo
+app.delete("/api/admin/contratos/modelos/:id", checkAuth, async (req, res) => {
+  try {
+    await db.query("DELETE FROM modelos_contrato WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+app.get("/api/admin/pedidos/:id/checklist", checkAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM checklist_pedidos WHERE orcamento_id = ? ORDER BY id ASC",
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/admin/pedidos/:id/checklist", checkAuth, async (req, res) => {
+  try {
+    const [result] = await db.query(
+      "INSERT INTO checklist_pedidos (orcamento_id, etapa, concluido) VALUES (?, ?, 0)",
+      [req.params.id, req.body.etapa]
+    );
+    res.json({ success: true, id: result.insertId });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put("/api/admin/checklist/:id", checkAuth, async (req, res) => {
+  try {
+    await db.query(
+      "UPDATE checklist_pedidos SET concluido = ? WHERE id = ?",
+      [req.body.concluido ? 1 : 0, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete("/api/admin/checklist/:id", checkAuth, async (req, res) => {
+  try {
+    await db.query("DELETE FROM checklist_pedidos WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`🔥 Server on ${PORT}`));

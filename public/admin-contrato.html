@@ -224,7 +224,7 @@
         <span id="toastMsg" class="font-bold text-sm"></span>
     </div>
 
-    <script>
+   <script>
         const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
         if (!ADMIN_TOKEN) window.location.href = "painel.html";
 
@@ -271,7 +271,7 @@
 
         // INICIALIZAÇÃO E ABAS
         async function iniciar() {
-            carregarModelosLocais();
+            await carregarModelosDoBanco();
             await carregarPedidos();
             mudarAba('emitir');
         }
@@ -294,18 +294,32 @@
             }
         }
 
-        // LÓGICA DE MODELOS
-        function carregarModelosLocais() {
-            const salvos = localStorage.getItem('cabana_modelos_contrato');
-            if (salvos) {
-                modelos = JSON.parse(salvos);
-            } else {
-                modelos = [{ id: Date.now().toString(), nome: "Contrato Padrão Jurídico", conteudo: modeloPadraoDefault }];
-                salvarNoStorage();
+        // LÓGICA DE MODELOS (COM BANCO DE DADOS)
+        async function carregarModelosDoBanco() {
+            try {
+                const res = await fetch("/api/admin/contratos/modelos", {
+                    headers: { "x-admin-password": ADMIN_TOKEN }
+                });
+                
+                if (res.ok) {
+                    modelos = await res.json();
+                } else {
+                    modelos = [];
+                }
+
+                // Se o banco estiver vazio, carrega o modelo padrão temporariamente na tela
+                if (modelos.length === 0) {
+                    modelos = [{ id: "temp", nome: "Contrato Padrão Jurídico", conteudo: modeloPadraoDefault }];
+                }
+                
+                renderizarListaModelos();
+                if(!document.getElementById('view_emitir').classList.contains('hidden')) {
+                    atualizarSelectModelos();
+                }
+            } catch (error) {
+                console.error("Erro ao carregar modelos:", error);
             }
         }
-
-        function salvarNoStorage() { localStorage.setItem('cabana_modelos_contrato', JSON.stringify(modelos)); }
 
         function renderizarListaModelos() {
             const container = document.getElementById('listaModelosSalvos');
@@ -329,7 +343,8 @@
         }
 
         function carregarModeloParaEdicao(id) {
-            const m = modelos.find(x => x.id === id);
+            // O ID agora pode ser número (do banco) ou string ('temp')
+            const m = modelos.find(x => x.id == id);
             if (!m) return;
             modeloEditandoId = m.id;
             document.getElementById('nomeModelo').value = m.nome;
@@ -337,35 +352,55 @@
             document.getElementById('btnExcluirModelo').classList.remove('hidden');
         }
 
-        function salvarModelo() {
+        async function salvarModelo() {
             const nome = document.getElementById('nomeModelo').value.trim();
             const conteudo = document.getElementById('editorModelo').innerHTML;
             if (!nome) return alert("Dê um nome ao modelo!");
 
-            if (modeloEditandoId) {
-                const index = modelos.findIndex(m => m.id === modeloEditandoId);
-                modelos[index] = { id: modeloEditandoId, nome, conteudo };
-            } else {
-                const novoId = Date.now().toString();
-                modelos.push({ id: novoId, nome, conteudo });
-                modeloEditandoId = novoId;
-            }
+            const payload = { nome, conteudo };
 
-            salvarNoStorage();
-            renderizarListaModelos();
-            document.getElementById('btnExcluirModelo').classList.remove('hidden');
-            mostrarToast("Modelo salvo com sucesso!");
+            try {
+                if (modeloEditandoId && modeloEditandoId !== "temp") {
+                    // Atualiza no banco
+                    await fetch(`/api/admin/contratos/modelos/${modeloEditandoId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json", "x-admin-password": ADMIN_TOKEN },
+                        body: JSON.stringify(payload)
+                    });
+                    mostrarToast("Modelo atualizado com sucesso!");
+                } else {
+                    // Cria no banco
+                    await fetch("/api/admin/contratos/modelos", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "x-admin-password": ADMIN_TOKEN },
+                        body: JSON.stringify(payload)
+                    });
+                    mostrarToast("Novo modelo salvo com sucesso!");
+                }
+
+                await carregarModelosDoBanco();
+                document.getElementById('btnExcluirModelo').classList.remove('hidden');
+            } catch (error) {
+                alert("Erro ao salvar o modelo no banco de dados.");
+            }
         }
 
-        function excluirModelo() {
-            if (!modeloEditandoId) return;
+        async function excluirModelo() {
+            if (!modeloEditandoId || modeloEditandoId === "temp") return;
             if (modelos.length <= 1) return alert("Você precisa ter pelo menos 1 modelo no sistema.");
-            if (confirm("Excluir este modelo permanentemente?")) {
-                modelos = modelos.filter(m => m.id !== modeloEditandoId);
-                salvarNoStorage();
-                novoModelo();
-                renderizarListaModelos();
-                mostrarToast("Modelo excluído!");
+            
+            if (confirm("Excluir este modelo permanentemente do banco de dados?")) {
+                try {
+                    await fetch(`/api/admin/contratos/modelos/${modeloEditandoId}`, {
+                        method: "DELETE",
+                        headers: { "x-admin-password": ADMIN_TOKEN }
+                    });
+                    mostrarToast("Modelo excluído com sucesso!");
+                    novoModelo();
+                    await carregarModelosDoBanco();
+                } catch (error) {
+                    alert("Erro ao excluir modelo.");
+                }
             }
         }
 
@@ -398,7 +433,7 @@
                 return;
             }
 
-            const modelo = modelos.find(m => m.id === modeloId);
+            const modelo = modelos.find(m => m.id == modeloId);
             const pedido = listaPedidos.find(p => p.id == pedidoId);
             if(!modelo || !pedido) return;
 
@@ -426,23 +461,23 @@
             // Substituição de Tags
             let resultado = modelo.conteudo;
             const mapaVariaveis = {
-                '[[NOME_CLIENTE]]': pedido.nome.toUpperCase(),
-                '[[WHATSAPP]]': pedido.whatsapp,
-                '[[EMAIL]]': pedido.email || "Não informado",
-                '[[DATA_FESTA]]': dataFesta,
-                '[[HORARIO]]': pedido.horario || "A combinar",
-                '[[ENDERECO]]': pedido.endereco || "Não informado",
-                '[[QTD_CRIANCAS]]': pedido.qtd_criancas || "N/I",
-                '[[MODELO_BARRACA]]': pedido.modelo_barraca || "N/A",
-                '[[TEMA]]': pedido.tema || "A definir",
-                '[[LISTA_BENS]]': htmlBens,
-                '[[LISTA_ALIMENTACAO]]': htmlAlim,
-                '[[ALERGIAS]]': pedido.alergias ? pedido.alergias.toUpperCase() : "NENHUMA",
-                '[[VALOR_TOTAL]]': total
+                '\\[\\[NOME_CLIENTE\\]\\]': pedido.nome.toUpperCase(),
+                '\\[\\[WHATSAPP\\]\\]': pedido.whatsapp,
+                '\\[\\[EMAIL\\]\\]': pedido.email || "Não informado",
+                '\\[\\[DATA_FESTA\\]\\]': dataFesta,
+                '\\[\\[HORARIO\\]\\]': pedido.horario || "A combinar",
+                '\\[\\[ENDERECO\\]\\]': pedido.endereco || "Não informado",
+                '\\[\\[QTD_CRIANCAS\\]\\]': pedido.qtd_criancas || "N/I",
+                '\\[\\[MODELO_BARRACA\\]\\]': pedido.modelo_barraca || "N/A",
+                '\\[\\[TEMA\\]\\]': pedido.tema || "A definir",
+                '\\[\\[LISTA_BENS\\]\\]': htmlBens,
+                '\\[\\[LISTA_ALIMENTACAO\\]\\]': htmlAlim,
+                '\\[\\[ALERGIAS\\]\\]': pedido.alergias ? pedido.alergias.toUpperCase() : "NENHUMA",
+                '\\[\\[VALOR_TOTAL\\]\\]': total
             };
 
             for (const [chave, valor] of Object.entries(mapaVariaveis)) {
-                const regex = new RegExp(chave.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'g');
+                const regex = new RegExp(chave, 'g');
                 resultado = resultado.replace(regex, valor);
             }
 

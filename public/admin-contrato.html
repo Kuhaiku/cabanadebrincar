@@ -55,7 +55,34 @@
         @media print {
             body { background: white; }
             .no-print { display: none !important; }
-            .a4-page { margin: 0; padding: 10mm; box-shadow: none; width: 100%; min-height: auto; }
+            .a4-page { 
+                margin: 0; 
+                padding: 10mm; 
+                box-shadow: none; 
+                width: 100%; 
+                min-height: auto; 
+            }
+            
+            /* Evita que parágrafos, listas e blocos sejam cortados ao meio na quebra de página */
+            .a4-page div, 
+            .a4-page p, 
+            .a4-page ul, 
+            .a4-page li, 
+            .a4-page h1, 
+            .a4-page h2, 
+            .a4-page h3 {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            /* Garante que os títulos sempre fiquem junto com o texto logo abaixo deles */
+            .a4-page h1, 
+            .a4-page h2, 
+            .a4-page h3,
+            .a4-page b {
+                page-break-after: avoid;
+                break-after: avoid;
+            }
         }
     </style>
 </head>
@@ -204,9 +231,11 @@
                                 <span class="variavel-tag" onclick="copiarVar('[[MODELO_BARRACA]]')">[[MODELO_BARRACA]]</span>
                                 <span class="variavel-tag" onclick="copiarVar('[[TEMA]]')">[[TEMA]]</span>
                                 <span class="variavel-tag" onclick="copiarVar('[[LISTA_BENS]]')">[[LISTA_BENS]]</span>
+                                <span class="variavel-tag" onclick="copiarVar('[[ITENS_ADICIONAIS]]')">[[ITENS_ADICIONAIS]]</span>
                                 <span class="variavel-tag" onclick="copiarVar('[[LISTA_ALIMENTACAO]]')">[[LISTA_ALIMENTACAO]]</span>
                                 <span class="variavel-tag" onclick="copiarVar('[[ALERGIAS]]')">[[ALERGIAS]]</span>
                                 <span class="variavel-tag" onclick="copiarVar('[[VALOR_TOTAL]]')">[[VALOR_TOTAL]]</span>
+                                <span class="variavel-tag" onclick="copiarVar('[[OBSERVACOES_EXTRAS]]')">[[OBSERVACOES_EXTRAS]]</span>
                             </div>
                         </div>
                     </div>
@@ -224,7 +253,7 @@
         <span id="toastMsg" class="font-bold text-sm"></span>
     </div>
 
-   <script>
+    <script>
         const ADMIN_TOKEN = localStorage.getItem("cabana_admin_token");
         if (!ADMIN_TOKEN) window.location.href = "painel.html";
 
@@ -245,28 +274,45 @@
         }
 
         const modeloPadraoDefault = `
-<div style="text-align: center;"><b><span style="font-size: 18pt;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</span></b></div><br>
-<div><b>1. PARTES</b></div>
-<div>CONTRATANTE: <b>[[NOME_CLIENTE]]</b>, telefone [[WHATSAPP]].</div>
-<div>CONTRATADA: Cabana de Brincar.</div><br>
-<div><b>2. EVENTO</b></div>
+<div style="text-align: center;"><b><span style="font-size: 16pt;">CONTRATO DE LOCAÇÃO DE BENS MÓVEIS E PRESTAÇÃO DE SERVIÇOS</span></b></div>
+<br>
+<div style="text-align: justify;">Pelo presente instrumento particular, as partes abaixo qualificadas celebram o presente Contrato de Locação e Prestação de Serviços, regido pelas cláusulas descritas a seguir.</div>
+<br>
+<div><b>CLÁUSULA 1 - DAS PARTES E EVENTO</b></div>
+<div style="text-align: justify;"><b>CONTRATANTE:</b> <b>[[NOME_CLIENTE]]</b>, Contato: [[WHATSAPP]], E-mail: [[EMAIL]].</div>
+<div style="text-align: justify;"><b>CONTRATADA:</b> CABANA DE BRINCAR.</div>
 <ul>
-    <li>Data: [[DATA_FESTA]] às [[HORARIO]]</li>
-    <li>Local: [[ENDERECO]]</li>
-    <li>Público: [[QTD_CRIANCAS]] crianças.</li>
-</ul><br>
-<div><b>3. BENS LOCADOS E ESTRUTURA</b></div>
-<div>Modelo: [[MODELO_BARRACA]] / Tema: [[TEMA]]</div>
-<ul>[[LISTA_BENS]]</ul><br>
-<div><b>4. ALIMENTAÇÃO E ISENÇÃO</b></div>
-<ul>[[LISTA_ALIMENTACAO]]</ul>
-<div>Restrições e Alergias declaradas: <span style="background-color: rgb(255, 255, 0);"><b>[[ALERGIAS]]</b></span>.</div>
-<div>O CONTRATANTE atesta ciência e assume responsabilidade sobre o consumo dos itens acima descritos.</div><br>
-<div><b>5. REMUNERAÇÃO</b></div>
-<div>Valor Total: <b>[[VALOR_TOTAL]]</b>.</div>
-<br><br><br>
+    <li><b>Data do Evento:</b> [[DATA_FESTA]] | <b>Horário:</b> [[HORARIO]]</li>
+    <li><b>Local de Montagem:</b> [[ENDERECO]]</li>
+</ul>
+<br>
+<div><b>CLÁUSULA 2 - DA ESTRUTURA E BENS LOCADOS (Tema: [[TEMA]])</b></div>
+<div style="text-align: justify;">A CONTRATADA fornecerá, em regime de locação pelo período do evento, os seguintes bens móveis:</div>
+<ul style="margin-top: 10px;">[[LISTA_BENS]]</ul>
+<div style="text-align: justify;"><b>Itens Adicionais Físicos Contratados:</b></div>
+<div style="margin-top: 10px; margin-left: 20px;">[[ITENS_ADICIONAIS]]</div>
+<br>
+<div><b>CLÁUSULA 3 - DA ALIMENTAÇÃO E SAÚDE</b></div>
+<div style="text-align: justify;">Itens de alimentação sob responsabilidade da CONTRATADA:</div>
+<ul style="margin-top: 10px;">[[LISTA_ALIMENTACAO]]</ul>
+<div style="text-align: justify;"><b>Restrições Alimentares Declaradas:</b> <span style="background-color: rgb(255, 255, 0);"><b>[[ALERGIAS]]</b></span>.</div>
+<br>
+<div><b>CLÁUSULA 4 - DO VALOR, DESCONTOS E OBSERVAÇÕES</b></div>
+<div style="text-align: justify;"><b>4.1. Valor Total:</b> O valor acordado para a locação e prestação dos serviços é de <b>[[VALOR_TOTAL]]</b>.</div>
+<div style="text-align: justify;"><b>4.2. Condições Especiais / Observações Comerciais:</b> [[OBSERVACOES_EXTRAS]]</div>
+<br>
+<div><b>CLÁUSULA 5 - RESPONSABILIDADES DO CONTRATANTE</b></div>
+<div style="text-align: justify;"><b>5.1. Indenizações:</b> O CONTRATANTE é plenamente responsável pela integridade dos itens listados na Cláusula 2. Danos, rasgos, manchas de corantes ou extravios deverão ser ressarcidos imediatamente pelo valor de mercado de um item novo equivalente.</div>
+<div style="text-align: justify;"><b>5.2. Montagem:</b> O local deverá estar limpo e sem móveis bloqueando a área no momento da chegada da equipe.</div>
+<br>
+<div><b>CLÁUSULA 6 - CANCELAMENTO</b></div>
+<div style="text-align: justify;">Em caso de cancelamento com menos de 07 dias do evento, o sinal pago não será reembolsado, servindo como multa compensatória pelos dias em que a data ficou bloqueada.</div>
+<br><br>
 <div style="text-align: center;">____________________________________________________</div>
-<div style="text-align: center;">[[NOME_CLIENTE]]</div>
+<div style="text-align: center;"><b>[[NOME_CLIENTE]]</b></div>
+<br>
+<div style="text-align: center;">____________________________________________________</div>
+<div style="text-align: center;"><b>Cabana de Brincar</b></div>
         `.trim();
 
         // INICIALIZAÇÃO E ABAS
@@ -309,7 +355,7 @@
 
                 // Se o banco estiver vazio, carrega o modelo padrão temporariamente na tela
                 if (modelos.length === 0) {
-                    modelos = [{ id: "temp", nome: "Contrato Padrão Jurídico", conteudo: modeloPadraoDefault }];
+                    modelos = [{ id: "temp", nome: "Contrato Organizado (Separado)", conteudo: modeloPadraoDefault }];
                 }
                 
                 renderizarListaModelos();
@@ -437,18 +483,37 @@
             const pedido = listaPedidos.find(p => p.id == pedidoId);
             if(!modelo || !pedido) return;
 
-            // Formatação do Banco de Dados
+            // Formatação de Datas e Valores
             let dataFesta = pedido.data_festa ? new Date(pedido.data_festa.split('T')[0] + 'T00:00:00').toLocaleDateString("pt-BR") : "A definir";
             const total = (parseFloat(pedido.valor_final || 0) + parseFloat(pedido.valor_itens_extras || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+            // 1. LISTA DE BENS (ESTRUTURA FÍSICA E PADRÃO APENAS)
+            let htmlBens = "";
+            const qtdBarracas = pedido.qtd_barracas || (pedido.qtd_criancas ? Math.ceil(pedido.qtd_criancas / 2) : "N/I");
+            htmlBens += `<li style="margin-bottom: 8px;"><b>Estrutura Principal:</b> ${qtdBarracas}x ${pedido.modelo_barraca || 'Cabana/Tenda'} (Capacidade: ${pedido.qtd_criancas || 'N/I'} crianças).</li>`;
+            
             const itensPadrao = parseSeguro(pedido.itens_padrao);
-            let htmlBens = Array.isArray(itensPadrao) && itensPadrao.length > 0 ? itensPadrao.map(i => `<li>${i}</li>`).join('') : "<li>Estrutura padrão do modelo.</li>";
-            if (pedido.itens_adicionais || pedido.descricao_itens_extras) {
-                htmlBens += `<li><strong>Extras/Logística:</strong> ${pedido.itens_adicionais || ""} ${pedido.descricao_itens_extras || ""}</li>`;
+            if (Array.isArray(itensPadrao) && itensPadrao.length > 0) {
+                htmlBens += `<li style="margin-bottom: 8px;"><b>Composição da Estrutura:</b><ul style="margin-top: 4px; list-style-type: circle; margin-left: 20px;">`;
+                itensPadrao.forEach(item => { htmlBens += `<li>${item}</li>`; });
+                htmlBens += `</ul></li>`;
             }
 
+            // 2. ITENS ADICIONAIS CONTRATADOS (Kits, Iluminação extra, etc)
+            let htmlAdicionais = "Nenhum item adicional físico contratado.";
+            const itensAdd = parseSeguro(pedido.itens_adicionais);
+            if (Array.isArray(itensAdd) && itensAdd.length > 0) {
+                htmlAdicionais = `<ul style="margin-top: 4px; list-style-type: circle; margin-left: 20px;">` + itensAdd.map(i => `<li>${i}</li>`).join('') + `</ul>`;
+            } else if (typeof itensAdd === 'string' && itensAdd.trim() !== "") {
+                htmlAdicionais = itensAdd;
+            }
+
+            // 3. OBSERVAÇÕES / LOGÍSTICA / DESCONTOS (Texto livre do Admin)
+            const obsExtras = pedido.descricao_itens_extras ? pedido.descricao_itens_extras.trim() : "Nenhuma observação adicional.";
+
+            // 4. ALIMENTAÇÃO
             const alim = parseSeguro(pedido.alimentacao);
-            let htmlAlim = "<li>Nenhuma alimentação contratada no sistema.</li>";
+            let htmlAlim = "<li>Nenhuma alimentação contratada no pacote.</li>";
             if (alim) {
                 if (Array.isArray(alim) && alim.length > 0) htmlAlim = alim.map(i => `<li>${i}</li>`).join('');
                 else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
@@ -471,8 +536,10 @@
                 '\\[\\[MODELO_BARRACA\\]\\]': pedido.modelo_barraca || "N/A",
                 '\\[\\[TEMA\\]\\]': pedido.tema || "A definir",
                 '\\[\\[LISTA_BENS\\]\\]': htmlBens,
+                '\\[\\[ITENS_ADICIONAIS\\]\\]': htmlAdicionais,
+                '\\[\\[OBSERVACOES_EXTRAS\\]\\]': obsExtras,
                 '\\[\\[LISTA_ALIMENTACAO\\]\\]': htmlAlim,
-                '\\[\\[ALERGIAS\\]\\]': pedido.alergias ? pedido.alergias.toUpperCase() : "NENHUMA",
+                '\\[\\[ALERGIAS\\]\\]': pedido.alergias ? pedido.alergias.toUpperCase() : "NENHUMA DECLARADA",
                 '\\[\\[VALOR_TOTAL\\]\\]': total
             };
 

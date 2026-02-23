@@ -6,11 +6,12 @@
     <title>Gerenciador de Contratos | Cabana de Brincar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
         body { background-color: #f8fafc; font-family: 'Quicksand', sans-serif; overflow-x: hidden; }
         
-        /* Folha A4 */
+        /* Folha A4 na tela */
         .a4-page {
             background: white;
             width: 210mm;
@@ -52,6 +53,7 @@
         .toolbar-btn:hover { background-color: #e2e8f0; color: #0f172a; }
         .toolbar-divider { width: 1px; height: 24px; background-color: #cbd5e1; margin: 0 4px; }
 
+        /* Estilos de impressão caso use Ctrl+P por acidente */
         @media print {
             body { background: white; }
             .no-print { display: none !important; }
@@ -62,24 +64,11 @@
                 width: 100%; 
                 min-height: auto; 
             }
-            
-            /* Evita que parágrafos, listas e blocos sejam cortados ao meio na quebra de página */
-            .a4-page div, 
-            .a4-page p, 
-            .a4-page ul, 
-            .a4-page li, 
-            .a4-page h1, 
-            .a4-page h2, 
-            .a4-page h3 {
+            .a4-page div, .a4-page p, .a4-page ul, .a4-page li, .a4-page h1, .a4-page h2, .a4-page h3 {
                 page-break-inside: avoid;
                 break-inside: avoid;
             }
-
-            /* Garante que os títulos sempre fiquem junto com o texto logo abaixo deles */
-            .a4-page h1, 
-            .a4-page h2, 
-            .a4-page h3,
-            .a4-page b {
+            .a4-page h1, .a4-page h2, .a4-page h3, .a4-page b {
                 page-break-after: avoid;
                 break-after: avoid;
             }
@@ -102,8 +91,8 @@
                 <button onclick="mudarAba('modelos')" id="aba_modelos" class="px-4 py-2 rounded-md text-sm font-bold text-slate-300 hover:text-white transition-all">Meus Modelos</button>
             </div>
             
-            <button onclick="window.print()" id="btnImprimir" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors">
-                <i data-lucide="printer" class="w-4 h-4"></i> Imprimir
+            <button onclick="gerarPDF()" id="btnImprimir" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-md">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Baixar PDF
             </button>
         </div>
     </div>
@@ -264,8 +253,6 @@
         // Função WYSIWYG (O Segredo da Barra de Ferramentas)
         function formatar(comando, valor = null) {
             document.execCommand(comando, false, valor);
-            
-            // Tenta manter o foco na div correta dependendo de qual aba está aberta
             if (document.getElementById('view_emitir').classList.contains('hidden')) {
                 document.getElementById('editorModelo').focus();
             } else {
@@ -353,7 +340,6 @@
                     modelos = [];
                 }
 
-                // Se o banco estiver vazio, carrega o modelo padrão temporariamente na tela
                 if (modelos.length === 0) {
                     modelos = [{ id: "temp", nome: "Contrato Organizado (Separado)", conteudo: modeloPadraoDefault }];
                 }
@@ -389,7 +375,6 @@
         }
 
         function carregarModeloParaEdicao(id) {
-            // O ID agora pode ser número (do banco) ou string ('temp')
             const m = modelos.find(x => x.id == id);
             if (!m) return;
             modeloEditandoId = m.id;
@@ -407,7 +392,6 @@
 
             try {
                 if (modeloEditandoId && modeloEditandoId !== "temp") {
-                    // Atualiza no banco
                     await fetch(`/api/admin/contratos/modelos/${modeloEditandoId}`, {
                         method: "PUT",
                         headers: { "Content-Type": "application/json", "x-admin-password": ADMIN_TOKEN },
@@ -415,7 +399,6 @@
                     });
                     mostrarToast("Modelo atualizado com sucesso!");
                 } else {
-                    // Cria no banco
                     await fetch("/api/admin/contratos/modelos", {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "x-admin-password": ADMIN_TOKEN },
@@ -450,7 +433,7 @@
             }
         }
 
-        // EMISSÃO DE CONTRATO (Lendo do Banco)
+        // EMISSÃO DE CONTRATO
         async function carregarPedidos() {
             try {
                 const res = await fetch("/api/admin/pedidos", { headers: { "x-admin-password": ADMIN_TOKEN } });
@@ -483,11 +466,9 @@
             const pedido = listaPedidos.find(p => p.id == pedidoId);
             if(!modelo || !pedido) return;
 
-            // Formatação de Datas e Valores
             let dataFesta = pedido.data_festa ? new Date(pedido.data_festa.split('T')[0] + 'T00:00:00').toLocaleDateString("pt-BR") : "A definir";
             const total = (parseFloat(pedido.valor_final || 0) + parseFloat(pedido.valor_itens_extras || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-            // 1. LISTA DE BENS (ESTRUTURA FÍSICA E PADRÃO APENAS)
             let htmlBens = "";
             const qtdBarracas = pedido.qtd_barracas || (pedido.qtd_criancas ? Math.ceil(pedido.qtd_criancas / 2) : "N/I");
             htmlBens += `<li style="margin-bottom: 8px;"><b>Estrutura Principal:</b> ${qtdBarracas}x ${pedido.modelo_barraca || 'Cabana/Tenda'} (Capacidade: ${pedido.qtd_criancas || 'N/I'} crianças).</li>`;
@@ -499,7 +480,6 @@
                 htmlBens += `</ul></li>`;
             }
 
-            // 2. ITENS ADICIONAIS CONTRATADOS (Kits, Iluminação extra, etc)
             let htmlAdicionais = "Nenhum item adicional físico contratado.";
             const itensAdd = parseSeguro(pedido.itens_adicionais);
             if (Array.isArray(itensAdd) && itensAdd.length > 0) {
@@ -508,10 +488,8 @@
                 htmlAdicionais = itensAdd;
             }
 
-            // 3. OBSERVAÇÕES / LOGÍSTICA / DESCONTOS (Texto livre do Admin)
             const obsExtras = pedido.descricao_itens_extras ? pedido.descricao_itens_extras.trim() : "Nenhuma observação adicional.";
 
-            // 4. ALIMENTAÇÃO
             const alim = parseSeguro(pedido.alimentacao);
             let htmlAlim = "<li>Nenhuma alimentação contratada no pacote.</li>";
             if (alim) {
@@ -523,7 +501,6 @@
                 }
             }
 
-            // Substituição de Tags
             let resultado = modelo.conteudo;
             const mapaVariaveis = {
                 '\\[\\[NOME_CLIENTE\\]\\]': pedido.nome.toUpperCase(),
@@ -562,6 +539,46 @@
             document.getElementById('toastMsg').innerText = msg;
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        // GERAÇÃO DE PDF
+        function gerarPDF() {
+            const elemento = document.getElementById('contratoPreview');
+            
+            if (elemento.innerText.includes('Selecione um Modelo e um Cliente')) {
+                alert('Gere um contrato primeiro!');
+                return;
+            }
+
+            const selectPedido = document.getElementById('selectPedido');
+            const textoSelecionado = selectPedido.options[selectPedido.selectedIndex].text;
+            let nomeArquivo = "Contrato_Cabana_de_Brincar.pdf";
+            
+            if (textoSelecionado.includes('-')) {
+                const nomeCliente = textoSelecionado.split('-')[1].split('(')[0].trim();
+                nomeArquivo = `Contrato_${nomeCliente.replace(/ /g, '_')}.pdf`;
+            }
+
+            const opt = {
+                margin:       [15, 15, 15, 15],
+                filename:     nomeArquivo,
+                image:        { type: 'jpeg', quality: 1.0 },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            mostrarToast("Gerando PDF, aguarde...");
+
+            elemento.classList.remove('shadow-xl', 'border');
+            
+            html2pdf().set(opt).from(elemento).save().then(() => {
+                elemento.classList.add('shadow-xl', 'border');
+                mostrarToast("PDF baixado com sucesso!");
+            }).catch(err => {
+                console.error(err);
+                elemento.classList.add('shadow-xl', 'border');
+                alert("Ocorreu um erro ao gerar o PDF.");
+            });
         }
 
         iniciar();

@@ -129,7 +129,7 @@
         carregarChecklist();
       }
 
-      async function carregarChecklist() {
+   async function carregarChecklist() {
         const container = document.getElementById("listaEtapas");
         container.innerHTML = '<div class="text-center text-slate-400"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto"></i></div>';
         lucide.createIcons();
@@ -138,7 +138,19 @@
           const res = await fetch(`/api/admin/pedidos/${pedidoAtual.id}/checklist`, { headers: { "x-admin-password": ADMIN_TOKEN } });
           const etapas = await res.json();
           
-          if (etapas.length === 0) {
+          // PROTEÇÃO: Verifica se o servidor retornou um erro (ex: erro 500)
+          if (!res.ok || etapas.error) {
+              container.innerHTML = `
+                <div class="text-center py-10">
+                  <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto text-red-400 mb-3"></i>
+                  <p class="text-red-500 font-bold">Erro ao carregar o checklist.</p>
+                  <p class="text-slate-500 text-sm mt-1">${etapas.error || 'Erro desconhecido no servidor.'}</p>
+                </div>`;
+              lucide.createIcons();
+              return;
+          }
+          
+          if (!Array.isArray(etapas) || etapas.length === 0) {
             container.innerHTML = `
               <div class="text-center py-10">
                 <p class="text-slate-400 mb-4">O checklist está vazio.</p>
@@ -162,9 +174,9 @@
           lucide.createIcons();
         } catch (e) {
           console.error(e);
+          container.innerHTML = `<div class="text-center py-10 text-red-500 font-bold">Erro de conexão.</div>`;
         }
       }
-
       async function adicionarEtapaManual(e) {
         e.preventDefault();
         const input = document.getElementById("novaEtapa");

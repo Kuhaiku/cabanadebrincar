@@ -24,39 +24,11 @@
             class="text-slate-400 hover:text-pink-500 transition-colors"
             ><i data-lucide="arrow-left"></i
           ></a>
-          Fluxo de Caixa
+          Fluxo de Caixa Geral
         </h1>
         <p class="text-xs text-slate-400 mt-1 ml-8">
-          Entradas de Festas vs Despesas Gerais
+          Entradas Totais vs Despesas Gerais Totais
         </p>
-      </div>
-
-      <div
-        class="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center gap-2"
-      >
-        <input
-          type="date"
-          id="filtro-inicio"
-          class="border border-slate-200 rounded-lg px-2 py-1 text-sm text-slate-600 focus:outline-pink-500 bg-slate-50"
-        />
-        <span class="text-slate-300">até</span>
-        <input
-          type="date"
-          id="filtro-fim"
-          class="border border-slate-200 rounded-lg px-2 py-1 text-sm text-slate-600 focus:outline-pink-500 bg-slate-50"
-        />
-        <button
-          onclick="aplicarFiltros()"
-          class="bg-slate-800 text-white p-1.5 rounded-lg hover:bg-slate-700 transition"
-        >
-          <i data-lucide="search" class="w-4 h-4"></i>
-        </button>
-        <button
-          onclick="limparFiltros()"
-          class="bg-slate-100 text-slate-500 p-1.5 rounded-lg hover:bg-slate-200 transition"
-        >
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
       </div>
 
       <button
@@ -104,7 +76,7 @@
         <p
           class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1"
         >
-          Balanço Líquido
+          Balanço Líquido (Lucro)
         </p>
         <h3 class="text-3xl font-bold text-slate-800" id="card-lucro">
           R$ 0,00
@@ -229,17 +201,7 @@
 
       function init() {
         lucide.createIcons();
-        configurarDatas();
         carregarDados();
-      }
-
-      function configurarDatas() {
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-        document.getElementById("filtro-inicio").value = `${ano}-${mes}-01`;
-        document.getElementById("filtro-fim").value =
-          `${ano}-${mes}-${String(hoje.getDate()).padStart(2, "0")}`;
       }
 
       async function carregarDados() {
@@ -248,47 +210,15 @@
             headers: { "x-admin-password": ADMIN_TOKEN },
           });
           const json = await res.json();
-          // Recebe os arrays separados do backend
           DADOS.pagamentos = json.pagamentos || [];
           DADOS.gerais = json.gerais || [];
           DADOS.custosFestas = json.custosFestas || [];
-          aplicarFiltros();
+          
+          // Chama a renderização diretamente com todos os dados sem filtro
+          renderizar(DADOS.pagamentos, DADOS.gerais);
         } catch (e) {
           console.error(e);
         }
-      }
-
-      function aplicarFiltros() {
-        const inicio = new Date(
-          document.getElementById("filtro-inicio").value + "T00:00:00",
-        );
-        const fim = new Date(
-          document.getElementById("filtro-fim").value + "T23:59:59.999",
-        );
-
-        // Filtra Pagamentos (Data do Pagamento)
-        const pagFiltrados = DADOS.pagamentos.filter((p) => {
-          const d = new Date(p.data_pagamento);
-          return d >= inicio && d <= fim;
-        });
-
-        // Filtra Gerais (Data do Registro)
-        const gerFiltrados = DADOS.gerais.filter((g) => {
-          const d = new Date(g.data_registro);
-          return d >= inicio && d <= fim;
-        });
-
-        // Filtra Custos de Festas (para o total)
-        // (Opcional: Filtrar pela data da festa ou data do custo. Aqui filtro por data da festa para alinhar com o período)
-        // Mas como custos_festa não tem data, usamos a data do orcamento associado se quiser ser preciso.
-        // Simplificação: Soma tudo das festas que aconteceram nesse periodo.
-
-        renderizar(pagFiltrados, gerFiltrados);
-      }
-
-      function limparFiltros() {
-        configurarDatas();
-        aplicarFiltros();
       }
 
       function renderizar(pagamentos, gerais) {
@@ -301,13 +231,12 @@
 
         if (pagamentos.length === 0)
           listaPag.innerHTML =
-            '<div class="text-center py-10 text-slate-400 text-sm">Nenhum pagamento recebido neste período.</div>';
+            '<div class="text-center py-10 text-slate-400 text-sm">Nenhum pagamento registrado.</div>';
 
         pagamentos.forEach((pg) => {
           const valor = parseFloat(pg.valor);
           totalReceita += valor;
 
-          // Define cor e ícone baseados no tipo
           let badgeClass = "bg-slate-100 text-slate-500";
           let icon = "dollar-sign";
 
@@ -320,6 +249,9 @@
           } else if (pg.tipo === "INTEGRAL") {
             badgeClass = "bg-blue-100 text-blue-600";
             icon = "star";
+          } else if (pg.tipo === "PEGUE_MONTE") {
+            badgeClass = "bg-purple-100 text-purple-600";
+            icon = "package";
           }
 
           listaPag.innerHTML += `
@@ -333,7 +265,7 @@
                                 <span class="text-xs font-bold uppercase tracking-wider ${badgeClass} px-1.5 rounded">${pg.tipo}</span>
                                 <span class="text-[10px] text-slate-400">${new Date(pg.data_pagamento).toLocaleDateString("pt-BR")}</span>
                             </div>
-                            <h4 class="font-bold text-slate-700 text-sm mt-0.5">${pg.nome.split(" ")[0]}</h4>
+                            <h4 class="font-bold text-slate-700 text-sm mt-0.5">${pg.nome ? pg.nome.split(" ")[0] : "Cliente"}</h4>
                             <p class="text-[10px] text-slate-400 truncate w-32">${pg.tema || "Sem tema"}</p>
                         </div>
                     </div>
@@ -355,7 +287,7 @@
 
         gerais.forEach((item) => {
           const valor = parseFloat(item.valor);
-          const isEntrada = item.tipo === "entrada";
+          const isEntrada = item.tipo === "entrada" || item.tipo === "receita"; // Suporte para 'receita' ou 'entrada'
 
           if (isEntrada) totalReceita += valor;
           else totalDespesa += valor;
@@ -382,12 +314,7 @@
         });
 
         // --- 3. SOMAR CUSTOS DE FESTAS AO TOTAL DE DESPESAS ---
-        // (Aqui uma simplificação: somamos todos os custos de festas,
-        // o ideal seria filtrar apenas custos das festas que tiveram pagamento no periodo,
-        // mas para fluxo de caixa geral, somamos tudo que saiu do bolso)
         DADOS.custosFestas.forEach((c) => {
-          // Como custos_festa não tem data, assumimos impacto imediato ou usamos logica mais complexa.
-          // Para simplificar, vou somar ao totalDespesa apenas para exibição
           totalDespesa += parseFloat(c.valor);
         });
 
@@ -454,7 +381,7 @@
       }
 
       async function excluirDespesaGeral(id) {
-        if (!confirm("Excluir?")) return;
+        if (!confirm("Excluir lançamento avulso?")) return;
         await fetch(`${API_URL}/admin/financeiro/geral/${id}`, {
           method: "DELETE",
           headers: { "x-admin-password": ADMIN_TOKEN },

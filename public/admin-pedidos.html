@@ -240,7 +240,7 @@
       let tabelaPrecos = [];
       let listaCardapios = [];
       let listaAlimentos = [];
-      let taxasSistema = []; // Lista de itens 'sistema'
+      let taxasSistema = []; 
       let pedidoAtual = null;
 
       // --- FUNÇÃO DE COPIAR WHATSAPP ---
@@ -279,7 +279,7 @@
               fetch("/api/alimentos", {
                 headers: { "x-admin-password": ADMIN_TOKEN },
               }),
-              fetch("/api/itens-disponiveis"), // Busca itens para os checkboxes (categoria sistema)
+              fetch("/api/itens-disponiveis"),
             ]);
 
           let pedidosBrutos = await resPedidos.json();
@@ -287,11 +287,9 @@
           listaCardapios = await resCardapios.json();
           listaAlimentos = await resAlimentos.json();
 
-          // Separa as taxas de sistema
           const todosItens = await resItens.json();
           taxasSistema = todosItens.filter((i) => i.categoria === "sistema");
 
-          // --- LÓGICA DE DATA: +1 DIA = CONCLUÍDO AUTOMATICAMENTE ---
           const hoje = new Date();
           hoje.setHours(0, 0, 0, 0);
 
@@ -304,7 +302,6 @@
                   const msPorDia = 1000 * 60 * 60 * 24;
                   const diasPassados = (hoje.getTime() - dataFesta.getTime()) / msPorDia;
                   
-                  // Se já passou 1 dia e não está cancelado, força visualmente como concluído
                   if (diasPassados >= 1 && p.status !== 'cancelado') {
                       p.status = 'concluido';
                       p.status_agenda = 'concluido';
@@ -362,7 +359,6 @@
               statusColor = "bg-green-100 text-green-700";
               statusText = "Concluído";
             }
-            // Indicador de Pagamento
             const iconMoney =
               p.status_pagamento === "pago"
                 ? "check-circle"
@@ -403,7 +399,6 @@
         lucide.createIcons();
       }
 
-      // --- UTILITÁRIOS ---
       function parseSeguro(dado) {
         if (!dado) return null;
         if (typeof dado === "object") return dado;
@@ -414,28 +409,13 @@
         }
       }
 
-      function normalizar(texto) {
-        if (!texto) return "";
-        return texto
-          .toString()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .trim();
-      }
-
-      // --- ABRIR DETALHES ---
       function abrirDetalhes(id) {
         pedidoAtual = todosPedidos.find((p) => p.id === id);
         if (!pedidoAtual) return;
 
         const isPegueMonte = pedidoAtual.modelo_barraca === "PEGUE E MONTE";
-
-        // Pega o bloco financeiro inteiro (pai do botão mágico)
         const btnFluxo = document.getElementById("btnFluxo");
-        const areaFinanceira = btnFluxo
-          ? btnFluxo.closest(".bg-slate-50.border-t")
-          : null;
+        const areaFinanceira = btnFluxo ? btnFluxo.closest(".bg-slate-50.border-t") : null;
 
         let dataFormatadaModal = "Data não informada";
         if(pedidoAtual.data_festa) {
@@ -444,12 +424,8 @@
         }
 
         if (isPegueMonte) {
-          // 1. RENDERIZAÇÃO LIMPA (SÓ PEGUE E MONTE)
-          if (areaFinanceira) areaFinanceira.style.display = "none"; // Esconde financeiro
-
-          // Puxa o nome do pacote que nós armazenamos na coluna "tema"
+          if (areaFinanceira) areaFinanceira.style.display = "none";
           const nomePacote = pedidoAtual.tema || "Pacote não especificado";
-
           const html = `
             <div class="bg-blue-50 border border-blue-100 p-5 rounded-2xl mb-4 flex items-start gap-4">
                 <div class="bg-blue-100 text-blue-600 p-3 rounded-full shrink-0">
@@ -481,33 +457,25 @@
                     <p><strong>Pacote Escolhido:</strong> <span class="font-bold text-pink-600">${nomePacote}</span></p>
                     <p><strong>Data:</strong> ${dataFormatadaModal}</p>
                     <p><strong>Horário:</strong> ${pedidoAtual.horario || "Não informado"}</p>
-                    <p><strong>Valor:</strong> <span class="font-bold text-green-600">R$ ${parseFloat(
-                      pedidoAtual.valor_final || 0,
-                    )
-                      .toFixed(2)
-                      .replace(".", ",")}</span></p>
+                    <p><strong>Valor:</strong> <span class="font-bold text-green-600">R$ ${parseFloat(pedidoAtual.valor_final || 0).toFixed(2).replace(".", ",")}</span></p>
                 </div>
             </div>
         `;
           document.getElementById("conteudoModal").innerHTML = html;
         } else {
-          // 2. RENDERIZAÇÃO COMPLETA (FESTAS NORMAIS)
-          if (areaFinanceira) areaFinanceira.style.display = "block"; // Mostra financeiro
+          if (areaFinanceira) areaFinanceira.style.display = "block";
 
-          let htmlAlimentacao =
-            '<span class="text-slate-400 italic">Nenhuma.</span>';
+          let htmlAlimentacao = '<span class="text-slate-400 italic">Nenhuma.</span>';
           const alim = parseSeguro(pedidoAtual.alimentacao);
 
           if (alim) {
             if (Array.isArray(alim) && alim.length > 0) {
-              htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
+              htmlAlimentacao = `<ul class="list-disc pl-4 text-slate-600 text-xs">${alim.map((i) => `<li>${i}</li>`).join("")}</ul>`;
             } else if (alim.combo || (alim.extras && alim.extras.length > 0)) {
               let partes = [];
               if (alim.combo) {
                 const titulo = alim.combo.titulo || "Combo";
-                partes.push(
-                  `<div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100"><span class="font-bold text-slate-700 block">${titulo}</span></div>`,
-                );
+                partes.push(`<div class="bg-pink-50 p-2 rounded mb-2 border border-pink-100"><span class="font-bold text-slate-700 block">${titulo}</span></div>`);
               }
               if (alim.extras && alim.extras.length > 0) {
                 partes.push(`<ul class="text-sm text-slate-600 space-y-1">`);
@@ -518,6 +486,13 @@
               }
               htmlAlimentacao = partes.join("");
             }
+          }
+
+          // Renderização dos Itens Padrão / Adicionais (mesa, luz, etc.)
+          const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
+          let htmlItensPadrao = '<span class="text-slate-400 italic text-xs">Apenas padrão do modelo.</span>';
+          if (Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0) {
+              htmlItensPadrao = `<ul class="list-disc pl-4 text-slate-600 text-xs">${itensPadraoArr.map(i => `<li>${i}</li>`).join('')}</ul>`;
           }
 
           const html = `
@@ -539,20 +514,28 @@
                     <p><strong>Data:</strong> ${dataFormatadaModal}</p>
                     <p><strong>Horário:</strong> ${pedidoAtual.horario || '-'}</p>
                     <p><strong>Modelo:</strong> ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas}x)</p>
+                    <p><strong>Tema:</strong> ${pedidoAtual.tema || "-"}</p>
+                    <p><strong>Cores:</strong> ${pedidoAtual.cores || "-"}</p>
                 </div>
             </div>
+            
+            <div class="border-t border-slate-100 pt-2 text-sm mt-3">
+                 <p><strong>Itens da Estrutura Inclusos:</strong></p>
+                 ${htmlItensPadrao}
+            </div>
+
             <div class="border-t border-slate-100 pt-2 text-sm mt-2">
                  <p><strong>Alimentação:</strong></p>
                  ${htmlAlimentacao}
             </div>
-            <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2">
-                 <p><strong>Obs:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
+
+            <div class="border-t border-slate-100 pt-2 text-sm grid grid-cols-2 gap-2 mt-2">
+                 <p><strong>Obs Extras:</strong> ${pedidoAtual.itens_adicionais || "-"}</p>
                  <p><strong>Alergias:</strong> <span class="text-red-600 font-bold">${pedidoAtual.alergias || "-"}</span></p>
             </div>
         `;
           document.getElementById("conteudoModal").innerHTML = html;
 
-          // --- LÓGICA DE FINANCEIRO (SÓ RODA PARA FESTAS COMUNS) ---
           const divTaxas = document.getElementById("areaTaxasSistema");
           if (divTaxas) {
             divTaxas.innerHTML = "";
@@ -563,12 +546,8 @@
                   "pt-BR",
                   { style: "currency", currency: "BRL" },
                 );
-                const descSalva = (
-                  pedidoAtual.descricao_itens_extras || ""
-                ).toLowerCase();
-                const isMarcado = descSalva.includes(
-                  taxa.descricao.toLowerCase(),
-                );
+                const descSalva = (pedidoAtual.descricao_itens_extras || "").toLowerCase();
+                const isMarcado = descSalva.includes(taxa.descricao.toLowerCase());
 
                 divTaxas.innerHTML += `
                         <div class="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
@@ -588,50 +567,37 @@
             }
 
             const valorSalvoBase = parseFloat(pedidoAtual.valor_final) || 0;
-            let valorSalvoExtraTotal =
-              parseFloat(pedidoAtual.valor_itens_extras) || 0;
+            let valorSalvoExtraTotal = parseFloat(pedidoAtual.valor_itens_extras) || 0;
             let somaTaxasDetectadas = 0;
-            divTaxas
-              .querySelectorAll('input[type="checkbox"]')
-              .forEach((cb) => {
+            divTaxas.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
                 if (cb.checked) somaTaxasDetectadas += parseFloat(cb.value);
-              });
+            });
 
             let valorManual = valorSalvoExtraTotal - somaTaxasDetectadas;
             if (valorManual < 0.01 && valorManual > -0.01) valorManual = 0;
 
-            document.getElementById("fin_valor_final").value =
-              valorSalvoBase.toFixed(2);
-            document.getElementById("fin_valor_extras").value =
-              valorManual.toFixed(2);
-            document.getElementById("fin_desc_extras").value =
-              pedidoAtual.descricao_itens_extras || "";
+            document.getElementById("fin_valor_final").value = valorSalvoBase.toFixed(2);
+            document.getElementById("fin_valor_extras").value = valorManual.toFixed(2);
+            document.getElementById("fin_desc_extras").value = pedidoAtual.descricao_itens_extras || "";
             atualizarTotalVisual();
           }
 
           if (btnFluxo) {
             btnFluxo.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i> <span>Salvar, Gerar Links e Copiar</span>`;
-            btnFluxo.className =
-              "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
+            btnFluxo.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
             btnFluxo.disabled = false;
           }
         }
 
-        // --- CONTROLES DA BARRA INFERIOR (Aprovar / Concluir) ---
         const btnAprovar = document.getElementById("btnAprovar");
         const btnConcluir = document.getElementById("btnConcluir");
         const areaAviso = document.getElementById("areaAvisoModal");
-        
-        // Limpa aviso de conclusão
         areaAviso.innerHTML = "";
 
         if (pedidoAtual.status_agenda === "concluido") {
             btnAprovar.classList.add("hidden");
             btnConcluir.classList.add("hidden");
-            
-            // Exibe que a festa já foi realizada/concluída
             areaAviso.innerHTML = `<span class="text-green-600 font-bold bg-green-50 px-3 py-1.5 rounded-lg border border-green-100 flex items-center w-fit gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Evento Concluído</span>`;
-            
         } else if (pedidoAtual.status === "aprovado") {
             btnAprovar.classList.add("hidden");
             btnConcluir.classList.remove("hidden");
@@ -649,39 +615,24 @@
       }
 
       function atualizarTotalVisual() {
-        const vFinal =
-          parseFloat(document.getElementById("fin_valor_final").value) || 0;
-
-        // 1. Soma Checkboxes
+        const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
         let vTaxas = 0;
-        const checkboxes = document.querySelectorAll(
-          '#areaTaxasSistema input[type="checkbox"]:checked',
-        );
+        const checkboxes = document.querySelectorAll('#areaTaxasSistema input[type="checkbox"]:checked');
         checkboxes.forEach((cb) => {
           vTaxas += parseFloat(cb.value);
         });
-
-        // 2. Soma Manual
-        const vManual =
-          parseFloat(document.getElementById("fin_valor_extras").value) || 0;
-
+        const vManual = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
         const totalGeral = vFinal + vTaxas + vManual;
 
         document.getElementById("displayTotal").innerText =
-          totalGeral.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          });
+          totalGeral.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
         document.getElementById("displayResumo").innerText =
           `(Pacote: ${vFinal.toFixed(0)} + Taxas: ${vTaxas.toFixed(0)} + Extra: ${vManual.toFixed(0)})`;
       }
 
       function aplicarSugestaoCalculo() {
         if (!pedidoAtual) return;
-        // Tenta achar preço pelo nome do modelo
-        const itemHardware = tabelaPrecos.find(
-          (t) => t.descricao === pedidoAtual.modelo_barraca,
-        );
+        const itemHardware = tabelaPrecos.find((t) => t.descricao === pedidoAtual.modelo_barraca);
         if (itemHardware) {
           const valUnit = parseFloat(itemHardware.valor);
           const qtd = parseInt(pedidoAtual.qtd_barracas) || 0;
@@ -706,43 +657,31 @@
         lucide.createIcons();
 
         try {
-          const vFinal =
-            parseFloat(document.getElementById("fin_valor_final").value) || 0;
-          const vManual =
-            parseFloat(document.getElementById("fin_valor_extras").value) || 0;
+          const vFinal = parseFloat(document.getElementById("fin_valor_final").value) || 0;
+          const vManual = parseFloat(document.getElementById("fin_valor_extras").value) || 0;
 
-          // Calcula Taxas
           let vTaxas = 0;
           let nomesTaxas = [];
-          const checkboxes = document.querySelectorAll(
-            '#areaTaxasSistema input[type="checkbox"]:checked',
-          );
+          const checkboxes = document.querySelectorAll('#areaTaxasSistema input[type="checkbox"]:checked');
           checkboxes.forEach((cb) => {
             vTaxas += parseFloat(cb.value);
             nomesTaxas.push(cb.getAttribute("data-nome"));
           });
 
-          // Consolida Extras (Taxas + Manual)
           const vExtrasTotal = vTaxas + vManual;
           const vTotalGeral = vFinal + vExtrasTotal;
 
           if (vTotalGeral <= 0) throw new Error("Valor total inválido.");
 
-          // Monta Descrição
           let descUsuario = document.getElementById("fin_desc_extras").value;
           let descFinal = descUsuario;
           if (nomesTaxas.length > 0) {
             const taxasString = nomesTaxas.join(", ");
-            if (
-              !descUsuario.toLowerCase().includes(nomesTaxas[0].toLowerCase())
-            ) {
-              descFinal = descUsuario
-                ? `${taxasString} + ${descUsuario}`
-                : taxasString;
+            if (!descUsuario.toLowerCase().includes(nomesTaxas[0].toLowerCase())) {
+              descFinal = descUsuario ? `${taxasString} + ${descUsuario}` : taxasString;
             }
           }
 
-          // 1. Salvar no Banco
           await fetch(`/api/admin/pedidos/${pedidoAtual.id}/financeiro`, {
             method: "PUT",
             headers: {
@@ -751,7 +690,7 @@
             },
             body: JSON.stringify({
               valor_final: vFinal,
-              valor_itens_extras: vExtrasTotal, // ENVIA A SOMA
+              valor_itens_extras: vExtrasTotal,
               descricao_itens_extras: descFinal,
             }),
           });
@@ -760,23 +699,18 @@
           pedidoAtual.valor_itens_extras = vExtrasTotal;
           pedidoAtual.descricao_itens_extras = descFinal;
 
-          // 2. Gerar Links
-          const res = await fetch(
-            `/api/admin/gerar-links-mp/${pedidoAtual.id}`,
-            {
+          const res = await fetch(`/api/admin/gerar-links-mp/${pedidoAtual.id}`, {
               method: "POST",
               headers: { "x-admin-password": ADMIN_TOKEN },
-            },
-          );
+          });
 
           const links = await res.json();
           if (!links.linkReserva || !links.linkIntegral)
             throw new Error("Erro ao gerar links.");
 
-          // --- GERAÇÃO DO TEXTO ---
+          // --- GERAÇÃO DO TEXTO CORRIGIDA E COMPLETA ---
           const itensPadraoArr = parseSeguro(pedidoAtual.itens_padrao);
-          const textoItens =
-            Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0
+          const textoItens = Array.isArray(itensPadraoArr) && itensPadraoArr.length > 0
               ? itensPadraoArr.join(", ")
               : "Itens padrão do modelo";
 
@@ -787,16 +721,13 @@
             if (alimObj.combo)
               partes.push(`🥪 *Pacote:* ${alimObj.combo.titulo || "Combo"}`);
             if (alimObj.extras && alimObj.extras.length > 0) {
-              const lista = alimObj.extras
-                .map((e) => `${e.qtd}x ${e.nome}`)
-                .join(", ");
+              const lista = alimObj.extras.map((e) => `${e.qtd}x ${e.nome}`).join(", ");
               partes.push(`➕ *Extras:* ${lista}`);
             }
             if (partes.length > 0) textoComida = partes.join("\n");
           }
 
-          const textoExtras =
-            vExtrasTotal !== 0
+          const textoExtras = vExtrasTotal !== 0
               ? `\nTaxas/Extras: R$ ${vExtrasTotal.toFixed(2).replace(".", ",")} (${descFinal})`
               : "";
 
@@ -817,7 +748,9 @@ Endereço: ${pedidoAtual.endereco}
 🎪 *Estrutura:*
 Modelo: ${pedidoAtual.modelo_barraca} (${pedidoAtual.qtd_barracas} unidades)
 Participantes: ${pedidoAtual.qtd_criancas || '-'} crianças
-Tema: ${pedidoAtual.tema}
+Tema: ${pedidoAtual.tema || 'A definir'}
+Cores: ${pedidoAtual.cores || 'A definir'}
+Itens Inclusos: ${textoItens}${pedidoAtual.itens_adicionais ? `\nObs Extras: ${pedidoAtual.itens_adicionais}` : ""}
 
 🥣 *Alimentação:*
 ${textoComida}
@@ -848,15 +781,12 @@ Fico no aguardo para confirmarmos! Qualquer dúvida é só chamar. 🥰
 
           await navigator.clipboard.writeText(texto);
 
-          // Sucesso
-          btn.className =
-            "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
+          btn.className = "w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3";
           btn.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i> <span>Sucesso! Copiado.</span>`;
           lucide.createIcons();
 
           setTimeout(() => {
-            btn.className =
-              "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
+            btn.className = "w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]";
             btn.innerHTML = conteudoOriginal;
             btn.disabled = false;
             lucide.createIcons();
@@ -877,10 +807,8 @@ Fico no aguardo para confirmarmos! Qualquer dúvida é só chamar. 🥰
         let url = "";
         let method = "PUT";
 
-        if (acao === "aprovar")
-          url = `/api/admin/agenda/aprovar/${pedidoAtual.id}`;
-        if (acao === "concluir")
-          url = `/api/admin/agenda/concluir/${pedidoAtual.id}`;
+        if (acao === "aprovar") url = `/api/admin/agenda/aprovar/${pedidoAtual.id}`;
+        if (acao === "concluir") url = `/api/admin/agenda/concluir/${pedidoAtual.id}`;
         if (acao === "excluir") {
           url = `/api/admin/pedidos/${pedidoAtual.id}`;
           method = "DELETE";
